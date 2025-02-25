@@ -26,21 +26,20 @@ receiveMsg();
 let jsonobj = JSON.parse("{}");
 
 //延时5秒钟执行windowLoadedHandler()函数
+import ConfigManager from './config.js';
+
 let downloadbtn = document.createElement("div")
 downloadbtn.style = "position: fixed;right: 15px;margin-top: 20px;z-index: 1000;font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\";-webkit-tap-highlight-color: transparent;color: inherit;"
 downloadbtn.innerHTML = "<button style=\"background-color: #1971c2;border-radius: 12px;border: none;color: white;padding: 8px 24px;text-align: center;text-decoration: none;display: inline-block;font-size: 12px;\">下载json</button>";
-downloadbtn.onclick = function () {
+downloadbtn.onclick = async function () {
+    const config = await ConfigManager.getConfig('toggleSettings');
+    if (!config.imageDownloader) {
+        alert('请在插件设置中启用图片下载功能');
+        return;
+    }
     getModelInfo()
     getDataInfo()
     getImageInfo()
-    /*setTimeout(() => {
-        const b = document.createElement("a");
-        b.href = "data:application/octet-stream," + encodeURIComponent(JSON.stringify(jsonobj));
-        b.download = filename + ".json";
-        b.click();
-    }, 1000);*/
-
-
 }
 setTimeout(function () {
     var next = document.getElementById("__next");

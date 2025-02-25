@@ -10,29 +10,35 @@ const toolbarStyle = `
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
-    background-color: rgba(25, 113, 194, 0.8);
-    border-radius: 8px;
+    background-color: transparent;
+    border-radius: 5px;
     padding: 10px;
     display: flex;
     flex-direction: column;
     gap: 10px;
     z-index: 2147483647;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
 // 创建按钮基础样式
 const buttonStyle = `
-    background-color: white;
+    background-color: rgba(255, 209, 0, 0.75);
     border: none;
-    border-radius: 4px;
-    color: #1971c2;
-    padding: 8px 12px;
-    font-size: 14px;
+    border-radius: 50%;
+    color: #B05346;
+    padding: 8px;
+    width: 48px;
+    height: 48px;
+    margin: 5px 0;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    word-wrap: break-word;
     &:hover {
-        background-color: #e7f5ff;
+        background-color: rgba(255, 238, 111, 0.9);
         transform: scale(1.05);
     }
 `;
