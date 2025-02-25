@@ -1,0 +1,72 @@
+{
+  "manifest_version": 3,
+  "name": "NWS Tools Extensions",
+  "description": "chrome扩展工具集合",
+  "version": "1.0",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "webNavigation",
+    "contextMenus",
+    "nativeMessaging",
+    "scripting",
+    "notifications",
+    "webRequest",
+    "storage"
+  ],
+  "icons": {
+    "16": "img/icon.png",
+    "32": "img/icon.png",
+    "48": "img/icon.png",
+    "128": "img/icon.png"
+  },
+  "action": {
+    "default_popup": "html/hello.html",
+    "default_icon": "img/lw.png"
+  },
+  "content_scripts": [
+    {
+      "js": [
+        "js/jquery-1.8.3.js","js/civitai.js"
+      ],
+      "matches": [
+        "*://*.civitai.com/images/*",
+        "*://civitai.com/images/*"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "js": [
+        "js/jquery-1.8.3.js","js/mainpage.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "js": [
+        "js/jquery-1.8.3.js","js/aliyun.js","js/axios.js"
+      ],
+      "matches":[
+        "*://*.aliyun.com/*"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "js": [
+        "js/langchain-service.js",
+        "js/toolsbar.js"
+      ],
+      "matches": ["<all_urls>"],
+      "run_at": "document_idle",
+      "type": "module"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["js/*.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
