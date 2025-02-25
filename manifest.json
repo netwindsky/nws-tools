@@ -55,12 +55,13 @@
     },
     {
       "js": [
-        "js/langchain-service.js",
-        "js/toolsbar.js"
+        "js/jquery-1.8.3.js",
+        "js/toolsbar.js",
+        "js/imageDownloader.js",
+        "js/elementHighlighter.js"
       ],
       "matches": ["<all_urls>"],
-      "run_at": "document_idle",
-      "type": "module"
+      "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
@@ -68,5 +69,8 @@
       "resources": ["js/*.js"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "background": {
+    "scripts": "service-worker.js"
+  }
 }

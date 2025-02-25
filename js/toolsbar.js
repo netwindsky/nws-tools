@@ -1,5 +1,3 @@
-// 导入 LangChain 服务
-import langChainService from './langchain-service.js';
 
 /**
  * toolsbar.js - 网页右侧悬浮工具栏
@@ -107,16 +105,189 @@ function handleBatchDownload() {
     });
 }
 
+const OLLAMA_ENDPOINT = 'http://localhost:11434/api/generate';
+
+async function callOllama(prompt, model = 'deepseek-r1:14b') {
+    console.log(`调用Ollama API，模型：${model}，提示：${prompt}`);
+    try {
+        const response = await fetch(OLLAMA_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model,
+                prompt,
+                stream: false
+            })
+            // body: JSON.stringify({
+            //     model,
+            //     prompt,
+            //     stream: false
+            // })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.response;
+    } catch (error) {
+        console.error('Ollama API 调用失败:', error);
+        throw error;
+    }
+}
+
+function splitTextIntoChunks(text, maxChunkSize = 2000) {
+    const chunks = [];
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    let currentChunk = '';
+
+    for (const sentence of sentences) {
+        if ((currentChunk + sentence).length <= maxChunkSize) {
+            currentChunk += (currentChunk ? ' ' : '') + sentence;
+        } else {
+            if (currentChunk) chunks.push(currentChunk);
+            currentChunk = sentence;
+        }
+    }
+
+    if (currentChunk) chunks.push(currentChunk);
+    return chunks;
+}
+
+function extractPageContent() {
+    const elementsToSkip = [
+        'script', 'style', 'noscript', 'iframe', 'nav', 'footer',
+        'header', '[role="banner"]', '[role="navigation"]', '[role="complementary"]'
+    ];
+
+    const content = [];
+    const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        {
+            acceptNode: function(node) {
+                if (node.parentElement && 
+                    elementsToSkip.some(selector => 
+                        node.parentElement.matches(selector))) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                return node.textContent.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            }
+        }
+    );
+
+    while (walker.nextNode()) {
+        content.push(walker.currentNode.textContent.trim());
+    }
+
+    return content.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+async function translatePage(targetLang = '中文') {
+    try {
+        const content = extractPageContent();
+        const chunks = splitTextIntoChunks(content);
+        const translations = [];
+
+        for (const chunk of chunks) {
+            const prompt = `请将以下文本翻译成${targetLang}：\n${chunk}`;
+            const translation = await callOllama(prompt);
+            translations.push(translation);
+        }
+
+        const translationOverlay = document.createElement('div');
+        translationOverlay.style.cssText = `
+            position: fixed;
+            top: 10%;
+            left: 10%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 10000;
+            overflow-y: auto;
+        `;
+
+        translationOverlay.innerHTML = `
+            <div style="position: sticky; top: 0; background: white; padding: 10px 0;">
+                <button onclick="this.parentElement.parentElement.remove()" 
+                        style="float: right; padding: 5px 10px; cursor: pointer;">
+                    关闭
+                </button>
+                <h2>页面翻译结果</h2>
+            </div>
+            <div style="margin-top: 20px;">
+                ${translations.join('\n\n')}
+            </div>
+        `;
+
+        document.body.appendChild(translationOverlay);
+
+    } catch (error) {
+        console.error('翻译失败:', error);
+        alert('翻译失败，请检查 Ollama 服务是否正在运行');
+    }
+}
+
+async function summarizePage() {
+    try {
+        const content = extractPageContent();
+        const prompt = `请对以下内容进行摘要总结（控制在300字以内）：\n${content}`;
+        const summary = await callOllama(prompt);
+
+        const summaryOverlay = document.createElement('div');
+        summaryOverlay.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            max-height: 80%;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 10000;
+            overflow-y: auto;
+        `;
+
+        summaryOverlay.innerHTML = `
+            <div style="position: sticky; top: 0; background: white; padding: 10px 0;">
+                <button onclick="this.parentElement.parentElement.remove()" 
+                        style="float: right; padding: 5px 10px; cursor: pointer;">
+                    关闭
+                </button>
+                <h2>页面摘要</h2>
+            </div>
+            <div style="margin-top: 20px;">
+                ${summary}
+            </div>
+        `;
+
+        document.body.appendChild(summaryOverlay);
+
+    } catch (error) {
+        console.error('生成摘要失败:', error);
+        alert('生成摘要失败，请检查 Ollama 服务是否正在运行');
+    }
+}
+
 // 翻译页面处理函数
-function handleTranslate() {
+async function handleTranslate() {
     console.log('开始翻译页面');
-    langChainService.translatePage();
+    await translatePage();
 }
 
 // 总结页面处理函数
-function handleSummary() {
+async function handleSummary() {
     console.log('开始生成页面总结');
-    langChainService.summarizePage();
+    await summarizePage();
 }
 
 // 在页面加载完成后初始化工具栏

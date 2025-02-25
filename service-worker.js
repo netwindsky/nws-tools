@@ -1,5 +1,4 @@
 import "./js/menu.js"
-import "./js/background.js"
 
 function showMessage(message) {
   chrome.notifications.create(null, {
