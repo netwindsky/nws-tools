@@ -11,6 +11,20 @@ function showMessage(message) {
 
 function init() {
   console.log("init")
+
+  // 创建右键菜单项
+  chrome.contextMenus.create({
+    id: "openSidePanel",
+    title: "打开侧边栏",
+    contexts: ["action"]
+  });
+
+  // 添加右键菜单点击事件监听器
+  chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === "openSidePanel") {
+      chrome.sidePanel.open({ windowId: tab.windowId });
+    }
+  });
   chrome.tabs.onUpdated.addListener(
     function (tabId, changeInfo, tab) {
       // read changeInfo data and do something with it

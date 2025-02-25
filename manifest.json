@@ -12,7 +12,8 @@
     "scripting",
     "notifications",
     "webRequest",
-    "storage"
+    "storage",
+    "sidePanel"
   ],
   "icons": {
     "16": "img/icon.png",
@@ -23,6 +24,9 @@
   "action": {
     "default_popup": "html/hello.html",
     "default_icon": "img/lw.png"
+  },
+  "side_panel": {
+    "default_path": "html/toolspanel.html"
   },
   "options_page": "html/options.html",
   "content_security_policy": {
