@@ -24,6 +24,10 @@
     "default_popup": "html/hello.html",
     "default_icon": "img/lw.png"
   },
+  "options_page": "html/options.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "content_scripts": [
     {
       "js": [
