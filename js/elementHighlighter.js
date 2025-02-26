@@ -11,6 +11,32 @@ let jszipLoaded = false;
 let jszipLoading = false;
 
 
+
+// 添加消息监听器
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (!lastHighlightedElement) return;
+
+    switch (request.action) {
+        case 'saveAsMD':
+            handleSaveMD(lastHighlightedElement);
+            break;
+        case 'collectInfo':
+            handleCollectInfo(lastHighlightedElement);
+            break;
+        case 'convertToVue':
+            handleConvertToVue(lastHighlightedElement);
+            break;
+        case 'copySelector':
+            const simplifiedPath = getSimplifiedCssPath(lastHighlightedElement);
+            copyToClipboard(simplifiedPath, lastCssPath);
+            break;
+        case 'copyStyle':
+            copyStyleToClipboard(lastHighlightedElement);
+            break;
+    }
+});
+
+
 // 加载JSZip库
 async function loadJSZip() {
     if (jszipLoaded) return;

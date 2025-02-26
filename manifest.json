@@ -7,18 +7,25 @@
     "storage",
     "activeTab",
     "scripting",
-    "downloads"
+    "downloads",
+    "contextMenus",
+    "sidePanel"
   ],
   "web_accessible_resources": [{
     "resources": ["js/jszip.min.js"],
     "matches": ["<all_urls>"]
   }],
+  "side_panel": {
+    "default_path": "html/toolspanel.html"
+  },
   "action": {
     "default_icon": "img/icon.png",
-    "default_popup": "html/options.html"
+    "default_title": "AI浏览器助手",
+    "default_popup": "html/hello.html"
   },
+  "options_page": "html/options.html",
   "background": {
-    "service_worker": "service-worker.js"
+    "service_worker": "js/background.js"
   },
   "content_scripts": [
     {
