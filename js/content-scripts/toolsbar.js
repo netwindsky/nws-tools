@@ -320,11 +320,12 @@ function handleElementHighlight() {
     const highlighter = window.NWSModules.ElementHighlighterModule;
     const button = document.querySelector('#nws-toolbar button:last-child');
     
-    // 使用ElementHighlighterModule的实际状态而不是本地变量
-    const isCurrentlyActive = highlighter.isActive;
-    console.log("当前高亮状态:", isCurrentlyActive);
+    // 使用ElementHighlighterModule的enabled状态来判断
+    const isCurrentlyEnabled = highlighter.enabled;
+    console.log("当前高亮状态 - enabled:", isCurrentlyEnabled);
+    console.log("当前高亮状态 - isActive:", highlighter.isActive);
     
-    if (!isCurrentlyActive) {
+    if (!isCurrentlyEnabled) {
         // 启用高亮功能
         console.log(highlighter)
         highlighter.enable().then(() => {

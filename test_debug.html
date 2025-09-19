@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElementHighlighter Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-element {
+            background: #f0f0f0;
+            padding: 20px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+        }
+        .debug-info {
+            background: #e8f4fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007acc;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+    </style>
+</head>
+<body>
+    <h1>ElementHighlighter 调试测试页面</h1>
+    
+    <div class="debug-info">
+        <h3>调试信息</h3>
+        <p>请打开浏览器开发者工具的控制台查看调试信息</p>
+        <button onclick="checkModules()">检查模块状态</button>
+        <button onclick="testHighlighter()">测试高亮功能</button>
+    </div>
+    
+    <div class="test-element">
+        <h2>测试元素 1</h2>
+        <p>这是一个用于测试元素高亮功能的段落。</p>
+    </div>
+    
+    <div class="test-element">
+        <h2>测试元素 2</h2>
+        <p>另一个测试段落，包含一些<span style="color: red;">彩色文本</span>。</p>
+        <ul>
+            <li>列表项 1</li>
+            <li>列表项 2</li>
+            <li>列表项 3</li>
+        </ul>
+    </div>
+    
+    <script>
+        function checkModules() {
+            console.log('=== 模块检查开始 ===');
+            console.log('window.NWSModules:', window.NWSModules);
+            
+            if (window.NWSModules) {
+                console.log('ElementHighlighterModule:', window.NWSModules.ElementHighlighterModule);
+                
+                if (window.NWSModules.ElementHighlighterModule) {
+                    const highlighter = window.NWSModules.ElementHighlighterModule;
+                    console.log('模块状态:');
+                    console.log('- isActive:', highlighter.isActive);
+                    console.log('- enabled:', highlighter.enabled);
+                    console.log('- initialized:', highlighter.initialized);
+                    console.log('- config:', highlighter.config);
+                } else {
+                    console.error('ElementHighlighterModule 未找到');
+                }
+            } else {
+                console.error('NWSModules 全局对象未找到');
+            }
+            console.log('=== 模块检查结束 ===');
+        }
+        
+        function testHighlighter() {
+            console.log('=== 测试高亮功能开始 ===');
+            
+            if (!window.NWSModules || !window.NWSModules.ElementHighlighterModule) {
+                console.error('ElementHighlighterModule 不可用');
+                return;
+            }
+            
+            const highlighter = window.NWSModules.ElementHighlighterModule;
+            console.log('当前状态 - isActive:', highlighter.isActive);
+            
+            if (!highlighter.isActive) {
+                console.log('尝试启用高亮功能...');
+                highlighter.enable().then(() => {
+                    console.log('高亮功能启用成功');
+                    console.log('新状态 - isActive:', highlighter.isActive);
+                }).catch(error => {
+                    console.error('启用失败:', error);
+                });
+            } else {
+                console.log('尝试禁用高亮功能...');
+                highlighter.disable().then(() => {
+                    console.log('高亮功能禁用成功');
+                    console.log('新状态 - isActive:', highlighter.isActive);
+                }).catch(error => {
+                    console.error('禁用失败:', error);
+                });
+            }
+            
+            console.log('=== 测试高亮功能结束 ===');
+        }
+        
+        // 页面加载完成后自动检查模块
+        window.addEventListener('load', function() {
+            setTimeout(checkModules, 1000);
+        });
+    </script>
+</body>
+</html>
