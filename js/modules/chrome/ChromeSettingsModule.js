@@ -35,15 +35,41 @@ class ChromeSettingsModule extends ModuleBase {
             throw new Error('Chrome API 不可用');
         }
 
-        // 初始化存储缓存
-        await this.loadAllSettings();
-        
-        // 设置存储监听器
-        this.setupStorageListener();
-        
-        // 启动自动同步
-        if (this.config.autoSync) {
-            this.startAutoSync();
+        // 检查扩展上下文是否有效
+        if (!this.isExtensionContextValid()) {
+            console.warn('[ChromeSettings] 扩展上下文无效，跳过初始化');
+            return;
+        }
+
+        try {
+            // 初始化存储缓存
+            await this.loadAllSettings();
+            
+            // 设置存储监听器
+            this.setupStorageListener();
+            
+            // 启动自动同步
+            if (this.config.autoSync) {
+                this.startAutoSync();
+            }
+        } catch (error) {
+            if (error.message.includes('Extension context invalidated')) {
+                console.warn('[ChromeSettings] 扩展上下文已失效，模块将不可用');
+                return;
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * 检查扩展上下文是否有效
+     */
+    isExtensionContextValid() {
+        try {
+            // 尝试访问chrome.runtime.id来检查上下文是否有效
+            return chrome.runtime && chrome.runtime.id;
+        } catch (error) {
+            return false;
         }
     }
 
@@ -63,6 +89,12 @@ class ChromeSettingsModule extends ModuleBase {
      */
     async getStorage(keys, area = 'sync') {
         try {
+            // 检查扩展上下文是否有效
+            if (!this.isExtensionContextValid()) {
+                console.warn('[ChromeSettings] 扩展上下文无效，无法获取存储数据');
+                return {};
+            }
+
             const storage = chrome.storage[area];
             if (!storage) {
                 throw new Error(`存储区域 ${area} 不支持`);
@@ -85,6 +117,10 @@ class ChromeSettingsModule extends ModuleBase {
 
             return result;
         } catch (error) {
+            if (error.message.includes('Extension context invalidated')) {
+                console.warn('[ChromeSettings] 扩展上下文已失效，无法获取存储数据');
+                return {};
+            }
             console.error('[ChromeSettings] 获取存储数据失败:', error);
             throw error;
         }
@@ -98,6 +134,12 @@ class ChromeSettingsModule extends ModuleBase {
      */
     async setStorage(items, area = 'sync') {
         try {
+            // 检查扩展上下文是否有效
+            if (!this.isExtensionContextValid()) {
+                console.warn('[ChromeSettings] 扩展上下文无效，无法设置存储数据');
+                return false;
+            }
+
             const storage = chrome.storage[area];
             if (!storage) {
                 throw new Error(`存储区域 ${area} 不支持`);
@@ -113,6 +155,10 @@ class ChromeSettingsModule extends ModuleBase {
             this.emit('storageChanged', { items, area });
             return true;
         } catch (error) {
+            if (error.message.includes('Extension context invalidated')) {
+                console.warn('[ChromeSettings] 扩展上下文已失效，无法设置存储数据');
+                return false;
+            }
             console.error('[ChromeSettings] 设置存储数据失败:', error);
             return false;
         }
@@ -126,6 +172,12 @@ class ChromeSettingsModule extends ModuleBase {
      */
     async removeStorage(keys, area = 'sync') {
         try {
+            // 检查扩展上下文是否有效
+            if (!this.isExtensionContextValid()) {
+                console.warn('[ChromeSettings] 扩展上下文无效，无法删除存储数据');
+                return false;
+            }
+
             const storage = chrome.storage[area];
             if (!storage) {
                 throw new Error(`存储区域 ${area} 不支持`);
@@ -142,6 +194,10 @@ class ChromeSettingsModule extends ModuleBase {
             this.emit('storageRemoved', { keys, area });
             return true;
         } catch (error) {
+            if (error.message.includes('Extension context invalidated')) {
+                console.warn('[ChromeSettings] 扩展上下文已失效，无法删除存储数据');
+                return false;
+            }
             console.error('[ChromeSettings] 删除存储数据失败:', error);
             return false;
         }
@@ -323,11 +379,21 @@ class ChromeSettingsModule extends ModuleBase {
      */
     async loadAllSettings() {
         try {
+            // 检查扩展上下文是否有效
+            if (!this.isExtensionContextValid()) {
+                console.warn('[ChromeSettings] 扩展上下文无效，跳过加载设置');
+                return;
+            }
+
             const syncData = await chrome.storage.sync.get(null);
             Object.entries(syncData).forEach(([key, value]) => {
                 this.storageCache.set(key, value);
             });
         } catch (error) {
+            if (error.message.includes('Extension context invalidated')) {
+                console.warn('[ChromeSettings] 扩展上下文已失效，无法加载设置');
+                return;
+            }
             console.error('[ChromeSettings] 加载设置到缓存失败:', error);
         }
     }
@@ -336,33 +402,65 @@ class ChromeSettingsModule extends ModuleBase {
      * 设置存储监听器
      */
     setupStorageListener() {
-        chrome.storage.onChanged.addListener((changes, namespace) => {
-            // 更新缓存
-            Object.entries(changes).forEach(([key, change]) => {
-                if (change.newValue !== undefined) {
-                    this.storageCache.set(key, change.newValue);
-                } else {
-                    this.storageCache.delete(key);
-                }
-            });
+        try {
+            // 检查扩展上下文是否有效
+            if (!this.isExtensionContextValid()) {
+                console.warn('[ChromeSettings] 扩展上下文无效，跳过设置存储监听器');
+                return;
+            }
 
-            this.emit('storageChanged', { changes, namespace });
-        });
+            chrome.storage.onChanged.addListener((changes, namespace) => {
+                // 更新缓存
+                Object.entries(changes).forEach(([key, change]) => {
+                    if (change.newValue !== undefined) {
+                        this.storageCache.set(key, change.newValue);
+                    } else {
+                        this.storageCache.delete(key);
+                    }
+                });
+
+                this.emit('storageChanged', { changes, namespace });
+            });
+        } catch (error) {
+            if (error.message.includes('Extension context invalidated')) {
+                console.warn('[ChromeSettings] 扩展上下文已失效，无法设置存储监听器');
+                return;
+            }
+            console.error('[ChromeSettings] 设置存储监听器失败:', error);
+        }
     }
 
     /**
      * 启动自动同步
      */
     startAutoSync() {
+        // 检查扩展上下文是否有效
+        if (!this.isExtensionContextValid()) {
+            console.warn('[ChromeSettings] 扩展上下文无效，跳过启动自动同步');
+            return;
+        }
+
         if (this.syncTimer) {
             clearInterval(this.syncTimer);
         }
 
         this.syncTimer = setInterval(async () => {
             try {
+                // 在每次同步前检查上下文是否仍然有效
+                if (!this.isExtensionContextValid()) {
+                    console.warn('[ChromeSettings] 扩展上下文已失效，停止自动同步');
+                    this.stopAutoSync();
+                    return;
+                }
+
                 await this.loadAllSettings();
                 this.emit('autoSyncCompleted');
             } catch (error) {
+                if (error.message.includes('Extension context invalidated')) {
+                    console.warn('[ChromeSettings] 扩展上下文已失效，停止自动同步');
+                    this.stopAutoSync();
+                    return;
+                }
                 console.error('[ChromeSettings] 自动同步失败:', error);
             }
         }, this.config.syncInterval);
