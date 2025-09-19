@@ -704,14 +704,24 @@ class ElementHighlighterModule extends ModuleBase {
      */
     async loadConfigSettings() {
         try {
+            // 确保config对象已正确初始化为defaultConfig的副本
+            if (!this.config || Object.keys(this.config).length === 0) {
+                this.config = { ...this.defaultConfig };
+            }
+            
             const toggleSettings = await this.chromeSettings.getStorage(['toggleSettings']);
             if (toggleSettings && toggleSettings.toggleSettings) {
                 const isEnabled = toggleSettings.toggleSettings.elementHighlighter;
-                this.config.enabled = isEnabled !== undefined ? isEnabled : true;
+                this.config.enabled = isEnabled !== undefined ? isEnabled : this.defaultConfig.enabled;
                 console.log('[ElementHighlighter] 配置加载完成，启用状态:', this.config.enabled);
+            } else {
+                // 如果没有存储的设置，使用默认配置
+                this.config = { ...this.defaultConfig };
             }
         } catch (error) {
             console.warn('[ElementHighlighter] 加载配置失败，使用默认设置:', error);
+            // 确保在错误情况下也有完整的配置
+            this.config = { ...this.defaultConfig };
         }
     }
 
