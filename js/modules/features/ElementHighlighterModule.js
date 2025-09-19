@@ -43,6 +43,12 @@ class ElementHighlighterModule extends ModuleBase {
         this.lastCssPath = '';
         this.isActive = false;
         this.jszipLoaded = false;
+        
+        // 绑定事件处理函数，确保可以正确移除监听器
+        this.boundHandleMouseMove = this.handleMouseMove.bind(this);
+        this.boundHandleMouseLeave = this.handleMouseLeave.bind(this);
+        this.boundHandleClick = this.handleClick.bind(this);
+        this.boundHandleKeyDown = this.handleKeyDown.bind(this);
     }
 
     async onInitialize() {
@@ -53,6 +59,9 @@ class ElementHighlighterModule extends ModuleBase {
         if (!this.chromeSettings) {
             throw new Error('ChromeSettingsModule 依赖未找到');
         }
+
+        // 加载配置设置
+        await this.loadConfigSettings();
 
         // 创建UI元素
         this.createTooltip();
@@ -68,6 +77,9 @@ class ElementHighlighterModule extends ModuleBase {
 
         // 监听Chrome消息
         this.setupMessageListener();
+        
+        // 监听配置变化
+        this.setupConfigListener();
     }
 
     async onDestroy() {
@@ -93,20 +105,20 @@ class ElementHighlighterModule extends ModuleBase {
      * 添加事件监听器
      */
     addEventListeners() {
-        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        document.addEventListener('mouseleave', this.handleMouseLeave.bind(this));
-        document.addEventListener('click', this.handleClick.bind(this));
-        document.addEventListener('keydown', this.handleKeyDown.bind(this));
+        document.addEventListener('mousemove', this.boundHandleMouseMove);
+        document.addEventListener('mouseleave', this.boundHandleMouseLeave);
+        document.addEventListener('click', this.boundHandleClick);
+        document.addEventListener('keydown', this.boundHandleKeyDown);
     }
 
     /**
      * 移除事件监听器
      */
     removeEventListeners() {
-        document.removeEventListener('mousemove', this.handleMouseMove.bind(this));
-        document.removeEventListener('mouseleave', this.handleMouseLeave.bind(this));
-        document.removeEventListener('click', this.handleClick.bind(this));
-        document.removeEventListener('keydown', this.handleKeyDown.bind(this));
+        document.removeEventListener('mousemove', this.boundHandleMouseMove);
+        document.removeEventListener('mouseleave', this.boundHandleMouseLeave);
+        document.removeEventListener('click', this.boundHandleClick);
+        document.removeEventListener('keydown', this.boundHandleKeyDown);
     }
 
     /**
@@ -684,6 +696,48 @@ class ElementHighlighterModule extends ModuleBase {
         } catch (error) {
             console.error('[ElementHighlighter] 加载JSZip库失败:', error);
             throw error;
+        }
+    }
+
+    /**
+     * 加载配置设置
+     */
+    async loadConfigSettings() {
+        try {
+            const toggleSettings = await this.chromeSettings.getStorage(['toggleSettings']);
+            if (toggleSettings && toggleSettings.toggleSettings) {
+                const isEnabled = toggleSettings.toggleSettings.elementHighlighter;
+                this.config.enabled = isEnabled !== undefined ? isEnabled : true;
+                console.log('[ElementHighlighter] 配置加载完成，启用状态:', this.config.enabled);
+            }
+        } catch (error) {
+            console.warn('[ElementHighlighter] 加载配置失败，使用默认设置:', error);
+        }
+    }
+
+    /**
+     * 设置配置监听器
+     */
+    setupConfigListener() {
+        if (this.chromeSettings) {
+            this.chromeSettings.on('storageChanged', async (changes) => {
+                if (changes.toggleSettings) {
+                    const newSettings = changes.toggleSettings.newValue;
+                    if (newSettings && newSettings.elementHighlighter !== undefined) {
+                        const wasEnabled = this.config.enabled;
+                        this.config.enabled = newSettings.elementHighlighter;
+                        
+                        console.log('[ElementHighlighter] 配置更新，启用状态:', this.config.enabled);
+                        
+                        // 根据新配置启用或禁用功能
+                        if (this.config.enabled && !wasEnabled) {
+                            await this.enable();
+                        } else if (!this.config.enabled && wasEnabled) {
+                            await this.disable();
+                        }
+                    }
+                }
+            });
         }
     }
 

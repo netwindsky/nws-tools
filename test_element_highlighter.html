@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElementHighlighter 功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #005a87;
+        }
+        .test-image {
+            width: 200px;
+            height: 150px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            border: 1px solid #ccc;
+            display: inline-block;
+            margin: 10px;
+        }
+        .test-list {
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        .test-table th, .test-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .test-table th {
+            background-color: #f2f2f2;
+        }
+        .status-indicator {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>ElementHighlighter 功能测试页面</h1>
+        
+        <div id="status" class="status-indicator status-info">
+            正在检测 ElementHighlighter 模块状态...
+        </div>
+        
+        <div class="test-section">
+            <h2>测试说明</h2>
+            <p>这个页面用于测试 ElementHighlighter 模块的功能。如果功能正常，您应该能够：</p>
+            <ul class="test-list">
+                <li>鼠标悬停在元素上时看到高亮边框</li>
+                <li>看到元素信息的工具提示</li>
+                <li>右键点击元素显示操作按钮</li>
+                <li>使用 Ctrl+C 复制选择器</li>
+                <li>使用 Ctrl+Shift+C 复制样式</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h2>测试按钮</h2>
+            <button class="test-button" onclick="testModuleStatus()">检查模块状态</button>
+            <button class="test-button" onclick="testHighlightFunction()">测试高亮功能</button>
+            <button class="test-button" onclick="testConfiguration()">检查配置</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>测试元素 - 按钮组</h2>
+            <button class="test-button">按钮 1</button>
+            <button class="test-button">按钮 2</button>
+            <button class="test-button">按钮 3</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>测试元素 - 图片区域</h2>
+            <div class="test-image">测试图片 1</div>
+            <div class="test-image">测试图片 2</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>测试元素 - 表格</h2>
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>列 1</th>
+                        <th>列 2</th>
+                        <th>列 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>数据 1-1</td>
+                        <td>数据 1-2</td>
+                        <td>数据 1-3</td>
+                    </tr>
+                    <tr>
+                        <td>数据 2-1</td>
+                        <td>数据 2-2</td>
+                        <td>数据 2-3</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="test-section">
+            <h2>测试元素 - 列表</h2>
+            <ul class="test-list">
+                <li>列表项目 1</li>
+                <li>列表项目 2
+                    <ul>
+                        <li>子项目 2.1</li>
+                        <li>子项目 2.2</li>
+                    </ul>
+                </li>
+                <li>列表项目 3</li>
+            </ul>
+        </div>
+        
+        <div id="test-results" class="test-section" style="display: none;">
+            <h2>测试结果</h2>
+            <div id="results-content"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 测试函数
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status-indicator status-${type}`;
+            statusEl.textContent = message;
+        }
+        
+        function showResults(content) {
+            const resultsEl = document.getElementById('test-results');
+            const contentEl = document.getElementById('results-content');
+            contentEl.innerHTML = content;
+            resultsEl.style.display = 'block';
+        }
+        
+        function testModuleStatus() {
+            let results = '<h3>模块状态检查</h3>';
+            
+            // 检查 NWSModules
+            if (window.NWSModules) {
+                results += '<p>✅ NWSModules 全局对象存在</p>';
+                
+                // 检查 ElementHighlighterModule
+                if (window.NWSModules.ElementHighlighterModule) {
+                    results += '<p>✅ ElementHighlighterModule 已加载</p>';
+                    
+                    const module = window.NWSModules.ElementHighlighterModule;
+                    if (module.isActive !== undefined) {
+                        results += `<p>📊 模块激活状态: ${module.isActive ? '已激活' : '未激活'}</p>`;
+                    }
+                    
+                    if (module.config) {
+                        results += `<p>📊 模块启用状态: ${module.config.enabled ? '已启用' : '已禁用'}</p>`;
+                        results += `<p>📊 工具提示: ${module.config.showTooltip ? '启用' : '禁用'}</p>`;
+                        results += `<p>📊 样式信息: ${module.config.showStyleInfo ? '启用' : '禁用'}</p>`;
+                        results += `<p>📊 高亮颜色: ${module.config.highlightColor}</p>`;
+                    }
+                } else {
+                    results += '<p>❌ ElementHighlighterModule 未加载</p>';
+                }
+            } else {
+                results += '<p>❌ NWSModules 全局对象不存在</p>';
+            }
+            
+            showResults(results);
+        }
+        
+        function testHighlightFunction() {
+            let results = '<h3>高亮功能测试</h3>';
+            
+            if (window.NWSModules && window.NWSModules.ElementHighlighterModule) {
+                const highlighter = window.NWSModules.ElementHighlighterModule;
+                
+                try {
+                    // 测试手动高亮
+                    const testButton = document.querySelector('.test-button');
+                    if (testButton) {
+                        highlighter.highlightElement(testButton);
+                        results += '<p>✅ 手动高亮测试成功</p>';
+                        
+                        // 3秒后隐藏高亮
+                        setTimeout(() => {
+                            highlighter.hideTooltip();
+                        }, 3000);
+                    }
+                    
+                    results += '<p>💡 请将鼠标悬停在页面元素上测试自动高亮功能</p>';
+                } catch (error) {
+                    results += `<p>❌ 高亮功能测试失败: ${error.message}</p>`;
+                }
+            } else {
+                results += '<p>❌ ElementHighlighterModule 不可用</p>';
+            }
+            
+            showResults(results);
+        }
+        
+        function testConfiguration() {
+            let results = '<h3>配置检查</h3>';
+            
+            if (window.NWSModules && window.NWSModules.ChromeSettingsModule) {
+                const chromeSettings = window.NWSModules.ChromeSettingsModule;
+                
+                chromeSettings.getStorage(['toggleSettings']).then(data => {
+                    if (data && data.toggleSettings) {
+                        const settings = data.toggleSettings;
+                        results += `<p>📊 ElementHighlighter 配置状态: ${settings.elementHighlighter ? '启用' : '禁用'}</p>`;
+                        results += `<p>📊 ElementActions 配置状态: ${settings.elementActions ? '启用' : '禁用'}</p>`;
+                    } else {
+                        results += '<p>⚠️ 未找到配置设置</p>';
+                    }
+                    
+                    showResults(results);
+                }).catch(error => {
+                    results += `<p>❌ 配置检查失败: ${error.message}</p>`;
+                    showResults(results);
+                });
+            } else {
+                results += '<p>❌ ChromeSettingsModule 不可用</p>';
+                showResults(results);
+            }
+        }
+        
+        // 页面加载完成后检查状态
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (window.NWSModules && window.NWSModules.ElementHighlighterModule) {
+                    const module = window.NWSModules.ElementHighlighterModule;
+                    if (module.config && module.config.enabled) {
+                        updateStatus('ElementHighlighter 模块已加载并启用', 'success');
+                    } else {
+                        updateStatus('ElementHighlighter 模块已加载但未启用', 'error');
+                    }
+                } else {
+                    updateStatus('ElementHighlighter 模块未加载', 'error');
+                }
+            }, 2000);
+        });
+        
+        // 监听模块事件
+        if (window.NWSModules && window.NWSModules.ElementHighlighterModule) {
+            const highlighter = window.NWSModules.ElementHighlighterModule;
+            
+            highlighter.on('elementHighlighted', (data) => {
+                console.log('元素高亮事件:', data);
+            });
+            
+            highlighter.on('selectorCopied', (data) => {
+                console.log('选择器复制事件:', data);
+                updateStatus('选择器已复制到剪贴板', 'success');
+            });
+        }
+    </script>
+</body>
+</html>
