@@ -560,7 +560,7 @@ function createBatchDownloadModal(images) {
 }
 
 // 全选/取消功能
-function toggleAllImages(button) {
+window.toggleAllImages = function(button) {
     const modal = button.closest('.batch-download-modal');
     const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
@@ -571,7 +571,7 @@ function toggleAllImages(button) {
 }
 
 // 开始批量下载
-async function startBatchDownload(button) {
+window.startBatchDownload = async function(button) {
     const modal = button.closest('.batch-download-modal');
     const checkedItems = modal.querySelectorAll('input[type="checkbox"]:checked');
     
