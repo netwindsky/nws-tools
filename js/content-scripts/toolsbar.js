@@ -7,6 +7,122 @@
 // 从全局模块系统获取工具函数
 const { safeQuerySelector, safeQuerySelectorAll } = window.NWSModules ? window.NWSModules.utils : {};
 
+// 现代化UI组件库 - 需要在其他函数之前定义
+function createLoadingOverlay(message, icon = '⏳') {
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease-out;
+    `;
+    
+    overlay.innerHTML = `
+        <div class="loading-content" style="
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            min-width: 300px;
+            animation: slideIn 0.3s ease-out;
+        ">
+            <div class="loading-icon" style="
+                font-size: 48px;
+                margin-bottom: 20px;
+                animation: pulse 2s infinite;
+            ">${icon}</div>
+            <div class="loading-message" style="
+                font-size: 16px;
+                color: #333;
+                margin-bottom: 20px;
+                font-weight: 500;
+            ">${message}</div>
+            <div class="progress-container" style="
+                width: 100%;
+                height: 6px;
+                background: #e9ecef;
+                border-radius: 3px;
+                overflow: hidden;
+                margin-bottom: 10px;
+            ">
+                <div class="progress-fill" style="
+                    height: 100%;
+                    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+                    width: 0%;
+                    transition: width 0.3s ease;
+                    border-radius: 3px;
+                "></div>
+            </div>
+            <div class="progress-text" style="
+                font-size: 12px;
+                color: #666;
+            ">准备中...</div>
+        </div>
+    `;
+    
+    return overlay;
+}
+
+function showErrorNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'error-notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        color: white;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
+        z-index: 10002;
+        max-width: 400px;
+        animation: slideInRight 0.3s ease-out;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    `;
+    
+    notification.innerHTML = `
+        <span style="font-size: 20px;">⚠️</span>
+        <div>
+            <div style="font-weight: 600; margin-bottom: 4px;">错误</div>
+            <div style="font-size: 14px; opacity: 0.9;">${message}</div>
+        </div>
+        <button onclick="this.parentElement.remove()" style="
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-left: auto;
+        ">×</button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // 5秒后自动消失
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// UI组件函数已在文件开头定义
+
 // 创建工具栏样式
 const toolbarStyle = `
     position: fixed;
@@ -482,7 +598,6 @@ function extractPageContent() {
     return content.join(' ').replace(/\s+/g, ' ').trim();
 }
 
-// 现代化UI组件库
 function createModernModal(title, icon, content, className = '') {
     const modal = document.createElement('div');
     modal.className = `modern-modal ${className}`;
@@ -561,119 +676,6 @@ function createModernModal(title, icon, content, className = '') {
     });
     
     return modal;
-}
-
-function createLoadingOverlay(message, icon = '⏳') {
-    const overlay = document.createElement('div');
-    overlay.className = 'loading-overlay';
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(5px);
-        z-index: 10001;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.3s ease-out;
-    `;
-    
-    overlay.innerHTML = `
-        <div class="loading-content" style="
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            min-width: 300px;
-            animation: slideIn 0.3s ease-out;
-        ">
-            <div class="loading-icon" style="
-                font-size: 48px;
-                margin-bottom: 20px;
-                animation: pulse 2s infinite;
-            ">${icon}</div>
-            <div class="loading-message" style="
-                font-size: 16px;
-                color: #333;
-                margin-bottom: 20px;
-                font-weight: 500;
-            ">${message}</div>
-            <div class="progress-container" style="
-                width: 100%;
-                height: 6px;
-                background: #e9ecef;
-                border-radius: 3px;
-                overflow: hidden;
-                margin-bottom: 10px;
-            ">
-                <div class="progress-fill" style="
-                    height: 100%;
-                    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-                    width: 0%;
-                    transition: width 0.3s ease;
-                    border-radius: 3px;
-                "></div>
-            </div>
-            <div class="progress-text" style="
-                font-size: 12px;
-                color: #666;
-            ">准备中...</div>
-        </div>
-    `;
-    
-    return overlay;
-}
-
-function showErrorNotification(message) {
-    const notification = document.createElement('div');
-    notification.className = 'error-notification';
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-        color: white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(255, 107, 107, 0.3);
-        z-index: 10002;
-        max-width: 400px;
-        animation: slideInRight 0.3s ease-out;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    `;
-    
-    notification.innerHTML = `
-        <span style="font-size: 20px;">⚠️</span>
-        <div>
-            <div style="font-weight: 600; margin-bottom: 4px;">错误</div>
-            <div style="font-size: 14px; opacity: 0.9;">${message}</div>
-        </div>
-        <button onclick="this.parentElement.remove()" style="
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            cursor: pointer;
-            margin-left: auto;
-        ">×</button>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // 5秒后自动消失
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.remove();
-        }
-    }, 5000);
 }
 
 // 添加CSS动画
