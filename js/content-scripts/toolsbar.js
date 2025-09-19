@@ -7,6 +7,45 @@
 // 从全局模块系统获取工具函数
 const { safeQuerySelector, safeQuerySelectorAll } = window.NWSModules ? window.NWSModules.utils : {};
 
+// 确保批量下载函数在全局作用域中可用
+if (typeof window.startBatchDownload === 'undefined') {
+    console.log('[BatchDownload] 初始化批量下载函数');
+    
+    // 全选/取消功能
+    window.toggleAllImages = function(button) {
+        const modal = button.closest('.batch-download-modal');
+        const checkboxes = modal.querySelectorAll('input[type="checkbox"]');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+    };
+    
+    // 开始批量下载
+    window.startBatchDownload = async function(button) {
+        console.log('[BatchDownload] 开始批量下载函数被调用');
+        const modal = button.closest('.batch-download-modal');
+        const checkedItems = modal.querySelectorAll('input[type="checkbox"]:checked');
+        
+        if (checkedItems.length === 0) {
+            if (typeof showErrorNotification === 'function') {
+                showErrorNotification('请至少选择一张图片');
+            } else {
+                alert('请至少选择一张图片');
+            }
+            return;
+        }
+        
+        // 调用实际的下载逻辑
+        if (typeof startBatchDownloadImpl === 'function') {
+            startBatchDownloadImpl(button);
+        } else {
+            console.error('[BatchDownload] 下载实现函数未找到');
+        }
+    };
+}
+
 // 现代化UI组件库 - 需要在其他函数之前定义
 function createLoadingOverlay(message, icon = '⏳') {
     const overlay = document.createElement('div');
@@ -568,7 +607,13 @@ function createBatchDownloadModal(images) {
     
     if (startDownloadBtn) {
         startDownloadBtn.addEventListener('click', function() {
-            window.startBatchDownload(this);
+            console.log('[BatchDownload] 按钮点击事件触发');
+            if (typeof window.startBatchDownload === 'function') {
+                window.startBatchDownload(this);
+            } else {
+                console.error('[BatchDownload] startBatchDownload函数未定义');
+                alert('批量下载功能未正确加载，请刷新页面重试');
+            }
         });
     }
     
@@ -586,8 +631,8 @@ window.toggleAllImages = function(button) {
     });
 }
 
-// 开始批量下载
-window.startBatchDownload = async function(button) {
+// 批量下载实现函数
+window.startBatchDownloadImpl = async function(button) {
     const modal = button.closest('.batch-download-modal');
     const checkedItems = modal.querySelectorAll('input[type="checkbox"]:checked');
     
