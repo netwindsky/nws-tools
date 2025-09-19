@@ -243,10 +243,19 @@ function initToolbar() {
         'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
     );
     
+    // 创建元素高亮按钮
+    const highlightBtn = createToolbarButton(
+        '🎯', 
+        '元素高亮', 
+        handleElementHighlight,
+        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    );
+    
     // 添加按钮到工具栏
     toolbar.appendChild(downloadBtn);
     toolbar.appendChild(translateBtn);
     toolbar.appendChild(summaryBtn);
+    toolbar.appendChild(highlightBtn);
     
     // 添加工具栏到页面
     document.body.appendChild(toolbar);
@@ -257,6 +266,110 @@ function initToolbar() {
 function handleBatchDownload() {
     console.log('开始批量下载图片');
     batchDownloadImages();
+}
+
+// 元素高亮处理函数
+let isHighlightEnabled = false;
+function handleElementHighlight() {
+    console.log('切换元素高亮功能');
+    
+    // 检查ElementHighlighterModule是否可用
+    if (!window.NWSModules || !window.NWSModules.ElementHighlighterModule) {
+        showErrorNotification('元素高亮模块未加载，请刷新页面重试');
+        return;
+    }
+    
+    const highlighter = window.NWSModules.ElementHighlighterModule;
+    const button = document.querySelector('#nws-toolbar button:last-child');
+    
+    if (!isHighlightEnabled) {
+        // 启用高亮功能
+        highlighter.enable().then(() => {
+            isHighlightEnabled = true;
+            if (button) {
+                button.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                button.querySelector('.button-text').textContent = '关闭高亮';
+            }
+            
+            // 显示使用提示
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+                z-index: 10002;
+                max-width: 350px;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 8px;">🎯 元素高亮已启用</div>
+                <div style="font-size: 14px; opacity: 0.9; line-height: 1.4;">
+                    • 鼠标悬停查看元素信息<br>
+                    • 右键显示操作菜单<br>
+                    • Ctrl+C 复制选择器<br>
+                    • Ctrl+Shift+C 复制样式
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后自动隐藏提示
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+            
+            console.log('[ElementHighlight] 元素高亮功能已启用');
+        }).catch(error => {
+            console.error('[ElementHighlight] 启用失败:', error);
+            showErrorNotification('启用元素高亮功能失败: ' + error.message);
+        });
+    } else {
+        // 禁用高亮功能
+        highlighter.disable().then(() => {
+            isHighlightEnabled = false;
+            if (button) {
+                button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                button.querySelector('.button-text').textContent = '元素高亮';
+            }
+            
+            // 显示禁用提示
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                box-shadow: 0 10px 25px rgba(108, 117, 125, 0.3);
+                z-index: 10002;
+                animation: slideInRight 0.3s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <div style="font-weight: 600;">🎯 元素高亮已禁用</div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 2秒后自动隐藏提示
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
+            
+            console.log('[ElementHighlight] 元素高亮功能已禁用');
+        }).catch(error => {
+            console.error('[ElementHighlight] 禁用失败:', error);
+            showErrorNotification('禁用元素高亮功能失败: ' + error.message);
+        });
+    }
 }
 
 async function batchDownloadImages() {

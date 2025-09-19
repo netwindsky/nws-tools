@@ -39,7 +39,8 @@
         "js/modules/ui/NotificationModule.js",
         "js/modules/features/ImageDownloaderModule.js",
         "js/modules/features/ElementHighlighterModule.js",
-        "js/main.js"
+        "js/main.js",
+        "js/content-scripts/toolsbar.js"
       ],
       "run_at": "document_end"
     },
@@ -56,14 +57,6 @@
       "js": [
         "js/modules-loader.js",
         "js/content-scripts/aliyun.js"
-      ],
-      "run_at": "document_end"
-    },
-    {
-      "matches": ["<all_urls>"],
-      "js": [
-        "js/modules-loader.js",
-        "js/content-scripts/toolsbar.js"
       ],
       "run_at": "document_end"
     }
