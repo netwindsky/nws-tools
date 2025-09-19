@@ -288,7 +288,10 @@ function handleElementHighlight() {
             isHighlightEnabled = true;
             if (button) {
                 button.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-                button.querySelector('.button-text').textContent = '关闭高亮';
+                const textElement = button.querySelector('div > div:last-child');
+                if (textElement) {
+                    textElement.textContent = '关闭高亮';
+                }
             }
             
             // 显示使用提示
@@ -335,7 +338,10 @@ function handleElementHighlight() {
             isHighlightEnabled = false;
             if (button) {
                 button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                button.querySelector('.button-text').textContent = '元素高亮';
+                const textElement = button.querySelector('div > div:last-child');
+                if (textElement) {
+                    textElement.textContent = '元素高亮';
+                }
             }
             
             // 显示禁用提示
