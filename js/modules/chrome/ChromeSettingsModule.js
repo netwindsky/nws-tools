@@ -367,7 +367,27 @@ class ChromeSettingsModule extends ModuleBase {
      */
     async downloadFile(downloadOptions) {
         try {
-            return await chrome.downloads.download(downloadOptions);
+            // 在content script中，需要通过消息传递与background script通信
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({
+                    action: 'download',
+                    options: downloadOptions
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('[ChromeSettings] 消息发送失败:', chrome.runtime.lastError);
+                        reject(new Error(chrome.runtime.lastError.message));
+                        return;
+                    }
+                    
+                    if (response && response.success) {
+                        resolve(response.downloadId);
+                    } else {
+                        const error = new Error(response ? response.error : '下载请求失败');
+                        console.error('[ChromeSettings] 下载文件失败:', error);
+                        reject(error);
+                    }
+                });
+            });
         } catch (error) {
             console.error('[ChromeSettings] 下载文件失败:', error);
             throw error;

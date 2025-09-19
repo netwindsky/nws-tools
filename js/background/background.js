@@ -10,6 +10,22 @@ chrome.runtime.onInstalled.addListener(() => {
         contexts: ['all']
     });
 
+// 处理来自content script的消息
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'download') {
+        // 处理下载请求
+        chrome.downloads.download(request.options)
+            .then(downloadId => {
+                sendResponse({ success: true, downloadId });
+            })
+            .catch(error => {
+                console.error('[Background] 下载失败:', error);
+                sendResponse({ success: false, error: error.message });
+            });
+        return true; // 保持消息通道开放以支持异步响应
+    }
+});
+
     // 创建子菜单
     chrome.contextMenus.create({
         id: 'saveAsMD',
