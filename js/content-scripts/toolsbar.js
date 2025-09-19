@@ -699,6 +699,73 @@ window.startBatchDownloadImpl = async function(button) {
 
 const OLLAMA_ENDPOINT = 'http://localhost:11434/api/generate';
 
+// 下载图片到本地
+async function downloadImage(imageUrl) {
+    return new Promise((resolve, reject) => {
+        console.log('[BatchDownload] 开始下载图片:', imageUrl);
+        
+        // 创建一个临时的a标签用于下载
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        
+        // 处理跨域图片下载
+        fetch(imageUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                link.href = url;
+                
+                // 从URL中提取文件名，或使用默认名称
+                const urlObj = new URL(imageUrl);
+                const pathname = urlObj.pathname;
+                let filename = pathname.split('/').pop() || 'image';
+                
+                // 确保文件有扩展名
+                if (!filename.includes('.')) {
+                    const contentType = blob.type;
+                    if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+                        filename += '.jpg';
+                    } else if (contentType.includes('png')) {
+                        filename += '.png';
+                    } else if (contentType.includes('webp')) {
+                        filename += '.webp';
+                    } else {
+                        filename += '.jpg'; // 默认扩展名
+                    }
+                }
+                
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                console.log('[BatchDownload] 图片下载完成:', filename);
+                resolve(filename);
+            })
+            .catch(error => {
+                console.error('[BatchDownload] 图片下载失败:', error);
+                // 尝试直接下载（可能会被浏览器阻止）
+                try {
+                    link.href = imageUrl;
+                    link.download = 'image.jpg';
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    resolve('image.jpg');
+                } catch (fallbackError) {
+                    reject(error);
+                }
+            });
+    });
+}
+
 async function callOllama(prompt, model = 'deepseek-r1:14b') {
     console.log(`调用Ollama API，模型：${model}，提示：${prompt}`);
     try {
