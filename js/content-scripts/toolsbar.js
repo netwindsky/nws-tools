@@ -501,8 +501,8 @@ function createBatchDownloadModal(images) {
                 gap: 12px;
                 background: #f8f9fa;
             ">
-                <button onclick="toggleAllImages(this)" style="
-                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+                <button class="toggle-all-btn" style="
+                    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
                     color: white;
                     border: none;
                     padding: 8px 16px;
@@ -511,7 +511,7 @@ function createBatchDownloadModal(images) {
                     font-size: 12px;
                 ">全选/取消</button>
                 
-                <button onclick="startBatchDownload(this)" style="
+                <button class="start-download-btn" style="
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     color: white;
                     border: none;
@@ -555,6 +555,22 @@ function createBatchDownloadModal(images) {
             modal.remove();
         }
     });
+    
+    // 添加按钮事件监听器
+    const toggleAllBtn = modal.querySelector('.toggle-all-btn');
+    const startDownloadBtn = modal.querySelector('.start-download-btn');
+    
+    if (toggleAllBtn) {
+        toggleAllBtn.addEventListener('click', function() {
+            window.toggleAllImages(this);
+        });
+    }
+    
+    if (startDownloadBtn) {
+        startDownloadBtn.addEventListener('click', function() {
+            window.startBatchDownload(this);
+        });
+    }
     
     return modal;
 }
