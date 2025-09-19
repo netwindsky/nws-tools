@@ -26,7 +26,7 @@ receiveMsg();
 let jsonobj = JSON.parse("{}");
 
 //延时5秒钟执行windowLoadedHandler()函数
-import ConfigManager from './config.js';
+import ConfigManager from '../utils/config.js';
 
 let downloadbtn = document.createElement("div")
 downloadbtn.style = "position: fixed;right: 15px;margin-top: 20px;z-index: 1000;font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\";-webkit-tap-highlight-color: transparent;color: inherit;"

@@ -35,5 +35,7 @@ function showNotification(message, type = 'info', duration = 2000) {
     }, duration);
 }
 
-// 导出函数
-export { showNotification };
+// 注册通知函数到全局模块系统
+if (window.NWSModules) {
+    window.NWSModules.showNotification = showNotification;
+}

@@ -4,6 +4,9 @@
  * 提供批量下载图片、翻译网页、总结网页等功能
  */
 
+// 从全局模块系统获取工具函数
+const { safeQuerySelector, safeQuerySelectorAll } = window.NWSModules ? window.NWSModules.utils : {};
+
 // 创建工具栏样式
 const toolbarStyle = `
     position: fixed;
@@ -82,7 +85,7 @@ function initToolbar() {
 function handleBatchDownload() {
     console.log('开始批量下载图片');
     // 获取页面上所有图片，包括背景图片
-    const images = Array.from(document.querySelectorAll('img, [style*="background-image"]'));
+    const images = Array.from(safeQuerySelectorAll('img, [style*="background-image"]'));
     
     // 过滤和处理图片
     const validImages = images.map(element => {

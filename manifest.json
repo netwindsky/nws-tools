@@ -12,7 +12,7 @@
     "sidePanel"
   ],
   "web_accessible_resources": [{
-    "resources": ["js/jszip.min.js"],
+    "resources": ["libs/jszip.min.js"],
     "matches": ["<all_urls>"]
   }],
   "side_panel": {
@@ -25,17 +25,47 @@
   },
   "options_page": "html/options.html",
   "background": {
-    "service_worker": "js/background.js"
+    "service_worker": "js/background/background.js"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": [
-        "js/jszip.min.js",
-        "js/jquery-3.7.1.js",
-        "js/notification.js",
-        "js/elementHighlighter.js"
-      ]
+        "js/modules-loader.js",
+        "js/utils/error-handler.js",
+        "js/modules/core/ModuleBase.js",
+        "js/modules/core/ModuleManager.js",
+        "js/modules/chrome/ChromeSettingsModule.js",
+        "js/modules/ui/NotificationModule.js",
+        "js/modules/features/ImageDownloaderModule.js",
+        "js/modules/features/ElementHighlighterModule.js",
+        "js/main.js"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["*://civitai.com/*"],
+      "js": [
+        "js/modules-loader.js",
+        "js/content-scripts/civitai.js"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["*://*.aliyun.com/*"],
+      "js": [
+        "js/modules-loader.js",
+        "js/content-scripts/aliyun.js"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "js/modules-loader.js",
+        "js/content-scripts/toolsbar.js"
+      ],
+      "run_at": "document_end"
     }
   ]
 }

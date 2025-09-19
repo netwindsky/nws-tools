@@ -5,190 +5,769 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NWS Tools 设置</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --info-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-gradient: linear-gradient(135deg, #434343 0%, #000000 100%);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --card-hover-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
         body {
-            background-color: #f8f9fa;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 20px;
         }
+
         .settings-container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
-        .nav-pills .nav-link {
-            color: #495057;
-            margin: 5px 0;
+
+        .settings-container:hover {
+            box-shadow: var(--card-hover-shadow);
         }
-        .nav-pills .nav-link.active {
-            background-color: #1971c2;
-        }
-        .tab-content {
-            padding: 20px;
-        }
-        .form-label {
-            font-weight: 500;
-        }
+
         .settings-header {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #dee2e6;
+            background: var(--primary-gradient);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
         }
+
+        .settings-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
         .settings-title {
-            color: #1971c2;
             margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .settings-subtitle {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .nav-tabs {
+            border: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 10px;
+            margin-bottom: 30px;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #6c757d;
+            border-radius: 10px;
+            margin: 0 5px;
+            padding: 12px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-tabs .nav-link:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .nav-tabs .nav-link.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-tabs .nav-link i {
+            margin-right: 8px;
+            font-size: 1.1rem;
+        }
+
+        .tab-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid;
+            border-image: var(--primary-gradient) 1;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--secondary-gradient);
+            border-radius: 2px;
+        }
+
+        .form-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+
+        .form-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .form-card.user-card {
+            border-left-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+
+        .form-card.model-card {
+            border-left-color: #f093fb;
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.05) 0%, rgba(245, 87, 108, 0.05) 100%);
+        }
+
+        .form-card.translation-card {
+            border-left-color: #4facfe;
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.05) 0%, rgba(0, 242, 254, 0.05) 100%);
+        }
+
+        .form-card.content-card {
+            border-left-color: #43e97b;
+            background: linear-gradient(135deg, rgba(67, 233, 123, 0.05) 0%, rgba(56, 249, 215, 0.05) 100%);
+        }
+
+        .form-card.shortcut-card {
+            border-left-color: #fa709a;
+            background: linear-gradient(135deg, rgba(250, 112, 154, 0.05) 0%, rgba(254, 225, 64, 0.05) 100%);
+        }
+
+        .form-card.toggle-card {
+            border-left-color: #434343;
+            background: linear-gradient(135deg, rgba(67, 67, 67, 0.05) 0%, rgba(0, 0, 0, 0.05) 100%);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn {
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-warning {
+            background: var(--warning-gradient);
+            box-shadow: 0 5px 15px rgba(67, 233, 123, 0.3);
+        }
+
+        .btn-info {
+            background: var(--info-gradient);
+            box-shadow: 0 5px 15px rgba(250, 112, 154, 0.3);
+        }
+
+        .form-check {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .form-check:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateX(5px);
+        }
+
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .form-check-label {
+            font-weight: 500;
+            color: #2c3e50;
+            cursor: pointer;
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .icon-user { background: var(--primary-gradient); }
+        .icon-model { background: var(--secondary-gradient); }
+        .icon-translation { background: var(--success-gradient); }
+        .icon-content { background: var(--warning-gradient); }
+        .icon-shortcut { background: var(--info-gradient); }
+        .icon-toggle { background: var(--dark-gradient); }
+        .icon-help { background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 100%); }
+
+        .help-section {
+            background: linear-gradient(135deg, #ff6b6b10 0%, #ffd93d10 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px dashed #ff6b6b;
+        }
+
+        .alert-custom {
+            border-radius: 12px;
+            border: none;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%);
+            color: #0366d6;
+            border-left: 4px solid #4facfe;
+        }
+
+        @media (max-width: 768px) {
+            .settings-container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .nav-tabs {
+                flex-direction: column;
+            }
+            
+            .nav-tabs .nav-link {
+                margin: 5px 0;
+                text-align: center;
+            }
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .save-success {
+            animation: pulse 0.6s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
     <div class="settings-container">
         <div class="settings-header">
-            <h2 class="settings-title">NWS Tools 设置</h2>
+            <h2 class="settings-title">
+                <i class="fas fa-cogs"></i>
+                NWS Tools 设置中心
+            </h2>
+            <p class="settings-subtitle">个性化您的浏览器工具体验</p>
         </div>
         
-        <div class="row">
-            <div class="col-3">
-                <div class="nav flex-column nav-pills" role="tablist">
-                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#user-management">用户管理</button>
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#model-settings">大模型设置</button>
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#translation-settings">翻译设置</button>
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#content-settings">内容管理</button>
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#shortcut-settings">快捷键设置</button>
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#feature-toggles">功能开关</button>
-                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#help-feedback">帮助与反馈</button>
+        <div class="main-content">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#user-management" type="button" role="tab">
+                        <i class="fas fa-user"></i>用户管理
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#model-settings" type="button" role="tab">
+                        <i class="fas fa-brain"></i>大模型设置
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#translation-settings" type="button" role="tab">
+                        <i class="fas fa-language"></i>翻译设置
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#content-settings" type="button" role="tab">
+                        <i class="fas fa-file-alt"></i>内容管理
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#shortcut-settings" type="button" role="tab">
+                        <i class="fas fa-keyboard"></i>快捷键
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#feature-toggles" type="button" role="tab">
+                        <i class="fas fa-toggle-on"></i>功能开关
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#help-feedback" type="button" role="tab">
+                        <i class="fas fa-question-circle"></i>帮助
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <!-- 用户管理 -->
+                <div class="tab-pane fade show active" id="user-management" role="tabpanel">
+                    <h3 class="section-title">
+                        <span class="feature-icon icon-user"><i class="fas fa-user"></i></span>
+                        用户管理
+                    </h3>
+                    <div class="alert alert-info alert-custom">
+                        <i class="fas fa-info-circle me-2"></i>
+                        配置您的个人信息，用于个性化服务和数据同步
+                    </div>
+                    <div class="form-card user-card">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-user me-2"></i>用户名
+                                    </label>
+                                    <input type="text" class="form-control" id="username" placeholder="请输入您的用户名">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-envelope me-2"></i>邮箱地址
+                                    </label>
+                                    <input type="email" class="form-control" id="email" placeholder="请输入您的邮箱地址">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="save-user">
+                            <i class="fas fa-save me-2"></i>保存设置
+                        </button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="col-9">
-                <div class="tab-content">
-                    <!-- 用户管理 -->
-                    <div class="tab-pane fade show active" id="user-management">
-                        <h4>用户管理</h4>
-                        <div class="mb-3">
-                            <label class="form-label">用户名</label>
-                            <input type="text" class="form-control" id="username">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">邮箱</label>
-                            <input type="email" class="form-control" id="email">
-                        </div>
-                        <button class="btn btn-primary" id="save-user">保存设置</button>
-                    </div>
 
-                    <!-- 大模型设置 -->
-                    <div class="tab-pane fade" id="model-settings">
-                        <h4>大模型设置</h4>
-                        <div class="mb-3">
-                            <label class="form-label">API地址</label>
-                            <input type="url" class="form-control" id="model-api-url">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">API Key</label>
-                            <input type="password" class="form-control" id="model-api-key">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">模型选择</label>
-                            <select class="form-select" id="model-selection">
-                                <option value="deepseek">Deepseek</option>
-                                <option value="gpt4">GPT-4</option>
-                                <option value="gpt35">GPT-3.5</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" id="save-model">保存设置</button>
+                <!-- 大模型设置 -->
+                <div class="tab-pane fade" id="model-settings" role="tabpanel">
+                    <h3 class="section-title">
+                        <span class="feature-icon icon-model"><i class="fas fa-brain"></i></span>
+                        大模型设置
+                    </h3>
+                    <div class="alert alert-info alert-custom">
+                        <i class="fas fa-robot me-2"></i>
+                        配置 AI 大模型相关参数，支持多种主流模型服务
                     </div>
-
-                    <!-- 翻译设置 -->
-                    <div class="tab-pane fade" id="translation-settings">
-                        <h4>翻译设置</h4>
-                        <div class="mb-3">
-                            <label class="form-label">默认目标语言</label>
-                            <select class="form-select" id="default-language">
-                                <option value="zh">中文</option>
-                                <option value="en">英文</option>
-                                <option value="ja">日文</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">翻译服务选择</label>
-                            <select class="form-select" id="translation-service">
-                                <option value="local">本地大模型</option>
-                                <option value="google">Google翻译</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" id="save-translation">保存设置</button>
-                    </div>
-
-                    <!-- 内容管理 -->
-                    <div class="tab-pane fade" id="content-settings">
-                        <h4>内容管理</h4>
-                        <div class="mb-3">
-                            <label class="form-label">内容过滤规则</label>
-                            <textarea class="form-control" id="content-rules" rows="4"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">自动保存间隔（分钟）</label>
-                            <input type="number" class="form-control" id="auto-save-interval">
-                        </div>
-                        <button class="btn btn-primary" id="save-content">保存设置</button>
-                    </div>
-
-                    <!-- 快捷键设置 -->
-                    <div class="tab-pane fade" id="shortcut-settings">
-                        <h4>快捷键设置</h4>
-                        <div class="mb-3">
-                            <label class="form-label">复制选择器</label>
-                            <input type="text" class="form-control" id="shortcut-copy-selector" placeholder="Alt + C">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">复制样式</label>
-                            <input type="text" class="form-control" id="shortcut-copy-style" placeholder="Alt + S">
-                        </div>
-                        <button class="btn btn-primary" id="save-shortcuts">保存设置</button>
-                    </div>
-
-                    <!-- 功能开关 -->
-                    <div class="tab-pane fade" id="feature-toggles">
-                        <h4>功能开关</h4>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="toggle-element-highlighter">
-                            <label class="form-check-label">元素高亮</label>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="toggle-image-downloader">
-                            <label class="form-check-label">图片下载器</label>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="toggle-translation">
-                            <label class="form-check-label">翻译功能</label>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="toggle-element-actions">
-                            <label class="form-check-label">元素操作功能</label>
-                        </div>
-                        <button class="btn btn-primary" id="save-toggles">保存设置</button>
-                    </div>
-
-                    <!-- 帮助与反馈 -->
-                    <div class="tab-pane fade" id="help-feedback">
-                        <h4>帮助与反馈</h4>
+                    <div class="form-card model-card">
                         <div class="mb-4">
-                            <h5>使用帮助</h5>
-                            <p>查看详细的使用说明和常见问题解答，请访问我们的<a href="#" target="_blank">帮助文档</a>。</p>
+                            <label class="form-label">
+                                <i class="fas fa-link me-2"></i>API 地址
+                            </label>
+                            <input type="url" class="form-control" id="model-api-url" placeholder="https://api.example.com/v1">
+                            <div class="form-text">请输入您的 AI 模型 API 地址</div>
                         </div>
-                        <div class="mb-3">
-                            <h5>问题反馈</h5>
-                            <textarea class="form-control mb-2" id="feedback-content" rows="4" placeholder="请描述您遇到的问题或建议"></textarea>
-                            <button class="btn btn-primary" id="submit-feedback">提交反馈</button>
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-key me-2"></i>API 密钥
+                            </label>
+                            <input type="password" class="form-control" id="model-api-key" placeholder="请输入您的 API Key">
+                            <div class="form-text">您的 API 密钥将被安全加密存储</div>
                         </div>
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-cog me-2"></i>模型选择
+                            </label>
+                            <select class="form-select" id="model-selection">
+                                <option value="deepseek">Deepseek - 高性能中文模型</option>
+                                <option value="gpt4">GPT-4 - OpenAI 旗舰模型</option>
+                                <option value="gpt35">GPT-3.5 - 经济高效选择</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="save-model">
+                            <i class="fas fa-save me-2"></i>保存设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 翻译设置 -->
+                <div class="tab-pane fade" id="translation-settings" role="tabpanel">
+                    <h3 class="section-title">
+                        <span class="feature-icon icon-translation"><i class="fas fa-language"></i></span>
+                        翻译设置
+                    </h3>
+                    <div class="alert alert-info alert-custom">
+                        <i class="fas fa-globe me-2"></i>
+                        配置多语言翻译功能，支持本地和云端翻译服务
+                    </div>
+                    <div class="form-card translation-card">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-flag me-2"></i>默认目标语言
+                                    </label>
+                                    <select class="form-select" id="default-language">
+                                        <option value="zh">🇨🇳 中文</option>
+                                        <option value="en">🇺🇸 英文</option>
+                                        <option value="ja">🇯🇵 日文</option>
+                                        <option value="ko">🇰🇷 韩文</option>
+                                        <option value="fr">🇫🇷 法文</option>
+                                        <option value="de">🇩🇪 德文</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-server me-2"></i>翻译服务选择
+                                    </label>
+                                    <select class="form-select" id="translation-service">
+                                        <option value="local">🤖 本地大模型</option>
+                                        <option value="google">🌐 Google翻译</option>
+                                        <option value="baidu">🔍 百度翻译</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-success" id="save-translation">
+                            <i class="fas fa-save me-2"></i>保存设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 内容管理 -->
+                <div class="tab-pane fade" id="content-settings" role="tabpanel">
+                    <h3 class="section-title">
+                        <span class="feature-icon icon-content"><i class="fas fa-file-alt"></i></span>
+                        内容管理
+                    </h3>
+                    <div class="alert alert-info alert-custom">
+                        <i class="fas fa-filter me-2"></i>
+                        设置内容过滤规则和自动保存机制，提高数据处理效率
+                    </div>
+                    <div class="form-card content-card">
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-shield-alt me-2"></i>内容过滤规则
+                            </label>
+                            <textarea class="form-control" id="content-rules" rows="6" placeholder="请输入过滤规则，每行一个规则..."></textarea>
+                            <div class="form-text">支持正则表达式，用于过滤不需要的内容</div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-clock me-2"></i>自动保存间隔（分钟）
+                            </label>
+                            <input type="number" class="form-control" id="auto-save-interval" min="1" max="60" placeholder="5">
+                            <div class="form-text">设置为 1-60 分钟之间，默认 5 分钟</div>
+                        </div>
+                        <button class="btn btn-warning" id="save-content">
+                            <i class="fas fa-save me-2"></i>保存设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 快捷键设置 -->
+                <div class="tab-pane fade" id="shortcut-settings" role="tabpanel">
+                    <h3 class="section-title">
+                        <span class="feature-icon icon-shortcut"><i class="fas fa-keyboard"></i></span>
+                        快捷键设置
+                    </h3>
+                    <div class="alert alert-info alert-custom">
+                        <i class="fas fa-bolt me-2"></i>
+                        自定义快捷键组合，提高操作效率和使用体验
+                    </div>
+                    <div class="form-card shortcut-card">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-copy me-2"></i>复制选择器
+                                    </label>
+                                    <input type="text" class="form-control" id="shortcut-copy-selector" placeholder="Alt + C">
+                                    <div class="form-text">快速复制元素的 CSS 选择器</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-palette me-2"></i>复制样式
+                                    </label>
+                                    <input type="text" class="form-control" id="shortcut-copy-style" placeholder="Alt + S">
+                                    <div class="form-text">快速复制元素的 CSS 样式</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-info" id="save-shortcuts">
+                            <i class="fas fa-save me-2"></i>保存设置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 功能开关 -->
+                <div class="tab-pane fade" id="feature-toggles" role="tabpanel">
+                    <h3 class="section-title">
+                        <span class="feature-icon icon-toggle"><i class="fas fa-toggle-on"></i></span>
+                        功能开关
+                    </h3>
+                    <div class="alert alert-info alert-custom">
+                        <i class="fas fa-sliders-h me-2"></i>
+                        灵活控制各项功能的启用状态，优化性能和用户体验
+                    </div>
+                    <div class="form-card toggle-card">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="toggle-element-highlighter">
+                                    <label class="form-check-label">
+                                        <i class="fas fa-highlighter me-2 text-warning"></i>
+                                        <strong>元素高亮</strong>
+                                        <div class="form-text mt-1">鼠标悬停时高亮显示元素边框</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="toggle-image-downloader">
+                                    <label class="form-check-label">
+                                        <i class="fas fa-download me-2 text-primary"></i>
+                                        <strong>图片下载器</strong>
+                                        <div class="form-text mt-1">为图片添加下载按钮</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="toggle-translation">
+                                    <label class="form-check-label">
+                                        <i class="fas fa-language me-2 text-success"></i>
+                                        <strong>翻译功能</strong>
+                                        <div class="form-text mt-1">启用智能翻译功能</div>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="toggle-element-actions">
+                                    <label class="form-check-label">
+                                        <i class="fas fa-mouse-pointer me-2 text-info"></i>
+                                        <strong>元素操作功能</strong>
+                                        <div class="form-text mt-1">启用元素点击操作功能</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button class="btn btn-primary" id="save-toggles">
+                                <i class="fas fa-save me-2"></i>保存设置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 帮助与反馈 -->
+                <div class="tab-pane fade" id="help-feedback" role="tabpanel">
+                    <h3 class="section-title">
+                        <span class="feature-icon icon-help"><i class="fas fa-question-circle"></i></span>
+                        帮助与反馈
+                    </h3>
+                    
+                    <div class="help-section">
+                        <h5>
+                            <i class="fas fa-book me-2"></i>使用帮助
+                        </h5>
+                        <p class="mb-3">查看详细的使用说明和常见问题解答，请访问我们的<a href="#" target="_blank" class="text-decoration-none fw-bold">帮助文档</a>。</p>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="text-center p-3">
+                                    <i class="fas fa-mouse-pointer fa-2x text-primary mb-2"></i>
+                                    <h6>元素操作</h6>
+                                    <small class="text-muted">鼠标悬停查看元素信息</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3">
+                                    <i class="fas fa-download fa-2x text-success mb-2"></i>
+                                    <h6>图片下载</h6>
+                                    <small class="text-muted">一键下载网页图片</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3">
+                                    <i class="fas fa-language fa-2x text-warning mb-2"></i>
+                                    <h6>智能翻译</h6>
+                                    <small class="text-muted">多语言翻译支持</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-card">
+                        <h5>
+                            <i class="fas fa-comment-dots me-2"></i>问题反馈
+                        </h5>
+                        <p class="text-muted mb-3">您的意见和建议对我们非常重要，请随时反馈您的使用体验。</p>
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-edit me-2"></i>反馈内容
+                            </label>
+                            <textarea class="form-control" id="feedback-content" rows="6" placeholder="请描述您遇到的问题或建议，我们会认真处理每一个反馈..."></textarea>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" id="submit-feedback">
+                                <i class="fas fa-paper-plane me-2"></i>提交反馈
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="document.getElementById('feedback-content').value=''">
+                                <i class="fas fa-eraser me-2"></i>清空内容
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <small class="text-muted">
+                            <i class="fas fa-heart text-danger me-1"></i>
+                            感谢您使用 NWS Tools，版本 v1.0
+                        </small>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="../js/bootstrap.bundle.min.js"></script>
-    <script src="../js/options.js"></script>
+    <script src="../libs/bootstrap.bundle.min.js"></script>
+    <script type="module" src="../js/options/options.js"></script>
+    
+    <script>
+        // 添加一些交互效果
+        document.addEventListener('DOMContentLoaded', function() {
+            // 保存按钮点击效果
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (this.id.startsWith('save-')) {
+                        this.classList.add('save-success');
+                        setTimeout(() => {
+                            this.classList.remove('save-success');
+                        }, 600);
+                    }
+                });
+            });
+            
+            // 表单焦点效果
+            document.querySelectorAll('.form-control, .form-select').forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.closest('.form-card')?.classList.add('loading');
+                });
+                input.addEventListener('blur', function() {
+                    this.closest('.form-card')?.classList.remove('loading');
+                });
+            });
+        });
+    </script>
 </body>
 </html>

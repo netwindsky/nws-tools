@@ -1,3 +1,6 @@
+// background.js - Service Worker for NWS Tools
+// 处理Chrome扩展的后台任务
+
 // 创建右键菜单
 chrome.runtime.onInstalled.addListener(() => {
     // 创建主菜单

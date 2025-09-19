@@ -1,4 +1,6 @@
-import ConfigManager from './config.js';
+// 导入配置管理器
+import ConfigManager from '../utils/config.js';
+import { safeQuerySelector, safeQuerySelectorAll } from '../utils/dom-helper.js';
 
 // 保存设置
 async function saveSettings(key, value) {
@@ -112,7 +114,7 @@ document.getElementById('submit-feedback').addEventListener('click', () => {
 // 初始化标签页切换功能
 document.addEventListener('DOMContentLoaded', async () => {
     // 初始化Bootstrap标签页
-    const triggerTabList = [].slice.call(document.querySelectorAll('.nav-link'));
+    const triggerTabList = [].slice.call(safeQuerySelectorAll('.nav-link'));
     triggerTabList.forEach(triggerEl => {
         new bootstrap.Tab(triggerEl);
     });

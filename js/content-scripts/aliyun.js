@@ -1,4 +1,3 @@
-
 let downloadbtn = document.createElement("div")
 downloadbtn.style = "position: fixed;right: 15px;margin-top: 20px;z-index: 1000;font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\";-webkit-tap-highlight-color: transparent;color: inherit;"
 downloadbtn.innerHTML = "<button style=\"background-color: #1971c2;border-radius: 12px;border: none;color: white;padding: 8px 24px;text-align: center;text-decoration: none;display: inline-block;font-size: 12px;\">下载json</button>";
@@ -57,6 +56,3 @@ intervalId = setInterval(function () {
     }
     
 }, 1000);
-
-
-   
