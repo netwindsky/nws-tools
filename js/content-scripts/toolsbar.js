@@ -308,7 +308,6 @@ function handleBatchDownload() {
 }
 
 // 元素高亮处理函数
-let isHighlightEnabled = false;
 function handleElementHighlight() {
     console.log('切换元素高亮功能');
     
@@ -321,10 +320,14 @@ function handleElementHighlight() {
     const highlighter = window.NWSModules.ElementHighlighterModule;
     const button = document.querySelector('#nws-toolbar button:last-child');
     
-    if (!isHighlightEnabled) {
+    // 使用ElementHighlighterModule的实际状态而不是本地变量
+    const isCurrentlyActive = highlighter.isActive;
+    console.log("当前高亮状态:", isCurrentlyActive);
+    
+    if (!isCurrentlyActive) {
         // 启用高亮功能
+        console.log(highlighter)
         highlighter.enable().then(() => {
-            isHighlightEnabled = true;
             if (button) {
                 button.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
                 const textElement = button.querySelector('div > div:last-child');
@@ -358,7 +361,7 @@ function handleElementHighlight() {
                     • Ctrl+Shift+C 复制样式
                 </div>
             `;
-            
+            console.log(notification)
             document.body.appendChild(notification);
             
             // 3秒后自动隐藏提示
@@ -374,7 +377,6 @@ function handleElementHighlight() {
     } else {
         // 禁用高亮功能
         highlighter.disable().then(() => {
-            isHighlightEnabled = false;
             if (button) {
                 button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 const textElement = button.querySelector('div > div:last-child');

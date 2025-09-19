@@ -70,10 +70,8 @@ class ElementHighlighterModule extends ModuleBase {
         // 注入样式
         this.injectStyles();
 
-        // 启用高亮功能
-        if (this.config.enabled) {
-            await this.enable();
-        }
+        // 注意：不在初始化时自动启用，让用户手动控制
+        // 这样可以确保工具栏按钮的状态与模块状态保持同步
 
         // 监听Chrome消息
         this.setupMessageListener();
@@ -89,6 +87,7 @@ class ElementHighlighterModule extends ModuleBase {
     }
 
     async onEnable() {
+        console.log("ElementHighlighterModule:onEnable")
         this.isActive = true;
         this.addEventListeners();
     }
