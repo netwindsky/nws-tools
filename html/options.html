@@ -568,6 +568,36 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">翻译模式</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-align-left"></i>
+                        <select class="form-control form-select" id="translation-mode">
+                            <option value="bilingual">对照模式</option>
+                            <option value="replace">替换模式</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>划词翻译</h4>
+                        <p>选中文本时显示即时翻译提示</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="enable-selection-translation" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-group">
+                    <div class="toggle-info">
+                        <h4>懒翻译</h4>
+                        <p>视口内内容才触发自动翻译</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="enable-viewport-translation" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
                 <div style="margin-top: 40px;">
                     <button class="btn btn-primary" id="save-translation">
                         <i class="fas fa-check"></i>
@@ -713,77 +743,6 @@
         <span id="toast-message"></span>
     </div>
 
-    <script>
-        // Navigation Logic
-        const navItems = document.querySelectorAll('.nav-item');
-        const panels = document.querySelectorAll('.section-panel');
-
-        navItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const target = item.getAttribute('data-target');
-                
-                // Update nav
-                navItems.forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                
-                // Update panels
-                panels.forEach(p => {
-                    p.classList.remove('active');
-                    if (p.id === target) {
-                        p.classList.add('active');
-                    }
-                });
-            });
-        });
-
-        // Toast Helper
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            const icon = document.getElementById('toast-icon');
-            const msg = document.getElementById('toast-message');
-            
-            toast.className = `toast show ${type}`;
-            icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
-            msg.textContent = message;
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        // Save Logic Mockups
-        document.querySelectorAll('.btn-primary').forEach(btn => {
-            btn.addEventListener('click', () => {
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
-                btn.style.opacity = '0.7';
-                btn.style.pointerEvents = 'none';
-                
-                setTimeout(() => {
-                    btn.innerHTML = '<i class="fas fa-check"></i> 已保存';
-                    showToast('设置已成功保存！');
-                    
-                    setTimeout(() => {
-                        const originalText = btn.id === 'save-user' ? '保存更改' : 
-                                           btn.id === 'save-model' ? '连接并保存' :
-                                           btn.id === 'save-translation' ? '应用设置' :
-                                           btn.id === 'save-shortcuts' ? '保存快捷键' : '应用设置';
-                        const icon = btn.id === 'save-user' ? 'fa-save' : 
-                                   btn.id === 'save-model' ? 'fa-plug' :
-                                   btn.id === 'save-translation' ? 'fa-check' :
-                                   btn.id === 'save-shortcuts' ? 'fa-keyboard' : 'fa-check';
-                        btn.innerHTML = `<i class="fas ${icon}"></i> ${originalText}`;
-                        btn.style.opacity = '1';
-                        btn.style.pointerEvents = 'auto';
-                    }, 2000);
-                }, 1000);
-            });
-        });
-
-        // Load Initial Settings (Mock)
-        window.addEventListener('DOMContentLoaded', () => {
-            // In a real extension, you would call chrome.storage.sync.get()
-            console.log('Settings page initialized');
-        });
-    </script>
+    <script src="../js/options/options.js"></script>
 </body>
 </html>

@@ -7,13 +7,14 @@
     'use strict';
     
     // 从全局模块系统获取模块
-    let ModuleManager, ChromeSettingsModule, NotificationModule, TranslationModule, ImageDownloaderModule, ElementHighlighterModule, SidebarModule, ErrorHandler;
+    let ModuleManager, ChromeSettingsModule, NotificationModule, TranslationModule, SummaryModule, ImageDownloaderModule, ElementHighlighterModule, SidebarModule, ErrorHandler;
     
     if (window.NWSModules) {
         ModuleManager = window.NWSModules.ModuleManager;
         ChromeSettingsModule = window.NWSModules.ChromeSettingsModule;
         NotificationModule = window.NWSModules.NotificationModule;
         TranslationModule = window.NWSModules.TranslationModule;
+        SummaryModule = window.NWSModules.SummaryModule;
         ImageDownloaderModule = window.NWSModules.ImageDownloaderModule;
         ElementHighlighterModule = window.NWSModules.ElementHighlighterModule;
         SidebarModule = window.NWSModules.SidebarModule;
@@ -31,6 +32,17 @@ class NWSTools {
     constructor() {
         this.moduleManager = ModuleManager; // ModuleManager is already an instance
         this.initialized = false;
+    }
+
+    async waitForModule(name, maxRetries = 20, delayMs = 50) {
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            const moduleClass = window.NWSModules ? window.NWSModules[name] : null;
+            if (moduleClass) {
+                return moduleClass;
+            }
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+        return null;
     }
 
     /**
@@ -132,10 +144,12 @@ class NWSTools {
         
         // 模块已经通过各个模块文件直接注册到 window.NWSModules
         // 现在将它们注册到 ModuleManager 进行统一管理
+        const summaryModuleClass = await this.waitForModule('SummaryModule');
         const availableModules = {
             'ChromeSettingsModule': window.NWSModules.ChromeSettingsModule,
             'NotificationModule': window.NWSModules.NotificationModule,
             'TranslationModule': window.NWSModules.TranslationModule,
+            'SummaryModule': summaryModuleClass,
             'ImageDownloaderModule': window.NWSModules.ImageDownloaderModule,
             'ElementHighlighterModule': window.NWSModules.ElementHighlighterModule,
             'SidebarModule': window.NWSModules.SidebarModule
@@ -143,8 +157,13 @@ class NWSTools {
         
         for (const [name, moduleClass] of Object.entries(availableModules)) {
             if (!moduleClass) {
-                console.warn(`[NWSTools] 模块 ${name} 不可用`);
-                throw new Error(`模块 ${name} 不可用`);
+                if (name === 'SummaryModule') {
+                    console.warn(`[NWSTools] 模块 ${name} 不可用，跳过注册`);
+                    continue;
+                } else {
+                    console.warn(`[NWSTools] 模块 ${name} 不可用`);
+                    throw new Error(`模块 ${name} 不可用`);
+                }
             }
             console.log(`[NWSTools] 模块 ${name} 可用，注册到管理器`);
             

@@ -33,6 +33,9 @@ class ChromeSettingsModule extends ModuleBase {
         this.reconnectDelay = 1000; // 减少初始延迟到1秒
         this.lastSuccessfulOperation = Date.now(); // 记录最后一次成功操作
         this.gracefulShutdown = false; // 标记是否是优雅关闭
+        this.reconnectTimer = null;
+        this.recoveryTimer = null;
+        this.contextInvalidHandled = false;
     }
 
     async onInitialize() {
@@ -52,6 +55,7 @@ class ChromeSettingsModule extends ModuleBase {
 
         try {
             this.contextValid = true;
+            this.contextInvalidHandled = false;
             
             // 初始化存储缓存
             await this.loadAllSettings();
@@ -185,6 +189,11 @@ class ChromeSettingsModule extends ModuleBase {
         
         // 停止自动同步
         this.stopAutoSync();
+        this.stopRecoveryCheck();
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
         
         // 清空缓存
         this.storageCache.clear();
@@ -561,9 +570,8 @@ class ChromeSettingsModule extends ModuleBase {
      * 启动自动同步
      */
     startAutoSync() {
-        // 检查扩展上下文是否有效
         if (!this.isExtensionContextValid()) {
-            console.warn('[ChromeSettings] 扩展上下文无效，跳过启动自动同步');
+            this.handleContextInvalidation('扩展上下文无效，跳过启动自动同步');
             return;
         }
 
@@ -574,14 +582,12 @@ class ChromeSettingsModule extends ModuleBase {
         this.syncTimer = setInterval(async () => {
             // 在每次同步前检查上下文是否仍然有效
             if (!this.isExtensionContextValid()) {
-                console.warn('[ChromeSettings] 扩展上下文已失效，停止自动同步');
-                this.contextValid = false;
-                this.stopAutoSync();
-                this.attemptReconnect(); // 尝试重连
+                this.handleContextInvalidation('扩展上下文已失效，停止自动同步');
                 return;
             }
 
             this.contextValid = true;
+            this.contextInvalidHandled = false;
             this.reconnectAttempts = 0; // 重置重连计数器
             
             try {
@@ -589,10 +595,7 @@ class ChromeSettingsModule extends ModuleBase {
                 this.emit('autoSyncCompleted');
             } catch (error) {
                 if (this.isContextInvalidatedError(error)) {
-                    console.warn('[ChromeSettings] 扩展上下文已失效，停止自动同步');
-                    this.contextValid = false;
-                    this.stopAutoSync();
-                    this.attemptReconnect(); // 尝试重连
+                    this.handleContextInvalidation('扩展上下文已失效，停止自动同步');
                     return;
                 }
                 console.error('[ChromeSettings] 自动同步失败:', error);
@@ -608,6 +611,16 @@ class ChromeSettingsModule extends ModuleBase {
             clearInterval(this.syncTimer);
             this.syncTimer = null;
         }
+    }
+
+    handleContextInvalidation(message) {
+        if (this.gracefulShutdown) return;
+        if (this.contextInvalidHandled) return;
+        this.contextInvalidHandled = true;
+        this.contextValid = false;
+        this.stopAutoSync();
+        this.safeLog('warn', message);
+        this.attemptReconnect();
     }
 
     /**
@@ -635,7 +648,9 @@ class ChromeSettingsModule extends ModuleBase {
             10000 // 最大延迟10秒
         );
 
-        setTimeout(() => {
+        if (this.reconnectTimer) return;
+        this.reconnectTimer = setTimeout(() => {
+            this.reconnectTimer = null;
             if (this.gracefulShutdown) {
                 return; // 如果在等待期间被关闭，直接返回
             }
@@ -644,6 +659,7 @@ class ChromeSettingsModule extends ModuleBase {
                 this.safeLog('log', '重连成功，恢复正常操作');
                 this.contextValid = true;
                 this.reconnectAttempts = 0;
+                this.contextInvalidHandled = false;
                 this.lastSuccessfulOperation = Date.now();
                 this.emit('contextRestored'); // 通知其他模块上下文已恢复
                 
@@ -656,6 +672,7 @@ class ChromeSettingsModule extends ModuleBase {
                 this.loadAllSettings().catch(error => {
                     this.safeLog('warn', '重连后加载设置失败:', error.message);
                 });
+                this.stopRecoveryCheck();
             } else {
                 this.attemptReconnect(); // 继续尝试
             }
@@ -681,19 +698,21 @@ class ChromeSettingsModule extends ModuleBase {
      */
     startRecoveryCheck() {
         // 每30秒检查一次是否可以恢复
-        const recoveryInterval = setInterval(() => {
+        if (this.recoveryTimer) return;
+        this.recoveryTimer = setInterval(() => {
             if (this.gracefulShutdown) {
-                clearInterval(recoveryInterval);
+                this.stopRecoveryCheck();
                 return;
             }
             
             if (this.isExtensionContextValid()) {
-                clearInterval(recoveryInterval);
+                this.stopRecoveryCheck();
                 this.safeLog('log', '检测到扩展上下文恢复，退出降级模式');
                 
                 // 重置状态
                 this.contextValid = true;
                 this.reconnectAttempts = 0;
+                this.contextInvalidHandled = false;
                 this.lastSuccessfulOperation = Date.now();
                 
                 // 重新启动服务
@@ -704,6 +723,13 @@ class ChromeSettingsModule extends ModuleBase {
                 this.emit('contextRestored');
             }
         }, 30000); // 30秒检查一次
+    }
+
+    stopRecoveryCheck() {
+        if (this.recoveryTimer) {
+            clearInterval(this.recoveryTimer);
+            this.recoveryTimer = null;
+        }
     }
 
     /**

@@ -1,185 +1,283 @@
-// 导入配置管理器
-// 使用全局对象替代ES6模块导入
-const ConfigManager = window.ConfigManager || {
-    getConfig: async () => ({}),
-    setConfig: async () => false,
-    getAllConfig: async () => ({})
+const storage = chrome?.storage?.sync;
+const getEl = (id) => document.getElementById(id);
+
+const getValue = (id) => {
+    const el = getEl(id);
+    return el ? el.value : '';
 };
 
-const { safeQuerySelector, safeQuerySelectorAll } = window.DOMHelper || {
-    safeQuerySelector: (selector) => document.querySelector(selector),
-    safeQuerySelectorAll: (selector) => document.querySelectorAll(selector)
+const getChecked = (id) => {
+    const el = getEl(id);
+    return Boolean(el?.checked);
 };
 
-// 保存设置
-async function saveSettings(key, value) {
-    const success = await ConfigManager.setConfig(key, value);
-    if (success) {
-        showNotification('设置已保存');
+const setValue = (id, value) => {
+    const el = getEl(id);
+    if (el && value !== undefined && value !== null) {
+        el.value = value;
     }
-}
+};
 
-// 加载设置
-async function loadSettings(key, callback) {
-    const value = await ConfigManager.getConfig(key);
-    if (value) {
-        callback(value);
+const setChecked = (id, value) => {
+    const el = getEl(id);
+    if (el && typeof value === 'boolean') {
+        el.checked = value;
     }
-}
+};
 
-// 显示通知
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 10px 20px;
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        z-index: 1000;
-        animation: fadeOut 2s forwards;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        document.body.removeChild(notification);
-    }, 2000);
-}
-
-// 用户管理设置
-document.getElementById('save-user').addEventListener('click', () => {
-    const userData = {
-        username: document.getElementById('username').value,
-        email: document.getElementById('email').value
-    };
-    saveSettings('userData', userData);
-});
-
-// 大模型设置
-document.getElementById('save-model').addEventListener('click', () => {
-    const modelSettings = {
-        apiUrl: document.getElementById('model-api-url').value,
-        apiKey: document.getElementById('model-api-key').value,
-        model: document.getElementById('model-selection').value
-    };
-    saveSettings('modelSettings', modelSettings);
-});
-
-// 翻译设置
-document.getElementById('save-translation').addEventListener('click', () => {
-    const translationSettings = {
-        defaultLanguage: document.getElementById('default-language').value,
-        service: document.getElementById('translation-service').value
-    };
-    saveSettings('translationSettings', translationSettings);
-});
-
-// 内容管理设置
-document.getElementById('save-content').addEventListener('click', () => {
-    const contentSettings = {
-        rules: document.getElementById('content-rules').value,
-        autoSaveInterval: document.getElementById('auto-save-interval').value
-    };
-    saveSettings('contentSettings', contentSettings);
-});
-
-// 快捷键设置
-document.getElementById('save-shortcuts').addEventListener('click', () => {
-    const shortcutSettings = {
-        copySelector: document.getElementById('shortcut-copy-selector').value,
-        copyStyle: document.getElementById('shortcut-copy-style').value
-    };
-    saveSettings('shortcutSettings', shortcutSettings);
-});
-
-// 功能开关设置
-document.getElementById('save-toggles').addEventListener('click', () => {
-    const toggleSettings = {
-        elementHighlighter: document.getElementById('toggle-element-highlighter').checked,
-        imageDownloader: document.getElementById('toggle-image-downloader').checked,
-        translation: document.getElementById('toggle-translation').checked,
-        elementActions: document.getElementById('toggle-element-actions').checked
-    };
-    saveSettings('toggleSettings', toggleSettings);
-});
-
-// 提交反馈
-document.getElementById('submit-feedback').addEventListener('click', () => {
-    const feedback = document.getElementById('feedback-content').value;
-    if (feedback.trim()) {
-        // 这里可以添加发送反馈到服务器的逻辑
-        showNotification('感谢您的反馈！');
-        document.getElementById('feedback-content').value = '';
-    } else {
-        showNotification('请输入反馈内容');
+const setConfig = async (key, value) => {
+    if (storage) {
+        return await new Promise(resolve => {
+            storage.set({ [key]: value }, () => resolve(true));
+        });
     }
-});
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+};
 
-// 页面加载时加载所有设置
-// 初始化标签页切换功能
-document.addEventListener('DOMContentLoaded', async () => {
-    // 初始化Bootstrap标签页
-    const triggerTabList = [].slice.call(safeQuerySelectorAll('.nav-link'));
-    triggerTabList.forEach(triggerEl => {
-        new bootstrap.Tab(triggerEl);
+const getConfig = async (keys) => {
+    if (storage) {
+        return await new Promise(resolve => storage.get(keys, resolve));
+    }
+    const result = {};
+    keys.forEach(key => {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+            result[key] = JSON.parse(raw);
+        }
     });
+    return result;
+};
 
-    // 加载保存的设置
+const mapTargetLanguageToCode = (targetLanguage) => {
+    if (!targetLanguage) return '';
+    const normalized = String(targetLanguage).toLowerCase();
+    if (normalized.includes('中文') || normalized.includes('chinese') || normalized.includes('zh')) return 'zh';
+    if (normalized.includes('english') || normalized.includes('en')) return 'en';
+    if (normalized.includes('日本語') || normalized.includes('ja')) return 'ja';
+    if (normalized.includes('한국어') || normalized.includes('ko')) return 'ko';
+    return '';
+};
+
+const showToast = (message, type = 'success') => {
+    const toast = getEl('toast');
+    const icon = getEl('toast-icon');
+    const msg = getEl('toast-message');
+    if (!toast || !icon || !msg) return;
+    toast.className = `toast show ${type}`;
+    icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+    msg.textContent = message;
+    setTimeout(() => toast.classList.remove('show'), 3000);
+};
+
+const setButtonState = (button, state) => {
+    if (!button) return;
+    if (!button.dataset.originalHtml) {
+        button.dataset.originalHtml = button.innerHTML;
+    }
+    if (state === 'loading') {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        button.style.opacity = '0.7';
+        button.style.pointerEvents = 'none';
+    } else if (state === 'saved') {
+        button.innerHTML = '<i class="fas fa-check"></i> 已保存';
+        button.style.opacity = '0.7';
+        button.style.pointerEvents = 'none';
+    } else if (state === 'restore') {
+        button.innerHTML = button.dataset.originalHtml;
+        button.style.opacity = '1';
+        button.style.pointerEvents = 'auto';
+    }
+};
+
+const handleSave = async (button, saveFn) => {
+    if (!button) return;
+    setButtonState(button, 'loading');
+    try {
+        await saveFn();
+        setButtonState(button, 'saved');
+        showToast('设置已成功保存！');
+    } catch (error) {
+        showToast('保存失败，请稍后再试', 'error');
+    } finally {
+        setTimeout(() => setButtonState(button, 'restore'), 2000);
+    }
+};
+
+const initNavigation = () => {
+    const navItems = Array.from(document.getElementsByClassName('nav-item'));
+    const panels = Array.from(document.getElementsByClassName('section-panel'));
+    if (!navItems.length || !panels.length) return;
+    const activate = (target) => {
+        navItems.forEach(item => item.classList.toggle('active', item.getAttribute('data-target') === target));
+        panels.forEach(panel => panel.classList.toggle('active', panel.id === target));
+    };
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const target = item.getAttribute('data-target');
+            if (target) {
+                activate(target);
+            }
+        });
+    });
+};
+
+const bindSaveHandlers = () => {
+    const saveUser = getEl('save-user');
+    if (saveUser) {
+        saveUser.addEventListener('click', () => handleSave(saveUser, async () => {
+            await setConfig('userData', {
+                username: getValue('username'),
+                email: getValue('email')
+            });
+        }));
+    }
+
+    const saveModel = getEl('save-model');
+    if (saveModel) {
+        saveModel.addEventListener('click', () => handleSave(saveModel, async () => {
+            await setConfig('modelSettings', {
+                apiUrl: getValue('model-api-url'),
+                apiKey: getValue('model-api-key'),
+                model: getValue('model-selection')
+            });
+        }));
+    }
+
+    const saveTranslation = getEl('save-translation');
+    if (saveTranslation) {
+        saveTranslation.addEventListener('click', () => handleSave(saveTranslation, async () => {
+            const defaultLanguage = getValue('default-language');
+            const service = getValue('translation-service');
+            const translationMode = getValue('translation-mode') || 'bilingual';
+            const enableSelectionTranslation = getChecked('enable-selection-translation');
+            const enableViewportTranslation = getChecked('enable-viewport-translation');
+            await setConfig('translationSettings', {
+                defaultLanguage,
+                service,
+                translationMode,
+                enableSelectionTranslation,
+                enableViewportTranslation
+            });
+            const langMap = {
+                zh: '中文',
+                en: 'English',
+                ja: '日本語',
+                ko: '한국어'
+            };
+            const config = await getConfig(['TranslationModule']);
+            const existing = config.TranslationModule || {};
+            const targetLanguage = langMap[defaultLanguage] || existing.targetLanguage || '中文';
+            await setConfig('TranslationModule', {
+                ...existing,
+                targetLanguage,
+                translationMode,
+                enableSelectionTranslation,
+                enableViewportTranslation
+            });
+        }));
+    }
+
+    const saveShortcuts = getEl('save-shortcuts');
+    if (saveShortcuts) {
+        saveShortcuts.addEventListener('click', () => handleSave(saveShortcuts, async () => {
+            await setConfig('shortcutSettings', {
+                main: getValue('shortcut-main'),
+                capture: getValue('shortcut-capture')
+            });
+        }));
+    }
+};
+
+const bindToggleHandlers = () => {
+    const autoSave = getEl('auto-save');
+    const cloudSync = getEl('cloud-sync');
+    if (autoSave || cloudSync) {
+        const handler = async () => {
+            await setConfig('contentSettings', {
+                autoSave: getChecked('auto-save'),
+                cloudSync: getChecked('cloud-sync')
+            });
+        };
+        autoSave?.addEventListener('change', handler);
+        cloudSync?.addEventListener('change', handler);
+    }
+
+    const enableSidebar = getEl('enable-sidebar');
+    const enableDarkmode = getEl('enable-darkmode');
+    const enableDevtools = getEl('enable-devtools');
+    if (enableSidebar || enableDarkmode || enableDevtools) {
+        const handler = async () => {
+            await setConfig('featureToggles', {
+                sidebar: getChecked('enable-sidebar'),
+                darkmode: getChecked('enable-darkmode'),
+                devtools: getChecked('enable-devtools')
+            });
+        };
+        enableSidebar?.addEventListener('change', handler);
+        enableDarkmode?.addEventListener('change', handler);
+        enableDevtools?.addEventListener('change', handler);
+    }
+};
+
+const loadSavedSettings = async () => {
+    const config = await getConfig([
+        'userData',
+        'modelSettings',
+        'translationSettings',
+        'TranslationModule',
+        'contentSettings',
+        'shortcutSettings',
+        'featureToggles'
+    ]);
+
+    if (config.userData) {
+        setValue('username', config.userData.username);
+        setValue('email', config.userData.email);
+    }
+    if (config.modelSettings) {
+        setValue('model-api-url', config.modelSettings.apiUrl);
+        setValue('model-api-key', config.modelSettings.apiKey);
+        setValue('model-selection', config.modelSettings.model);
+    }
+    if (config.translationSettings || config.TranslationModule) {
+        const translationSettings = config.translationSettings || {};
+        const translationModule = config.TranslationModule || {};
+        const defaultLanguage = translationSettings.defaultLanguage || mapTargetLanguageToCode(translationModule.targetLanguage) || 'zh';
+        setValue('default-language', defaultLanguage);
+        setValue('translation-service', translationSettings.service);
+        setValue('translation-mode', translationSettings.translationMode || translationModule.translationMode || 'bilingual');
+        const selectionEnabled = typeof translationSettings.enableSelectionTranslation === 'boolean'
+            ? translationSettings.enableSelectionTranslation
+            : typeof translationModule.enableSelectionTranslation === 'boolean'
+                ? translationModule.enableSelectionTranslation
+                : true;
+        const viewportEnabled = typeof translationSettings.enableViewportTranslation === 'boolean'
+            ? translationSettings.enableViewportTranslation
+            : typeof translationModule.enableViewportTranslation === 'boolean'
+                ? translationModule.enableViewportTranslation
+                : true;
+        setChecked('enable-selection-translation', selectionEnabled);
+        setChecked('enable-viewport-translation', viewportEnabled);
+    }
+    if (config.contentSettings) {
+        setChecked('auto-save', config.contentSettings.autoSave);
+        setChecked('cloud-sync', config.contentSettings.cloudSync);
+    }
+    if (config.shortcutSettings) {
+        setValue('shortcut-main', config.shortcutSettings.main);
+        setValue('shortcut-capture', config.shortcutSettings.capture);
+    }
+    if (config.featureToggles) {
+        setChecked('enable-sidebar', config.featureToggles.sidebar);
+        setChecked('enable-darkmode', config.featureToggles.darkmode);
+        setChecked('enable-devtools', config.featureToggles.devtools);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    initNavigation();
+    bindSaveHandlers();
+    bindToggleHandlers();
     await loadSavedSettings();
 });
-
-// 加载所有保存的设置
-async function loadSavedSettings() {
-    // 获取所有配置
-    const config = await ConfigManager.getAllConfig();
-
-    // 初始化默认配置
-    if (!config.toggleSettings) {
-        config.toggleSettings = {
-            elementHighlighter: true,
-            imageDownloader: true,
-            translation: true,
-            elementActions: true
-        };
-        await ConfigManager.setConfig('toggleSettings', config.toggleSettings);
-    }
-
-    // 加载功能开关设置
-    document.getElementById('toggle-element-highlighter').checked = config.toggleSettings.elementHighlighter;
-    document.getElementById('toggle-element-actions').checked = config.toggleSettings.elementActions;
-    document.getElementById('toggle-image-downloader').checked = config.toggleSettings.imageDownloader;
-    document.getElementById('toggle-translation').checked = config.toggleSettings.translation;
-
-    // 加载用户数据
-    document.getElementById('username').value = config.userData.username;
-    document.getElementById('email').value = config.userData.email;
-
-    // 加载大模型设置
-    document.getElementById('model-api-url').value = config.modelSettings.apiUrl;
-    document.getElementById('model-api-key').value = config.modelSettings.apiKey;
-    document.getElementById('model-selection').value = config.modelSettings.model;
-
-    // 加载翻译设置
-    document.getElementById('default-language').value = config.translationSettings.defaultLanguage;
-    document.getElementById('translation-service').value = config.translationSettings.service;
-
-    // 加载内容管理设置
-    document.getElementById('content-rules').value = config.contentSettings.rules;
-    document.getElementById('auto-save-interval').value = config.contentSettings.autoSaveInterval;
-
-    // 加载快捷键设置
-    document.getElementById('shortcut-copy-selector').value = config.shortcutSettings.copySelector;
-    document.getElementById('shortcut-copy-style').value = config.shortcutSettings.copyStyle;
-
-    // 加载功能开关设置
-    document.getElementById('toggle-element-highlighter').checked = config.toggleSettings.elementHighlighter;
-    document.getElementById('toggle-element-actions').checked = config.toggleSettings.elementActions;
-    document.getElementById('toggle-image-downloader').checked = config.toggleSettings.imageDownloader;
-    document.getElementById('toggle-translation').checked = config.toggleSettings.translation;
-
-}
-

@@ -364,6 +364,9 @@ function handleToolbarClick(event) {
         case 'element-highlight':
             handleElementHighlight();
             break;
+        case 'settings':
+            handleOpenSettings();
+            break;
         default:
             console.warn('[Toolsbar] 未知的操作:', action);
     }
@@ -755,6 +758,59 @@ if (!document.getElementById('modern-ui-styles')) {
             box-shadow: var(--shadow-sm);
         }
 
+        .nws-translation-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .nws-translation-options-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .nws-translation-option {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .nws-translation-option:hover {
+            background: var(--panel-lighter);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+
+        .nws-translation-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .nws-translation-toggle input {
+            accent-color: var(--accent);
+        }
+
+        .nws-translation-hint {
+            color: var(--text-dim);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
         .nws-modern-modal .nws-close-btn:hover {
             background: rgba(255, 255, 255, 0.06);
             color: var(--text);
@@ -799,13 +855,96 @@ function getTranslationModuleInstance() {
     return null;
 }
 
+function getSummaryModuleInstance() {
+    const direct = window.NWSModules?.SummaryModule;
+    if (direct && typeof direct.summarizePage === 'function') {
+        return direct;
+    }
+    if (window.NWSModules && typeof window.NWSModules.get === 'function') {
+        const instance = window.NWSModules.get('SummaryModule');
+        if (instance && typeof instance.summarizePage === 'function') {
+            return instance;
+        }
+    }
+    if (window.NWSTools && typeof window.NWSTools.getModule === 'function') {
+        const instance = window.NWSTools.getModule('SummaryModule');
+        if (instance && typeof instance.summarizePage === 'function') {
+            return instance;
+        }
+    }
+    return null;
+}
+
+function openTranslationOptionsModal(translationModule) {
+    const icon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
+    const content = `
+        <div class="nws-translation-options">
+            <div class="nws-translation-options-row">
+                <button class="nws-translation-option" data-mode="replace">替换模式</button>
+                <button class="nws-translation-option" data-mode="bilingual">对照模式</button>
+            </div>
+            <label class="nws-translation-toggle">
+                <input class="nws-translation-toggle-input" type="checkbox" />
+                <span>启用划词翻译</span>
+            </label>
+            <label class="nws-translation-toggle">
+                <input class="nws-translation-lazy-toggle" type="checkbox" />
+                <span>启用懒翻译（视口优先）</span>
+            </label>
+            <div class="nws-translation-hint">翻译会优先处理当前视口内容，滚动页面继续翻译</div>
+        </div>
+    `;
+
+    const modal = window.uiManager.createModernModal('页面翻译', icon, content);
+    document.body.appendChild(modal);
+
+    const safeQuerySelector = window.DOMHelper?.safeQuerySelector || toolbarSafeQuerySelector;
+    const safeQuerySelectorAll = window.DOMHelper?.safeQuerySelectorAll || toolbarSafeQuerySelectorAll;
+    if (!safeQuerySelector || !safeQuerySelectorAll) return;
+
+    const optionButtons = safeQuerySelectorAll('.nws-translation-option', modal);
+    Array.from(optionButtons).forEach((button) => {
+        button.addEventListener('click', async () => {
+            const mode = button.dataset.mode;
+            console.log('[Toolsbar] 点击翻译模式按钮:', mode, '模块:', translationModule);
+            modal.remove();
+            await translationModule.translatePage(null, mode);
+        });
+    });
+
+    const selectionToggle = safeQuerySelector('.nws-translation-toggle-input', modal);
+    if (selectionToggle) {
+        selectionToggle.checked = Boolean(translationModule.config?.enableSelectionTranslation);
+        selectionToggle.addEventListener('change', async (event) => {
+            await translationModule.setSelectionTranslationEnabled(event.target.checked);
+        });
+    }
+
+    const lazyToggle = safeQuerySelector('.nws-translation-lazy-toggle', modal);
+    if (lazyToggle) {
+        lazyToggle.checked = Boolean(translationModule.config?.enableViewportTranslation);
+        lazyToggle.addEventListener('change', async (event) => {
+            await translationModule.setViewportTranslationEnabled(event.target.checked);
+        });
+    }
+}
+
 // 翻译页面处理函数
-async function handleTranslate() {
+async function handleTranslate(options = {}) {
     console.log('开始翻译页面');
     const translationModule = getTranslationModuleInstance();
     if (translationModule) {
         try {
-            await translationModule.translatePage();
+            if (options.mode) {
+                await translationModule.translatePage(null, options.mode);
+                return;
+            }
+            if (options.directStart) {
+                await translationModule.translatePage();
+                return;
+            }
+            const mode = translationModule.config?.translationMode || 'bilingual';
+            await translationModule.translatePage(null, mode);
         } catch (error) {
             console.error('[Toolsbar] 翻译执行失败:', error);
             showErrorNotification('翻译执行失败: ' + error.message);
@@ -816,19 +955,37 @@ async function handleTranslate() {
     }
 }
 
+function handleOpenSettings() {
+    try {
+        if (chrome?.runtime?.openOptionsPage) {
+            chrome.runtime.openOptionsPage();
+            return;
+        }
+        if (chrome?.runtime?.sendMessage) {
+            chrome.runtime.sendMessage({ action: 'openOptionsPage' }, () => {});
+            return;
+        } else if (chrome?.runtime?.getURL) {
+            const url = chrome.runtime.getURL('html/options.html');
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+    } catch (error) {
+        console.warn('[Toolsbar] 无法打开设置页面:', error);
+    }
+}
+
 // 总结页面处理函数
 async function handleSummary() {
     console.log('开始生成页面总结');
-    const translationModule = getTranslationModuleInstance();
-    if (translationModule && typeof translationModule.summarizePage === 'function') {
+    const summaryModule = getSummaryModuleInstance();
+    if (summaryModule && typeof summaryModule.summarizePage === 'function') {
         try {
-            await translationModule.summarizePage();
+            await summaryModule.summarizePage();
         } catch (error) {
             console.error('[Toolsbar] 总结生成失败:', error);
             showErrorNotification('总结生成失败: ' + error.message);
         }
     } else {
-        console.warn('[Toolsbar] 总结模块未就绪:', translationModule);
+        console.warn('[Toolsbar] 总结模块未就绪:', summaryModule);
         showErrorNotification('总结模块未就绪，请稍后再试或刷新页面');
     }
 }
@@ -843,7 +1000,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             handleSummaryRequest();
             break;
         case 'translatePage':
-            handleTranslate();
+            handleTranslate({ mode: request.mode, directStart: Boolean(request.directStart) });
             break;
         case 'summarizePage':
             handleSummary();
@@ -925,11 +1082,11 @@ function updateToolbarSettings(settings) {
 // 处理摘要请求
 async function handleSummaryRequest() {
     try {
-        const translationModule = getTranslationModuleInstance();
-        if (translationModule && typeof translationModule.summarizePage === 'function') {
-            await translationModule.summarizePage();
+        const summaryModule = getSummaryModuleInstance();
+        if (summaryModule && typeof summaryModule.summarizePage === 'function') {
+            await summaryModule.summarizePage();
         } else {
-            console.warn('[Toolsbar] TranslationModule 未就绪');
+            console.warn('[Toolsbar] SummaryModule 未就绪');
         }
     } catch (error) {
         console.error('[Toolsbar] 生成摘要失败:', error);

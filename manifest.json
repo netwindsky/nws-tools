@@ -54,6 +54,7 @@
         "js/modules/ui/SidebarModule.js",
         "js/modules/ui/SidebarView.js",
         "js/modules/features/TranslationModule.js",
+        "js/modules/features/SummaryModule.js",
         "js/modules/features/ImageDownloaderModule.js",
         "js/modules/features/ElementHighlighterModule.js",
         "js/main.js",

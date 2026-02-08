@@ -73,6 +73,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
         return true;
     }
+
+    if (request.action === 'openOptionsPage') {
+        chrome.runtime.openOptionsPage();
+        sendResponse({ success: true });
+        return true;
+    }
     
     // 处理配置变化通知
     if (request.action === 'notifyConfigChange') {
