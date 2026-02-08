@@ -3,7 +3,7 @@
  * 提供批量图片下载功能，支持多种图片格式和下载策略
  */
 
-(function() {
+ (function() {
     'use strict';
     
     // 从全局模块系统获取ModuleBase
@@ -12,11 +12,15 @@
         ModuleBase = window.NWSModules.get('ModuleBase');
     }
     
-    // 从全局模块系统获取工具函数
-    let safeQuerySelector, safeQuerySelectorAll, safeAddEventListener, safeRemoveEventListener;
-    if (window.NWSModules && window.NWSModules.utils) {
-        ({ safeQuerySelector, safeQuerySelectorAll, safeAddEventListener, safeRemoveEventListener } = window.NWSModules.utils);
-    }
+    // 获取工具类
+    const ConfigManager = window.ConfigManager;
+    const StyleManager = window.StyleManager;
+    
+    // 从全局模块系统获取工具函数，使用别名避免冲突
+    const imageSafeQuerySelector = window.DOMHelper?.safeQuerySelector || window.NWSModules?.utils?.safeQuerySelector;
+    const imageSafeQuerySelectorAll = window.DOMHelper?.safeQuerySelectorAll || window.NWSModules?.utils?.safeQuerySelectorAll;
+    const imageSafeAddEventListener = window.NWSModules?.utils?.safeAddEventListener;
+    const imageSafeRemoveEventListener = window.NWSModules?.utils?.safeRemoveEventListener;
 
 class ImageDownloaderModule extends ModuleBase {
     constructor(name, options = {}) {
@@ -37,9 +41,10 @@ class ImageDownloaderModule extends ModuleBase {
         });
 
         this.processedImages = new WeakSet();
-        this.downloadButtons = new Map();
+        this.downloadButtons = new WeakMap();
         this.observer = null;
         this.downloadCounter = 0;
+        this.configManager = null;
     }
 
     async onInitialize() {
@@ -51,8 +56,25 @@ class ImageDownloaderModule extends ModuleBase {
             throw new Error('ChromeSettingsModule 依赖未找到');
         }
 
-        // 注入样式
-        this.injectStyles();
+        // 初始化配置管理器
+        this.configManager = new ConfigManager(
+            this.chromeSettings,
+            this.name,
+            this.defaultConfig
+        );
+
+        // 添加配置验证器
+        this.configManager
+            .addValidator('enabled', v => typeof v === 'boolean')
+            .addValidator('minImageSize', v => v > 0 && v <= 1000)
+            .addValidator('showDownloadButton', v => typeof v === 'boolean')
+            .addValidator('buttonPosition', v => ['top-right', 'top-left', 'bottom-right', 'bottom-left'].includes(v))
+            .addValidator('autoDetect', v => typeof v === 'boolean')
+            .addValidator('supportedFormats', v => Array.isArray(v) && v.length > 0)
+            .addValidator('filenameTemplate', v => typeof v === 'string' && v.length > 0);
+
+        // 加载配置
+        this.config = await this.configManager.load();
 
         // 初始化图片处理
         if (this.config.enabled) {
@@ -60,13 +82,33 @@ class ImageDownloaderModule extends ModuleBase {
         }
 
         // 监听配置变化
-        this.on('configChanged', this.handleConfigChange.bind(this));
+        this.configManager.addObserver((newConfig) => {
+            this.config = newConfig;
+            this.handleConfigChange();
+        });
     }
 
     async onDestroy() {
-        this.removeAllDownloadButtons();
-        this.stopImageObserver();
-        this.removeStyles();
+        try {
+            // 停止图片观察器
+            this.stopImageObserver();
+            
+            // 移除所有下载按钮
+            this.removeAllDownloadButtons();
+            
+            // 销毁配置管理器
+            if (this.configManager) {
+                this.configManager.destroy();
+            }
+            
+            // 清理其他引用
+            this.processedImages = new WeakSet();
+            this.downloadButtons = new WeakMap();
+            
+            console.log('[ImageDownloader] 模块已销毁');
+        } catch (error) {
+            console.error('[ImageDownloader] 销毁模块时出错:', error);
+        }
     }
 
     async onEnable() {
@@ -95,13 +137,14 @@ class ImageDownloaderModule extends ModuleBase {
      * 处理现有图片
      */
     async processExistingImages() {
-        const images = safeQuerySelectorAll('img');
+        const images = imageSafeQuerySelectorAll ? imageSafeQuerySelectorAll('img') : document.querySelectorAll('img');
+        const unprocessedImages = Array.from(images).filter(img => !this.processedImages.has(img));
         
-        for (const img of images) {
-            if (!this.processedImages.has(img)) {
-                await this.processImage(img);
-            }
-        }
+        if (unprocessedImages.length === 0) return;
+        
+        await Promise.allSettled(
+            unprocessedImages.map(img => this.processImage(img))
+        );
     }
 
     /**
@@ -201,9 +244,74 @@ class ImageDownloaderModule extends ModuleBase {
         const container = document.createElement('div');
         container.className = 'nws-image-container';
         
+        // 获取图片的计算样式
+        const style = window.getComputedStyle(img);
+        const rect = img.getBoundingClientRect();
+        
+        // 1. 处理定位
+        if (style.position !== 'static') {
+            container.style.position = style.position;
+            container.style.top = style.top;
+            container.style.right = style.right;
+            container.style.bottom = style.bottom;
+            container.style.left = style.left;
+            container.style.zIndex = style.zIndex;
+            container.style.transform = style.transform;
+        }
+
+        // 2. 处理显示模式
+        if (style.display === 'block') {
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'inline-block';
+        }
+        container.style.verticalAlign = style.verticalAlign;
+
+        // 3. 处理浮动和边距
+        container.style.float = style.float;
+        container.style.margin = style.margin;
+        
+        // 4. 处理尺寸 (核心修复：确保容器有明确的宽高)
+        // 使用 getBoundingClientRect 获取精确的渲染尺寸
+        let width = rect.width || img.offsetWidth;
+        let height = rect.height || img.offsetHeight;
+        
+        // 如果无法获取当前尺寸，尝试使用自然尺寸或样式尺寸
+        if (!width || width === 0) {
+            width = img.naturalWidth || (style.width !== 'auto' ? style.width : null);
+        }
+        if (!height || height === 0) {
+            height = img.naturalHeight || (style.height !== 'auto' ? style.height : null);
+        }
+        
+        if (width) {
+            container.style.width = typeof width === 'number' ? `${width}px` : width;
+        } else if (style.width === '100%' || style.maxWidth === '100%') {
+            container.style.width = '100%';
+        }
+        
+        if (height) {
+            container.style.height = typeof height === 'number' ? `${height}px` : height;
+        }
+        
+        // 5. 复制其他影响布局的属性
+        container.style.maxWidth = style.maxWidth;
+        container.style.maxHeight = style.maxHeight;
+        container.style.flex = style.flex;
+        container.style.gridArea = style.gridArea;
+        container.style.objectFit = style.objectFit;
+
         // 插入容器
         img.parentNode.insertBefore(container, img);
         container.appendChild(img);
+        
+        // 重置图片样式以填满容器
+        img.style.position = 'static';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.margin = '0';
+        img.style.padding = '0';
+        img.style.border = 'none';
         
         return container;
     }
@@ -216,7 +324,13 @@ class ImageDownloaderModule extends ModuleBase {
     createDownloadButton(img) {
         const button = document.createElement('button');
         button.className = `nws-download-button nws-download-button-${this.config.buttonPosition}`;
-        button.innerHTML = this.getDownloadIcon();
+        button.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        `;
         button.title = '下载图片';
         
         // 点击事件
@@ -315,7 +429,7 @@ class ImageDownloaderModule extends ModuleBase {
      * @param {Array<HTMLImageElement>} images 图片数组
      */
     async batchDownload(images = null) {
-        const imagesToDownload = images || Array.from(safeQuerySelectorAll('img')).filter(img => 
+        const imagesToDownload = images || Array.from(imageSafeQuerySelectorAll('img')).filter(img => 
             this.processedImages.has(img) && this.shouldProcessImage(img)
         );
 
@@ -429,6 +543,7 @@ class ImageDownloaderModule extends ModuleBase {
         for (const img of this.downloadButtons.keys()) {
             this.removeDownloadButton(img);
         }
+        this.downloadButtons = new WeakMap();
     }
 
     /**
@@ -447,7 +562,7 @@ class ImageDownloaderModule extends ModuleBase {
                                 this.processImage(node);
                             } else {
                                 // 检查子元素中的图片
-                                const images = safeQuerySelectorAll('img', node);
+                                const images = imageSafeQuerySelectorAll('img', node);
                                 for (const img of images) {
                                     this.processImage(img);
                                 }
@@ -476,36 +591,50 @@ class ImageDownloaderModule extends ModuleBase {
 
     /**
      * 处理配置变化
-     * @param {Object} newConfig 新配置
      */
-    async handleConfigChange(newConfig) {
-        const oldConfig = { ...this.config };
-        this.config = { ...this.config, ...newConfig };
+    async handleConfigChange() {
+        if (!this.configManager) return;
 
-        // 如果启用状态改变
-        if (oldConfig.enabled !== this.config.enabled) {
+        try {
+            // 如果启用状态改变
             if (this.config.enabled) {
                 await this.enable();
             } else {
                 await this.disable();
             }
+        } catch (error) {
+            console.error('[ImageDownloader] 配置变更处理失败:', error);
         }
+    }
 
-        // 如果按钮位置改变，重新创建按钮
-        if (oldConfig.buttonPosition !== this.config.buttonPosition) {
-            this.removeAllDownloadButtons();
-            if (this.config.enabled) {
-                await this.processExistingImages();
-            }
+    /**
+     * 更新配置
+     * @param {Object} newConfig 新配置
+     * @returns {Promise<boolean>} 是否更新成功
+     */
+    async updateConfig(newConfig) {
+        if (!this.configManager) return false;
+
+        try {
+            return await this.configManager.updateAndSave(newConfig);
+        } catch (error) {
+            console.error('[ImageDownloader] 更新配置失败:', error);
+            return false;
         }
+    }
 
-        // 如果自动检测设置改变
-        if (oldConfig.autoDetect !== this.config.autoDetect) {
-            if (this.config.autoDetect) {
-                this.startImageObserver();
-            } else {
-                this.stopImageObserver();
-            }
+    /**
+     * 重置配置
+     * @returns {Promise<boolean>} 是否重置成功
+     */
+    async resetConfig() {
+        if (!this.configManager) return false;
+
+        try {
+            return await this.configManager.reset();
+        } catch (error) {
+            console.error('[ImageDownloader] 重置配置失败:', error);
+            return false;
         }
     }
 
@@ -514,84 +643,7 @@ class ImageDownloaderModule extends ModuleBase {
      * @returns {string}
      */
     getDownloadIcon() {
-        return `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-            </svg>
-        `;
-    }
-
-    /**
-     * 注入样式
-     */
-    injectStyles() {
-        if (document.getElementById('nws-image-downloader-styles')) return;
-
-        const style = document.createElement('style');
-        style.id = 'nws-image-downloader-styles';
-        style.textContent = `
-            .nws-image-container {
-                position: relative;
-                display: inline-block;
-            }
-
-            .nws-download-button {
-                position: absolute;
-                background-color: rgba(0, 0, 0, 0.7);
-                border: none;
-                border-radius: 4px;
-                color: white;
-                cursor: pointer;
-                display: none;
-                align-items: center;
-                justify-content: center;
-                width: 32px;
-                height: 32px;
-                z-index: 1000;
-                transition: all 0.2s ease;
-            }
-
-            .nws-download-button:hover {
-                background-color: rgba(0, 0, 0, 0.9);
-                transform: scale(1.1);
-            }
-
-            .nws-download-button-top-right {
-                top: 5px;
-                right: 5px;
-            }
-
-            .nws-download-button-top-left {
-                top: 5px;
-                left: 5px;
-            }
-
-            .nws-download-button-bottom-right {
-                bottom: 5px;
-                right: 5px;
-            }
-
-            .nws-download-button-bottom-left {
-                bottom: 5px;
-                left: 5px;
-            }
-
-            .nws-image-container:hover .nws-download-button {
-                display: flex !important;
-            }
-        `;
-        
-        document.head.appendChild(style);
-    }
-
-    /**
-     * 移除样式
-     */
-    removeStyles() {
-        const style = document.getElementById('nws-image-downloader-styles');
-        if (style) {
-            style.parentNode.removeChild(style);
-        }
+        return '⬇';
     }
 
     /**
@@ -599,7 +651,7 @@ class ImageDownloaderModule extends ModuleBase {
      * @returns {number}
      */
     getProcessedImageCount() {
-        return this.downloadButtons.size;
+        return Array.from(this.downloadButtons.keys()).length;
     }
 
     /**

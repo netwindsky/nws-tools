@@ -7,23 +7,29 @@
     'use strict';
     
     // 从全局模块系统获取模块
-    let ModuleManager, ChromeSettingsModule, NotificationModule, ImageDownloaderModule, ElementHighlighterModule, ErrorHandler, initErrorHandler;
+    let ModuleManager, ChromeSettingsModule, NotificationModule, TranslationModule, ImageDownloaderModule, ElementHighlighterModule, SidebarModule, ErrorHandler;
     
     if (window.NWSModules) {
         ModuleManager = window.NWSModules.ModuleManager;
         ChromeSettingsModule = window.NWSModules.ChromeSettingsModule;
         NotificationModule = window.NWSModules.NotificationModule;
+        TranslationModule = window.NWSModules.TranslationModule;
         ImageDownloaderModule = window.NWSModules.ImageDownloaderModule;
         ElementHighlighterModule = window.NWSModules.ElementHighlighterModule;
+        SidebarModule = window.NWSModules.SidebarModule;
         ErrorHandler = window.NWSModules.ErrorHandler;
-        if (ErrorHandler) {
-            ({ initErrorHandler } = ErrorHandler);
-        }
     }
+    
+    // 从全局作用域获取initErrorHandler函数
+    const initErrorHandler = (typeof window.initErrorHandler === 'function') 
+        ? window.initErrorHandler 
+        : (ErrorHandler && typeof ErrorHandler.initErrorHandler === 'function') 
+            ? ErrorHandler.initErrorHandler 
+            : function() { console.log('[NWSTools] 使用默认错误处理器'); };
 
 class NWSTools {
     constructor() {
-        this.moduleManager = ModuleManager;
+        this.moduleManager = ModuleManager; // ModuleManager is already an instance
         this.initialized = false;
     }
 
@@ -36,30 +42,85 @@ class NWSTools {
             return;
         }
 
+        const maxRetries = 3;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    console.log(`[NWSTools] 开始初始化（第${attempt}次尝试）...`);
+
+                    // 初始化全局错误处理器
+                    try {
+                        initErrorHandler();
+                    } catch (error) {
+                        console.warn('[NWSTools] 错误处理器初始化失败，继续执行:', error);
+                    }
+
+                    // 注册所有模块
+                    await this.registerModules();
+
+                // 初始化所有模块
+                await this.moduleManager.initializeAll();
+
+                // 设置全局访问
+                this.setupGlobalAccess();
+
+                this.initialized = true;
+                console.log('[NWSTools] 初始化完成');
+
+                // 触发初始化完成事件
+                this.dispatchEvent('initialized');
+                return;
+
+            } catch (error) {
+                console.error(`[NWSTools] 初始化失败（第${attempt}次）:`, error);
+                
+                if (attempt === maxRetries) {
+                    // 最后一次尝试失败，显示用户友好的错误信息
+                    this.showInitializationError(error);
+                    throw error;
+                }
+                
+                // 等待后重试，指数退避
+                await new Promise(resolve => 
+                    setTimeout(resolve, 1000 * Math.pow(2, attempt - 1))
+                );
+            }
+        }
+    }
+
+    /**
+     * 显示初始化错误
+     * @param {Error} error - 错误对象
+     */
+    showInitializationError(error) {
         try {
-            console.log('[NWSTools] 开始初始化...');
-
-            // 初始化全局错误处理器
-            initErrorHandler();
-
-            // 注册所有模块
-            await this.registerModules();
-
-            // 初始化所有模块
-            await this.moduleManager.initializeAll();
-
-            // 设置全局访问
-            this.setupGlobalAccess();
-
-            this.initialized = true;
-            console.log('[NWSTools] 初始化完成');
-
-            // 触发初始化完成事件
-            this.dispatchEvent('initialized');
-
-        } catch (error) {
-            console.error('[NWSTools] 初始化失败:', error);
-            throw error;
+            // 显示用户友好的错误提示
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #f44336;
+                color: white;
+                padding: 16px;
+                border-radius: 4px;
+                z-index: 10000;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+                max-width: 400px;
+                text-align: center;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            errorDiv.textContent = 'NWS Tools 初始化失败，请刷新页面重试';
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.remove();
+                }
+            }, 5000);
+        } catch (displayError) {
+            console.error('[NWSTools] 无法显示错误提示:', displayError);
         }
     }
 
@@ -67,15 +128,29 @@ class NWSTools {
      * 注册所有模块
      */
     async registerModules() {
-        // 按依赖顺序注册模块
+        console.log('[NWSTools] 开始注册模块...');
         
-        // 1. 基础模块（无依赖）
-        this.moduleManager.register('ChromeSettingsModule', ChromeSettingsModule);
+        // 模块已经通过各个模块文件直接注册到 window.NWSModules
+        // 现在将它们注册到 ModuleManager 进行统一管理
+        const availableModules = {
+            'ChromeSettingsModule': window.NWSModules.ChromeSettingsModule,
+            'NotificationModule': window.NWSModules.NotificationModule,
+            'TranslationModule': window.NWSModules.TranslationModule,
+            'ImageDownloaderModule': window.NWSModules.ImageDownloaderModule,
+            'ElementHighlighterModule': window.NWSModules.ElementHighlighterModule,
+            'SidebarModule': window.NWSModules.SidebarModule
+        };
         
-        // 2. 功能模块（依赖基础模块）
-        this.moduleManager.register('NotificationModule', NotificationModule);
-        this.moduleManager.register('ImageDownloaderModule', ImageDownloaderModule);
-        this.moduleManager.register('ElementHighlighterModule', ElementHighlighterModule);
+        for (const [name, moduleClass] of Object.entries(availableModules)) {
+            if (!moduleClass) {
+                console.warn(`[NWSTools] 模块 ${name} 不可用`);
+                throw new Error(`模块 ${name} 不可用`);
+            }
+            console.log(`[NWSTools] 模块 ${name} 可用，注册到管理器`);
+            
+            // 注册到 ModuleManager
+            this.moduleManager.register(name, moduleClass);
+        }
 
         console.log('[NWSTools] 模块注册完成');
     }
@@ -85,7 +160,14 @@ class NWSTools {
      */
     setupGlobalAccess() {
         // 设置全局模块访问
-        window.NWSModules = {};
+        if (!window.NWSModules) {
+            window.NWSModules = {};
+        }
+        
+        // 添加模块管理器的 get 方法以保持向后兼容
+        if (this.moduleManager && !window.NWSModules.get) {
+            window.NWSModules.get = this.moduleManager.get.bind(this.moduleManager);
+        }
         
         const modules = this.moduleManager.getAllModules();
         for (const [name, module] of modules) {

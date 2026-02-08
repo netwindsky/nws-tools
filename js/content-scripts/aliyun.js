@@ -1,6 +1,23 @@
-let downloadbtn = document.createElement("div")
-downloadbtn.style = "position: fixed;right: 15px;margin-top: 20px;z-index: 1000;font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\";-webkit-tap-highlight-color: transparent;color: inherit;"
-downloadbtn.innerHTML = "<button style=\"background-color: #1971c2;border-radius: 12px;border: none;color: white;padding: 8px 24px;text-align: center;text-decoration: none;display: inline-block;font-size: 12px;\">下载json</button>";
+/**
+ * 阿里云网站专用脚本
+ * 重构版本：已分离内联样式
+ */
+
+// 加载样式
+function loadStyles() {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = chrome.runtime.getURL('css/content-scripts.css');
+    document.head.appendChild(link);
+}
+
+// 初始化样式
+loadStyles();
+
+// 创建下载按钮
+let downloadbtn = document.createElement("div");
+downloadbtn.className = "nws-site-download-button nws-aliyun-download-container";
+downloadbtn.innerHTML = "<button>下载json</button>";
 downloadbtn.onclick = function () {
     let model = $("div.content--rYWre76t");
     let child = model.children();

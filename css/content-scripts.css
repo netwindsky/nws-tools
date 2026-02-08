@@ -1,0 +1,124 @@
+/**
+ * 内容脚本样式
+ * 用于aliyun.js和civitai.js等内容脚本的样式定义
+ * 所有类名已添加 nws- 前缀以防污染原网页
+ */
+
+/* 站点通用下载按钮 */
+.nws-site-download-button {
+    all: initial !important; /* 彻底隔离原网页样式 */
+    position: fixed;
+    right: 15px;
+    margin-top: 20px;
+    z-index: 1000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji" !important;
+    -webkit-tap-highlight-color: transparent;
+    color: inherit;
+    display: block !important;
+}
+
+.nws-site-download-button button {
+    background-color: #1971c2;
+    border-radius: 12px;
+    border: none;
+    color: white;
+    padding: 8px 24px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(25, 113, 194, 0.3);
+}
+
+.nws-site-download-button button:hover {
+    background-color: #1864ab;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(25, 113, 194, 0.4);
+}
+
+.nws-site-download-button button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(25, 113, 194, 0.3);
+}
+
+/* 阿里云网站特定样式 */
+.nws-aliyun-download-container {
+    /* 可以根据需要添加阿里云特定的样式 */
+}
+
+/* CivitAI网站特定样式 */
+.nws-civitai-download-container {
+    /* 可以根据需要添加CivitAI特定的样式 */
+}
+
+/* 加载状态样式 */
+.nws-download-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.nws-download-loading button {
+    position: relative;
+    overflow: hidden;
+}
+
+.nws-download-loading button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: nws-loading-shimmer 1.5s infinite;
+}
+
+@keyframes nws-loading-shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* 状态消息 */
+.nws-download-status-message {
+    position: fixed;
+    top: 80px;
+    right: 15px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    max-width: 300px;
+    font-size: 14px;
+    animation: nws-slideInFromRight 0.3s ease-out;
+}
+
+.nws-download-status-message.nws-success {
+    border-left: 4px solid #28a745;
+    background: #f8fff9;
+}
+
+.nws-download-status-message.nws-error {
+    border-left: 4px solid #dc3545;
+    background: #fff8f8;
+}
+
+.nws-download-status-message.nws-info {
+    border-left: 4px solid #17a2b8;
+    background: #f8fcff;
+}
+
+@keyframes nws-slideInFromRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

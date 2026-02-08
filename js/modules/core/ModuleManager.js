@@ -8,6 +8,7 @@ class ModuleManager {
         this.modules = new Map();
         this.loadOrder = [];
         this.initialized = false;
+        this.failedModules = new Map(); // 记录初始化失败的模块
         
         // 全局模块注册表
         if (!window.NWSModules) {
@@ -44,6 +45,15 @@ class ModuleManager {
     }
 
     /**
+     * 获取模块（别名方法，保持向后兼容）
+     * @param {string} name 模块名称
+     * @returns {ModuleBase|null}
+     */
+    get(name) {
+        return this.getModule(name);
+    }
+
+    /**
      * 获取所有模块
      * @returns {Map}
      */
@@ -69,16 +79,75 @@ class ModuleManager {
         for (const moduleName of this.loadOrder) {
             const module = this.modules.get(moduleName);
             if (module && module.enabled) {
-                try {
-                    await module.initialize();
-                } catch (error) {
-                    console.error(`[ModuleManager] 模块 ${moduleName} 初始化失败:`, error);
+                const success = await this.initializeModule(moduleName, module);
+                if (!success) {
+                    console.warn(`[ModuleManager] 模块 ${moduleName} 初始化失败，已禁用`);
                 }
             }
         }
         
         this.initialized = true;
         console.log('[ModuleManager] 所有模块初始化完成');
+    }
+
+    /**
+     * 初始化单个模块
+     * @param {string} moduleName 模块名称
+     * @param {ModuleBase} module 模块实例
+     * @returns {Promise<boolean>} 是否成功
+     */
+    async initializeModule(moduleName, module) {
+        const maxRetries = 2;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                await module.initialize();
+                return true; // 初始化成功
+            } catch (error) {
+                console.error(`[ModuleManager] 模块 ${moduleName} 初始化失败（第${attempt}次）:`, error);
+                
+                if (attempt === maxRetries) {
+                    // 最终失败，禁用模块
+                    module.enabled = false;
+                    module.initializationError = error;
+                    this.failedModules.set(moduleName, error);
+                    
+                    // 通知用户（如果通知模块可用）
+                    this.notifyModuleFailure(moduleName, error);
+                    return false;
+                }
+                
+                // 等待后重试
+                await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * 通知模块初始化失败
+     * @param {string} moduleName 模块名称
+     * @param {Error} error 错误对象
+     */
+    notifyModuleFailure(moduleName, error) {
+        try {
+            // 使用通知模块（如果可用）
+            const notification = window.NWSModules?.NotificationModule;
+            if (notification && notification.warning) {
+                notification.warning(`模块 ${moduleName} 初始化失败，已禁用`, 5000);
+            }
+        } catch (notifyError) {
+            console.error('[ModuleManager] 无法通知模块失败:', notifyError);
+        }
+    }
+
+    /**
+     * 获取失败的模块
+     * @returns {Map} 失败的模块Map
+     */
+    getFailedModules() {
+        return new Map(this.failedModules);
     }
 
     /**

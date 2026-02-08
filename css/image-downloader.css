@@ -1,0 +1,121 @@
+/**
+ * 图片下载模块样式
+ * 从ImageDownloaderModule.js中分离出来的样式定义
+ */
+
+/* 图片容器 */
+.nws-image-container {
+    position: relative; /* 允许通过 JS 覆盖为 absolute/fixed */
+    display: inline-block; /* 允许通过 JS 覆盖为 block/flex */
+    max-width: 100%;
+    vertical-align: top; /* 防止下方出现空白间隙 */
+}
+
+/* 处理可能导致的 0x0 问题 */
+.nws-image-container:empty {
+    display: none !important;
+}
+
+/* 确保内部图片在容器内正确显示 */
+.nws-image-container img {
+    /* 移除可能导致 0x0 循环的 max-width: 100% */
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+}
+
+/* 下载按钮 */
+.nws-download-button {
+    position: absolute !important;
+    background: var(--panel, #1a1f2c) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: white !important;
+    cursor: pointer !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    z-index: 1000 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    padding: 6px !important;
+    pointer-events: auto !important;
+}
+
+.nws-download-button svg {
+    width: 100% !important;
+    height: 100% !important;
+    stroke: white !important;
+    stroke-width: 2 !important;
+}
+
+.nws-download-button:hover {
+    background: var(--accent, #7e57c2) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.1) translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(126, 87, 194, 0.4) !important;
+}
+
+/* 下载按钮位置 */
+.nws-download-button-top-right { top: 8px !important; right: 8px !important; }
+.nws-download-button-top-left { top: 8px !important; left: 8px !important; }
+.nws-download-button-bottom-right { bottom: 8px !important; right: 8px !important; }
+.nws-download-button-bottom-left { bottom: 8px !important; left: 8px !important; }
+
+/* 悬停时显示下载按钮 */
+.nws-image-container:hover .nws-download-button {
+    display: flex !important;
+    opacity: 1 !important;
+}
+
+/* 动画效果 */
+@keyframes nws-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.nws-download-button.downloading svg {
+    animation: nws-spin 1s linear infinite !important;
+}
+
+/* 下载状态指示器 */
+.nws-download-status {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: var(--panel, #1a1f2c);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    display: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.nws-download-status.downloading {
+    border-color: #ffc107;
+    color: #ffc107;
+    display: block;
+}
+
+.nws-download-status.completed {
+    border-color: #28a745;
+    color: #28a745;
+    display: block;
+}
+
+.nws-download-status.failed {
+    border-color: #dc3545;
+    color: #dc3545;
+    display: block;
+}

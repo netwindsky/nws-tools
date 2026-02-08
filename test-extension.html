@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>扩展测试页面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+        .info { background: #2196F3; }
+        .warning { background: #ff9800; }
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 NWS Tools 扩展测试页面</h1>
+        
+        <div class="status info" id="testStatus">
+            等待测试开始...
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="testModuleSystem()">测试模块系统</button>
+            <button onclick="testErrorHandler()">测试错误处理器</button>
+            <button onclick="testConfigManager()">测试配置管理器</button>
+            <button onclick="testStyleManager()">测试样式管理器</button>
+            <button onclick="clearLogs()">清空日志</button>
+        </div>
+        
+        <div class="log" id="logOutput"></div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('testStatus');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const typeEmoji = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            };
+            logEl.textContent += `[${timestamp}] ${typeEmoji[type]} ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logOutput').textContent = '';
+        }
+
+        function testModuleSystem() {
+            updateStatus('测试模块系统...', 'info');
+            log('开始测试模块系统', 'info');
+
+            try {
+                // 测试模块管理器
+                if (window.NWSModules) {
+                    log('✅ NWSModules全局对象存在', 'success');
+                    
+                    // 测试核心模块
+                    const coreModules = ['ModuleManager', 'ChromeSettingsModule'];
+                    coreModules.forEach(module => {
+                        if (window.NWSModules[module]) {
+                            log(`✅ ${module} 模块加载成功`, 'success');
+                        } else {
+                            log(`❌ ${module} 模块缺失`, 'error');
+                        }
+                    });
+
+                    // 测试功能模块
+                    const featureModules = ['NotificationModule', 'ImageDownloaderModule', 'ElementHighlighterModule'];
+                    featureModules.forEach(module => {
+                        if (window.NWSModules[module]) {
+                            log(`✅ ${module} 功能模块加载成功`, 'success');
+                        } else {
+                            log(`❌ ${module} 功能模块缺失`, 'error');
+                        }
+                    });
+
+                    updateStatus('模块系统测试完成', 'success');
+                } else {
+                    log('❌ NWSModules全局对象不存在', 'error');
+                    updateStatus('模块系统测试失败', 'error');
+                }
+            } catch (error) {
+                log(`❌ 模块系统测试异常: ${error.message}`, 'error');
+                updateStatus('模块系统测试异常', 'error');
+            }
+        }
+
+        function testErrorHandler() {
+            updateStatus('测试错误处理器...', 'info');
+            log('开始测试错误处理器', 'info');
+
+            try {
+                // 测试initErrorHandler函数
+                if (typeof window.initErrorHandler === 'function') {
+                    log('✅ initErrorHandler函数存在', 'success');
+                    
+                    // 测试错误处理器
+                    window.initErrorHandler();
+                    log('✅ 错误处理器初始化成功', 'success');
+                    
+                    // 测试ErrorHandler模块
+                    if (window.NWSModules && window.NWSModules.ErrorHandler) {
+                        log('✅ ErrorHandler模块存在', 'success');
+                        
+                        const errorHandler = window.NWSModules.ErrorHandler;
+                        const methods = ['safeExecute', 'safeExecuteAsync', 'createErrorBoundary'];
+                        methods.forEach(method => {
+                            if (typeof errorHandler[method] === 'function') {
+                                log(`✅ ${method} 方法可用`, 'success');
+                            } else {
+                                log(`❌ ${method} 方法不可用`, 'error');
+                            }
+                        });
+                    } else {
+                        log('⚠️ ErrorHandler模块不存在（可能是正常的）', 'warning');
+                    }
+                    
+                    updateStatus('错误处理器测试完成', 'success');
+                } else {
+                    log('❌ initErrorHandler函数不存在', 'error');
+                    updateStatus('错误处理器测试失败', 'error');
+                }
+            } catch (error) {
+                log(`❌ 错误处理器测试异常: ${error.message}`, 'error');
+                updateStatus('错误处理器测试异常', 'error');
+            }
+        }
+
+        function testConfigManager() {
+            updateStatus('测试配置管理器...', 'info');
+            log('开始测试配置管理器', 'info');
+
+            try {
+                // 测试ConfigManager类
+                if (typeof window.ConfigManager === 'function') {
+                    log('✅ ConfigManager类存在', 'success');
+                    
+                    // 尝试创建实例（需要Chrome API）
+                    if (window.NWSModules && window.NWSModules.ChromeSettingsModule) {
+                        const storage = window.NWSModules.ChromeSettingsModule;
+                        const configManager = new window.ConfigManager(storage, 'test', { enabled: true });
+                        log('✅ ConfigManager实例创建成功', 'success');
+                    } else {
+                        log('⚠️ ChromeSettingsModule不可用，跳过实例测试', 'warning');
+                    }
+                } else {
+                    log('❌ ConfigManager类不存在', 'error');
+                    updateStatus('配置管理器测试失败', 'error');
+                }
+            } catch (error) {
+                log(`❌ 配置管理器测试异常: ${error.message}`, 'error');
+                updateStatus('配置管理器测试异常', 'error');
+            }
+        }
+
+        function testStyleManager() {
+            updateStatus('测试样式管理器...', 'info');
+            log('开始测试样式管理器', 'info');
+
+            try {
+                // 测试StyleManager类
+                if (typeof window.StyleManager === 'function') {
+                    log('✅ StyleManager类存在', 'success');
+                    
+                    // 测试单例实例
+                    if (window.styleManager && typeof window.styleManager.inject === 'function') {
+                        log('✅ StyleManager单例实例可用', 'success');
+                        
+                        // 测试方法
+                        const methods = ['inject', 'remove', 'getAll', 'clear'];
+                        methods.forEach(method => {
+                            if (typeof window.styleManager[method] === 'function') {
+                                log(`✅ ${method} 方法可用`, 'success');
+                            } else {
+                                log(`❌ ${method} 方法不可用`, 'error');
+                            }
+                        });
+                    } else {
+                        log('❌ StyleManager单例实例不可用', 'error');
+                    }
+                } else {
+                    log('❌ StyleManager类不存在', 'error');
+                    updateStatus('样式管理器测试失败', 'error');
+                }
+            } catch (error) {
+                log(`❌ 样式管理器测试异常: ${error.message}`, 'error');
+                updateStatus('样式管理器测试异常', 'error');
+            }
+        }
+
+        // 页面加载完成后自动运行测试
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                log('🚀 开始自动测试', 'info');
+                testModuleSystem();
+                setTimeout(() => testErrorHandler(), 1000);
+                setTimeout(() => testConfigManager(), 2000);
+                setTimeout(() => testStyleManager(), 3000);
+            }, 1000);
+        });
+
+        // 监听NWS Tools初始化完成事件
+        document.addEventListener('nws:initialized', () => {
+            updateStatus('✅ NWS Tools 初始化完成！', 'success');
+            log('🎉 NWS Tools 完全初始化成功！', 'success');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+/**
+ * 元素高亮模块样式
+ * 从ElementHighlighterModule.js中分离出来的样式定义
+ */
+
+/* 工具提示 */
+.nws-tooltip {
+    position: fixed;
+    background: var(--panel); /* 使用深藏蓝面板色 */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-family: 'SF Pro Display', -apple-system, sans-serif;
+    z-index: 999999;
+    max-width: 320px;
+    word-wrap: break-word;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.nws-tooltip-tag {
+    color: var(--accent); /* 使用主题紫色 */
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.nws-tooltip-path {
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: monospace;
+    margin-top: 6px;
+    opacity: 0.8;
+}
+
+.nws-tooltip-text {
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 6px;
+    font-style: italic;
+    border-left: 2px solid var(--accent);
+    padding-left: 8px;
+}
+
+/* 样式信息面板 (计算样式) */
+.nws-style-info {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    background: var(--panel);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 13px;
+    font-family: 'SF Pro Display', -apple-system, sans-serif;
+    z-index: 999999;
+    width: 280px;
+    max-height: 500px;
+    overflow-y: auto;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    color: var(--text);
+}
+
+.nws-style-info::-webkit-scrollbar {
+    width: 4px;
+}
+
+.nws-style-info::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.nws-style-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nws-style-title::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+}
+
+.nws-style-item {
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.nws-style-prop {
+    color: var(--text-dim);
+    font-weight: normal;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.nws-style-value {
+    color: #ffffff;
+    font-family: monospace;
+    font-size: 12px;
+    text-align: right;
+    word-break: break-all;
+    max-width: 160px;
+}
+
+/* 按钮组 */
+.nws-button-group {
+    position: fixed;
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 8px;
+    z-index: 999999;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nws-button-group button {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.nws-button-group button:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffffff;
+}
+
+.nws-button-group button:active {
+    background: var(--accent-glow);
+    transform: scale(0.98);
+}
+
+.nws-button-group button:last-child {
+    margin-bottom: 0;
+}
+
+/* 元素高亮边框 */
+.nws-element-highlight {
+    outline: 1px solid #42b883 !important;
+    outline-offset: 1px;
+    box-shadow: 0 0 0 1px #42b883 !important;
+}

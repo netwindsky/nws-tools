@@ -67,11 +67,24 @@ function sanitizeSelector(selector) {
     return selector
         // 移除感叹号（CSS中不应该出现）
         .replace(/!/g, '')
-        // 处理方括号属性选择器中的特殊字符
-        .replace(/\[([^\]]*[\[\]])([^\]]*)\]/g, (match, p1, p2) => {
-            // 如果属性选择器内部还有方括号，尝试修复
-            const cleaned = p1.replace(/[\[\]]/g, '');
-            return `[${cleaned}${p2}]`;
+        // 处理方括号属性选择器中的引号嵌套问题 (例如 [style="...\"Segoe UI\"..."])
+        .replace(/\[([^\]]+)\]/g, (match, p1) => {
+            if (p1.includes('="') || p1.includes("='")) {
+                const parts = p1.split(/=(['"])/);
+                if (parts.length >= 3) {
+                    const attr = parts[0];
+                    const quote = parts[1];
+                    let value = parts.slice(2).join('=');
+                    // 移除末尾匹配的引号
+                    if (value.endsWith(quote)) {
+                        value = value.slice(0, -1);
+                    }
+                    // 移除内部所有同类型的引号，避免语法错误
+                    const cleanedValue = value.replace(new RegExp(quote, 'g'), '');
+                    return `[${attr}=${quote}${cleanedValue}${quote}]`;
+                }
+            }
+            return match;
         })
         // 移除连续的点号
         .replace(/\.{2,}/g, '.')
@@ -155,3 +168,12 @@ if (window.NWSModules) {
         }
     };
 }
+
+// 也将工具函数直接暴露到全局作用域
+window.DOMHelper = {
+    safeQuerySelector,
+    safeQuerySelectorAll,
+    sanitizeSelector,
+    isValidSelector,
+    getSafeSelector
+};

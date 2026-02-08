@@ -3,7 +3,7 @@
  * 提供页面元素高亮显示功能，支持多种高亮样式和交互效果
  */
 
-(function() {
+ (function() {
     'use strict';
     
     // 从全局模块系统获取ModuleBase
@@ -12,10 +12,32 @@
         ModuleBase = window.NWSModules.get('ModuleBase');
     }
     
-    // 从全局模块系统获取工具函数
-    let safeQuerySelector, safeQuerySelectorAll, safeAddEventListener, safeRemoveEventListener;
-    if (window.NWSModules && window.NWSModules.utils) {
-        ({ safeQuerySelector, safeQuerySelectorAll, safeAddEventListener, safeRemoveEventListener } = window.NWSModules.utils);
+    // 获取工具类
+    const ConfigManager = window.ConfigManager;
+    const StyleManager = window.StyleManager;
+    
+    // 从全局模块系统获取工具函数，使用别名避免冲突
+    const elementSafeQuerySelector = window.DOMHelper?.safeQuerySelector || window.NWSModules?.utils?.safeQuerySelector;
+    const elementSafeQuerySelectorAll = window.DOMHelper?.safeQuerySelectorAll || window.NWSModules?.utils?.safeQuerySelectorAll;
+    const elementSafeAddEventListener = window.NWSModules?.utils?.safeAddEventListener;
+    const elementSafeRemoveEventListener = window.NWSModules?.utils?.safeRemoveEventListener;
+
+    /**
+     * 防抖函数
+     * @param {Function} func - 要防抖的函数
+     * @param {number} wait - 延迟毫秒数
+     * @returns {Function} 防抖后的函数
+     */
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func.apply(this, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 
 class ElementHighlighterModule extends ModuleBase {
@@ -28,7 +50,7 @@ class ElementHighlighterModule extends ModuleBase {
                 showTooltip: true,
                 showStyleInfo: true,
                 enableActions: true,
-                highlightColor: '#42b883',
+                highlightColor: '#7e57c2', // 更改为主题紫色
                 tooltipPosition: 'auto', // auto, top, bottom, left, right
                 excludeSelectors: ['html', 'body', 'head', 'script', 'style', 'meta', 'link'],
                 minElementSize: 10 // 最小元素尺寸
@@ -43,12 +65,18 @@ class ElementHighlighterModule extends ModuleBase {
         this.lastCssPath = '';
         this.isActive = false;
         this.jszipLoaded = false;
+        this.configManager = null;
+        this.styleManager = null;
         
         // 绑定事件处理函数，确保可以正确移除监听器
         this.boundHandleMouseMove = this.handleMouseMove.bind(this);
         this.boundHandleMouseLeave = this.handleMouseLeave.bind(this);
         this.boundHandleClick = this.handleClick.bind(this);
         this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+        
+        // 应用防抖，16ms约等于60fps
+        this.debouncedHandleMouseMove = debounce(this.boundHandleMouseMove, 16);
+        this.debouncedHandleClick = debounce(this.boundHandleClick, 100);
     }
 
     async onInitialize() {
@@ -60,8 +88,28 @@ class ElementHighlighterModule extends ModuleBase {
             throw new Error('ChromeSettingsModule 依赖未找到');
         }
 
-        // 加载配置设置
-        await this.loadConfigSettings();
+        // 初始化配置管理器
+        this.configManager = new ConfigManager(
+            this.chromeSettings,
+            this.name,
+            this.defaultConfig
+        );
+
+        // 添加配置验证器
+        this.configManager
+            .addValidator('enabled', v => typeof v === 'boolean')
+            .addValidator('showTooltip', v => typeof v === 'boolean')
+            .addValidator('showStyleInfo', v => typeof v === 'boolean')
+            .addValidator('enableActions', v => typeof v === 'boolean')
+            .addValidator('highlightColor', v => typeof v === 'string' && v.length > 0)
+            .addValidator('tooltipPosition', v => ['auto', 'top', 'bottom', 'left', 'right'].includes(v))
+            .addValidator('minElementSize', v => v > 0 && v <= 1000);
+
+        // 加载配置
+        this.config = await this.configManager.load();
+
+        // 初始化样式管理器
+        this.styleManager = window.styleManager || new StyleManager();
 
         // 创建UI元素
         this.createTooltip();
@@ -70,20 +118,38 @@ class ElementHighlighterModule extends ModuleBase {
         // 注入样式
         this.injectStyles();
 
+        // 监听配置变化
+        this.configManager.addObserver((newConfig) => {
+            this.config = newConfig;
+            this.handleConfigChange();
+        });
+
         // 注意：不在初始化时自动启用，让用户手动控制
         // 这样可以确保工具栏按钮的状态与模块状态保持同步
 
         // 监听Chrome消息
         this.setupMessageListener();
-        
-        // 监听配置变化
-        this.setupConfigListener();
     }
 
     async onDestroy() {
-        await this.disable();
-        this.removeUI();
-        this.removeStyles();
+        try {
+            await this.disable();
+            this.removeUI();
+            
+            // 清理样式
+            if (this.styleManager) {
+                this.styleManager.removeModuleStyles(this.name);
+            }
+            
+            // 销毁配置管理器
+            if (this.configManager) {
+                this.configManager.destroy();
+            }
+            
+            console.log('[ElementHighlighter] 模块已销毁');
+        } catch (error) {
+            console.error('[ElementHighlighter] 销毁模块时出错:', error);
+        }
     }
 
     async onEnable() {
@@ -104,9 +170,9 @@ class ElementHighlighterModule extends ModuleBase {
      * 添加事件监听器
      */
     addEventListeners() {
-        document.addEventListener('mousemove', this.boundHandleMouseMove);
+        document.addEventListener('mousemove', this.debouncedHandleMouseMove);
         document.addEventListener('mouseleave', this.boundHandleMouseLeave);
-        document.addEventListener('click', this.boundHandleClick);
+        document.addEventListener('click', this.debouncedHandleClick);
         document.addEventListener('keydown', this.boundHandleKeyDown);
     }
 
@@ -114,9 +180,9 @@ class ElementHighlighterModule extends ModuleBase {
      * 移除事件监听器
      */
     removeEventListeners() {
-        document.removeEventListener('mousemove', this.boundHandleMouseMove);
+        document.removeEventListener('mousemove', this.debouncedHandleMouseMove);
         document.removeEventListener('mouseleave', this.boundHandleMouseLeave);
-        document.removeEventListener('click', this.boundHandleClick);
+        document.removeEventListener('click', this.debouncedHandleClick);
         document.removeEventListener('keydown', this.boundHandleKeyDown);
     }
 
@@ -241,7 +307,7 @@ class ElementHighlighterModule extends ModuleBase {
      */
     highlightElement(element) {
         // 移除之前的高亮
-        const previousHighlight = safeQuerySelector('.nws-element-highlight');
+        const previousHighlight = elementSafeQuerySelector('.nws-element-highlight');
         if (previousHighlight) {
             previousHighlight.remove();
         }
@@ -280,11 +346,24 @@ class ElementHighlighterModule extends ModuleBase {
         const id = element.id ? `#${element.id}` : '';
         const text = element.textContent ? element.textContent.substring(0, 50) + '...' : '';
 
-        this.tooltip.innerHTML = `
-            <div class="nws-tooltip-tag">&lt;${tagName}${id}${className}&gt;</div>
-            <div class="nws-tooltip-path">${this.getSimplifiedCssPath(element)}</div>
-            ${text ? `<div class="nws-tooltip-text">${text}</div>` : ''}
-        `;
+        this.tooltip.innerHTML = '';
+        
+        const tagDiv = document.createElement('div');
+        tagDiv.className = 'nws-tooltip-tag';
+        tagDiv.textContent = `<${tagName}${id}${className}>`;
+        this.tooltip.appendChild(tagDiv);
+        
+        const pathDiv = document.createElement('div');
+        pathDiv.className = 'nws-tooltip-path';
+        pathDiv.textContent = this.getSimplifiedCssPath(element);
+        this.tooltip.appendChild(pathDiv);
+        
+        if (text) {
+            const textDiv = document.createElement('div');
+            textDiv.className = 'nws-tooltip-text';
+            textDiv.textContent = text;
+            this.tooltip.appendChild(textDiv);
+        }
 
         // 计算位置
         const tooltipRect = this.tooltip.getBoundingClientRect();
@@ -519,21 +598,51 @@ class ElementHighlighterModule extends ModuleBase {
         this.buttonGroup = document.createElement('div');
         this.buttonGroup.className = 'nws-button-group';
         this.buttonGroup.style.display = 'none';
+        
+        const copySelectorBtn = document.createElement('button');
+        copySelectorBtn.innerHTML = `
+            <svg style="width:14px;height:14px;vertical-align:middle;margin-right:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            复制选择器
+        `;
+        copySelectorBtn.onclick = () => {
+            this.copySelector();
+            this.hideButtonGroup();
+        };
+        
+        const copyStyleBtn = document.createElement('button');
+        copyStyleBtn.innerHTML = `
+            <svg style="width:14px;height:14px;vertical-align:middle;margin-right:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            复制计算样式
+        `;
+        copyStyleBtn.onclick = () => {
+            this.copyStyle();
+            this.hideButtonGroup();
+        };
 
-        const buttons = [
-            { text: '复制选择器', action: () => this.copySelector() },
-            { text: '复制样式', action: () => this.copyStyle() },
-            { text: '保存为MD', action: () => this.saveAsMD() },
-            { text: '转换为Vue', action: () => this.convertToVue() }
-        ];
+        const saveMdBtn = document.createElement('button');
+        saveMdBtn.innerHTML = `
+            <svg style="width:14px;height:14px;vertical-align:middle;margin-right:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+            保存为 Markdown
+        `;
+        saveMdBtn.onclick = () => {
+            this.saveAsMD();
+            this.hideButtonGroup();
+        };
 
-        buttons.forEach(btn => {
-            const button = document.createElement('button');
-            button.textContent = btn.text;
-            button.onclick = btn.action;
-            this.buttonGroup.appendChild(button);
-        });
-
+        const convertVueBtn = document.createElement('button');
+        convertVueBtn.innerHTML = `
+            <svg style="width:14px;height:14px;vertical-align:middle;margin-right:8px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            转换为 Vue 组件
+        `;
+        convertVueBtn.onclick = () => {
+            this.convertToVue();
+            this.hideButtonGroup();
+        };
+        
+        this.buttonGroup.appendChild(copySelectorBtn);
+        this.buttonGroup.appendChild(copyStyleBtn);
+        this.buttonGroup.appendChild(saveMdBtn);
+        this.buttonGroup.appendChild(convertVueBtn);
         document.body.appendChild(this.buttonGroup);
     }
 
@@ -665,7 +774,18 @@ class ElementHighlighterModule extends ModuleBase {
         
         template += `</${tagName}>\n</template>\n\n`;
         
-        template += `<script>\nexport default {\n  name: 'ExtractedElement',\n  data() {\n    return {\n      content: '${textContent || '内容'}'\n    }\n  }\n}\n</script>\n\n`;
+        template += `<script>
+module.exports = {
+  name: 'ExtractedElement',
+  data() {
+    return {
+      content: '${textContent || '内容'}'
+    }
+  }
+}
+</script>
+
+`;
         
         template += `<style scoped>\n/* 添加样式 */\n</style>`;
         
@@ -796,117 +916,159 @@ class ElementHighlighterModule extends ModuleBase {
      * 注入样式
      */
     injectStyles() {
-        if (document.getElementById('nws-element-highlighter-styles')) return;
+        if (!this.styleManager) return;
 
-        const style = document.createElement('style');
-        style.id = 'nws-element-highlighter-styles';
-        style.textContent = `
+        const css = `
+            .nws-element-highlight {
+                position: absolute;
+                border: 2px solid ${this.config.highlightColor};
+                background: ${this.config.highlightColor}20;
+                pointer-events: none;
+                z-index: 9999;
+                transition: all 0.2s ease;
+            }
+            
+            .nws-element-highlight.active {
+                box-shadow: 0 0 10px ${this.config.highlightColor}40;
+            }
+            
             .nws-tooltip {
-                position: fixed;
-                background: rgba(0, 0, 0, 0.9);
+                position: absolute;
+                background: #333;
                 color: white;
                 padding: 8px 12px;
-                border-radius: 4px;
+                border-radius: 6px;
                 font-size: 12px;
                 font-family: monospace;
-                z-index: 999999;
+                z-index: 10000;
                 max-width: 300px;
                 word-wrap: break-word;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                pointer-events: none;
             }
-
+            
             .nws-tooltip-tag {
-                color: #42b883;
+                color: #4CAF50;
                 font-weight: bold;
+                margin-bottom: 4px;
             }
-
+            
             .nws-tooltip-path {
-                color: #ccc;
-                margin-top: 4px;
+                color: #2196F3;
+                font-size: 11px;
+                margin-bottom: 4px;
             }
-
+            
             .nws-tooltip-text {
-                color: #fff;
-                margin-top: 4px;
+                color: #FFC107;
                 font-style: italic;
             }
-
+            
+            .nws-button-group {
+                position: absolute;
+                display: flex;
+                gap: 8px;
+                z-index: 10001;
+            }
+            
+            .nws-action-btn {
+                background: ${this.config.highlightColor};
+                color: white;
+                border: none;
+                padding: 6px 10px;
+                border-radius: 4px;
+                font-size: 11px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                white-space: nowrap;
+            }
+            
+            .nws-action-btn:hover {
+                opacity: 0.8;
+                transform: translateY(-1px);
+            }
+            
             .nws-style-info {
-                position: fixed;
-                top: 20px;
-                right: 20px;
+                position: absolute;
                 background: white;
                 border: 1px solid #ddd;
-                border-radius: 4px;
-                padding: 12px;
+                border-radius: 8px;
+                padding: 16px;
                 font-size: 12px;
                 font-family: monospace;
-                z-index: 999999;
-                max-width: 300px;
-                max-height: 400px;
-                overflow-y: auto;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                z-index: 10002;
+                max-width: 400px;
+                max-height: 300px;
+                overflow: auto;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.2);
             }
-
-            .nws-style-title {
-                font-weight: bold;
-                margin-bottom: 8px;
-                color: #333;
-            }
-
-            .nws-style-item {
-                margin-bottom: 4px;
-            }
-
-            .nws-style-prop {
-                color: #d73a49;
-                font-weight: bold;
-            }
-
-            .nws-style-value {
-                color: #032f62;
-            }
-
-            .nws-button-group {
-                position: fixed;
-                background: white;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                padding: 8px;
-                z-index: 999999;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            }
-
-            .nws-button-group button {
-                display: block;
-                width: 100%;
-                margin-bottom: 4px;
-                padding: 6px 12px;
-                border: 1px solid #ddd;
-                border-radius: 3px;
-                background: white;
-                cursor: pointer;
-                font-size: 12px;
-            }
-
-            .nws-button-group button:hover {
-                background: #f5f5f5;
-            }
-
-            .nws-button-group button:last-child {
-                margin-bottom: 0;
+            
+            .nws-style-info h4 {
+                margin: 0 0 12px 0;
+                color: ${this.config.highlightColor};
+                border-bottom: 1px solid #eee;
+                padding-bottom: 8px;
             }
         `;
-        
-        document.head.appendChild(style);
+
+        this.styleManager.inject(this.name, css, null, {
+            priority: 'high',
+            cache: true
+        });
     }
 
     /**
-     * 移除样式
+     * 处理配置变化
      */
-    removeStyles() {
-        const style = document.getElementById('nws-element-highlighter-styles');
-        if (style) {
-            style.parentNode.removeChild(style);
+    handleConfigChange() {
+        if (!this.styleManager || !this.configManager) return;
+
+        try {
+            // 重新注入样式（因为高亮颜色可能变化）
+            if (this.styleManager.has(`nws-style-${this.name}`)) {
+                this.styleManager.removeModuleStyles(this.name);
+                this.injectStyles();
+            }
+
+            // 如果启用状态改变
+            if (this.config.enabled && !this.isActive) {
+                this.enable();
+            } else if (!this.config.enabled && this.isActive) {
+                this.disable();
+            }
+        } catch (error) {
+            console.error('[ElementHighlighter] 配置变更处理失败:', error);
+        }
+    }
+
+    /**
+     * 更新配置
+     * @param {Object} newConfig 新配置
+     * @returns {Promise<boolean>} 是否更新成功
+     */
+    async updateConfig(newConfig) {
+        if (!this.configManager) return false;
+
+        try {
+            return await this.configManager.updateAndSave(newConfig);
+        } catch (error) {
+            console.error('[ElementHighlighter] 更新配置失败:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 重置配置
+     * @returns {Promise<boolean>} 是否重置成功
+     */
+    async resetConfig() {
+        if (!this.configManager) return false;
+
+        try {
+            return await this.configManager.reset();
+        } catch (error) {
+            console.error('[ElementHighlighter] 重置配置失败:', error);
+            return false;
         }
     }
 }

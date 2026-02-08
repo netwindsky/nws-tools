@@ -112,7 +112,11 @@ class ModuleBase {
      * 检查模块是否已加载
      */
     isModuleLoaded(moduleName) {
-        return window.NWSModules && window.NWSModules[moduleName];
+        // 检查多种可能的模块存在方式
+        return (window.NWSModules && window.NWSModules[moduleName]) ||
+               (window.NWSModules && window.NWSModules.get && typeof window.NWSModules.get === 'function' && window.NWSModules.get(moduleName)) ||
+               (window.NWSModules && window.NWSModules.getModule && typeof window.NWSModules.getModule === 'function' && window.NWSModules.getModule(moduleName)) ||
+               window[moduleName];
     }
 
     /**

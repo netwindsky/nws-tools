@@ -137,3 +137,6 @@ if (window.NWSModules) {
         createErrorBoundary
     };
 }
+// 同时注册到全局作用域，供main.js直接使用
+window.initErrorHandler = initErrorHandler;
+

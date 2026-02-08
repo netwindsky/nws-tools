@@ -1,0 +1,364 @@
+/**
+ * NWS Tools Modern Design System
+ * Aesthetic: Luxury Refined Dark Mode
+ */
+
+:root {
+    /* Core Colors - Updated to Navy Blue Theme from reference image */
+    --bg: #0d1117;
+    --panel: #1a1f2c;
+    --panel-lighter: #252c3d;
+    --accent: #7e57c2;
+    --accent-glow: rgba(126, 87, 194, 0.3);
+    --text: #ffffff;
+    --text-dim: #9494a0;
+    --border: rgba(255, 255, 255, 0.08);
+    
+    /* Semantic Colors */
+    --success: #00c853;
+    --danger: #ff5252;
+    --warning: #ffd600;
+    --info: #00b0ff;
+    
+    /* Elevations */
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+    
+    /* Layout */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --spacing: 20px;
+    
+    /* Transitions */
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Styles - Scoped to NWS elements */
+.nws-root * {
+    box-sizing: border-box;
+}
+
+/* Typography - Always use prefixed classes instead of generic tags */
+
+/* Background Gradients */
+.nws-bg-glow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 10% 10%, rgba(126, 87, 194, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(126, 87, 194, 0.05) 0%, transparent 40%);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Container */
+.nws-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing);
+}
+
+/* Cards & Panels */
+.nws-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    transition: var(--transition);
+    backdrop-filter: blur(20px);
+}
+
+.nws-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Typography */
+.nws-title-large {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+}
+
+.nws-title-medium {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.nws-subtitle {
+    font-size: 16px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+}
+
+/* Buttons */
+.nws-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    text-decoration: none;
+}
+
+.nws-button-primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+.nws-button-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--accent-glow);
+    filter: brightness(1.1);
+}
+
+.nws-button-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.nws-button-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Grid System */
+.nws-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.nws-grid-cols-4 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.nws-grid-cols-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.nws-grid-cols-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+
+/* Feature Cards */
+.nws-feature-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 24px;
+    text-align: center;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.nws-feature-card:hover {
+    border-color: var(--accent);
+    background: rgba(126, 87, 194, 0.05);
+    transform: translateY(-4px);
+}
+
+.nws-feature-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.nws-feature-title {
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.nws-feature-description {
+    color: var(--text-dim);
+    font-size: 14px;
+}
+
+/* Stats */
+.nws-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+}
+
+.nws-stat-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+}
+
+.nws-stat-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.nws-stat-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Progress Bar */
+.nws-progress-container {
+    margin-bottom: 24px;
+}
+
+.nws-progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.nws-progress {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.nws-progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 10px;
+    transition: width 0.5s ease-in-out;
+    box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Status Indicator */
+.nws-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.nws-status-indicator.loading {
+    background: rgba(0, 176, 255, 0.1);
+    color: var(--info);
+}
+
+.nws-status-indicator.success {
+    background: rgba(0, 200, 83, 0.1);
+    color: var(--success);
+}
+
+/* Animations */
+@keyframes nws-fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.nws-fade-in {
+    animation: nws-fadeIn 0.5s ease-out;
+}
+
+/* Scoped Scrollbar for NWS containers */
+.nws-root::-webkit-scrollbar,
+.nws-sidebar::-webkit-scrollbar,
+.nws-batch-modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.nws-root::-webkit-scrollbar-track,
+.nws-sidebar::-webkit-scrollbar-track,
+.nws-batch-modal-content::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+
+.nws-root::-webkit-scrollbar-thumb,
+.nws-sidebar::-webkit-scrollbar-thumb,
+.nws-batch-modal-content::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.nws-root::-webkit-scrollbar-thumb:hover,
+.nws-sidebar::-webkit-scrollbar-thumb:hover,
+.nws-batch-modal-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Feature Specific Styles - Translation & Summary */
+.nws-translation-block {
+    background: var(--panel-lighter);
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    border-left: 4px solid var(--accent);
+    color: var(--text);
+}
+
+.nws-summary-content {
+    background: linear-gradient(135deg, var(--panel) 0%, var(--panel-lighter) 100%);
+    padding: 20px;
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--accent);
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text);
+}
+
+.nws-markdown-content h1, .nws-markdown-content h2, .nws-markdown-content h3 {
+    color: var(--text);
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+.nws-markdown-content p {
+    margin-bottom: 1em;
+}
+
+.nws-markdown-content ul {
+    padding-left: 20px;
+    margin-bottom: 1em;
+}
+
+.nws-markdown-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.nws-markdown-content pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 1em;
+}
+
+.nws-think-content {
+    font-style: italic !important;
+    text-decoration: underline !important;
+    font-size: 0.85em !important;
+    color: var(--danger) !important;
+    display: block;
+    margin: 8px 0;
+    padding: 8px 12px;
+    background: rgba(255, 82, 82, 0.1);
+    border-left: 2px solid var(--danger);
+    border-radius: 4px;
+    font-family: inherit;
+    line-height: 1.4;
+}

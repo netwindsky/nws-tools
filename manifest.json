@@ -12,7 +12,18 @@
     "sidePanel"
   ],
   "web_accessible_resources": [{
-    "resources": ["libs/jszip.min.js"],
+    "resources": [
+      "libs/jszip.min.js",
+      "libs/marked.min.js",
+      "css/modern-control-panel.css",
+      "css/enhanced-toolpanel.css",
+      "css/element-highlighter.css",
+      "css/image-downloader.css",
+      "css/content-scripts.css",
+      "icons/icon16.png",
+      "img/icon.png",
+      "img/download-two.svg"
+    ],
     "matches": ["<all_urls>"]
   }],
   "side_panel": {
@@ -31,32 +42,65 @@
     {
       "matches": ["<all_urls>"],
       "js": [
-        "js/modules-loader.js",
+        "js/utils/dom-helper.js",
         "js/utils/error-handler.js",
+        "js/modules-loader.js",
+        "js/utils/ConfigManager.js",
+        "js/utils/StyleManager.js",
         "js/modules/core/ModuleBase.js",
         "js/modules/core/ModuleManager.js",
         "js/modules/chrome/ChromeSettingsModule.js",
         "js/modules/ui/NotificationModule.js",
+        "js/modules/ui/SidebarModule.js",
+        "js/modules/ui/SidebarView.js",
+        "js/modules/features/TranslationModule.js",
         "js/modules/features/ImageDownloaderModule.js",
         "js/modules/features/ElementHighlighterModule.js",
         "js/main.js",
         "js/content-scripts/toolsbar.js"
+      ],
+      "css": [
+        "css/modern-control-panel.css",
+        "css/enhanced-toolpanel.css",
+        "css/content-scripts.css",
+        "css/element-highlighter.css",
+        "css/image-downloader.css"
       ],
       "run_at": "document_end"
     },
     {
       "matches": ["*://civitai.com/*"],
       "js": [
+        "js/utils/dom-helper.js",
+        "js/utils/ConfigManager.js",
         "js/modules-loader.js",
+        "js/modules/core/ModuleBase.js",
+        "js/modules/core/ModuleManager.js",
+        "js/modules/chrome/ChromeSettingsModule.js",
+        "js/modules/ui/NotificationModule.js",
         "js/content-scripts/civitai.js"
+      ],
+      "css": [
+        "css/content-scripts.css",
+        "css/modern-control-panel.css"
       ],
       "run_at": "document_end"
     },
     {
       "matches": ["*://*.aliyun.com/*"],
       "js": [
+        "js/utils/dom-helper.js",
+        "js/utils/ConfigManager.js",
         "js/modules-loader.js",
+        "js/modules/core/ModuleBase.js",
+        "js/modules/core/ModuleManager.js",
+        "js/modules/chrome/ChromeSettingsModule.js",
+        "js/modules/ui/NotificationModule.js",
         "js/content-scripts/aliyun.js"
+      ],
+      "css": [
+        "css/content-scripts.css",
+        "css/modern-control-panel.css"
       ],
       "run_at": "document_end"
     }

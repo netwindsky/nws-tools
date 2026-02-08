@@ -1,6 +1,15 @@
 // 导入配置管理器
-import ConfigManager from '../utils/config.js';
-import { safeQuerySelector, safeQuerySelectorAll } from '../utils/dom-helper.js';
+// 使用全局对象替代ES6模块导入
+const ConfigManager = window.ConfigManager || {
+    getConfig: async () => ({}),
+    setConfig: async () => false,
+    getAllConfig: async () => ({})
+};
+
+const { safeQuerySelector, safeQuerySelectorAll } = window.DOMHelper || {
+    safeQuerySelector: (selector) => document.querySelector(selector),
+    safeQuerySelectorAll: (selector) => document.querySelectorAll(selector)
+};
 
 // 保存设置
 async function saveSettings(key, value) {
@@ -174,13 +183,3 @@ async function loadSavedSettings() {
 
 }
 
-// 添加动画样式
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes fadeOut {
-        0% { opacity: 1; }
-        70% { opacity: 1; }
-        100% { opacity: 0; }
-    }
-`;
-document.head.appendChild(style);

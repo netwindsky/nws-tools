@@ -1,6 +1,326 @@
-<html>
-  <body>
-    <h1>Hello Extensions</h1>
-    
-  </body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NWS Tools</title>
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --panel: #16161a;
+            --accent: #7e57c2;
+            --accent-glow: rgba(126, 87, 194, 0.3);
+            --text: #ffffff;
+            --text-dim: #9494a0;
+            --border: rgba(255, 255, 255, 0.08);
+            --success: #00c853;
+            --danger: #ff5252;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            width: 360px;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        .app-container {
+            padding: 20px;
+            background: radial-gradient(circle at top right, var(--accent-glow), transparent 70%);
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .status-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: rgba(0, 200, 83, 0.1);
+            color: var(--success);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 200, 83, 0.2);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .feature-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            background: rgba(126, 87, 194, 0.05);
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .card-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .card-info p {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .actions-list {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .action-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .action-item:last-child {
+            border-bottom: none;
+        }
+
+        .action-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .action-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .action-info span {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .btn-exec {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-exec:hover {
+            transform: scale(1.05);
+        }
+
+        footer {
+            display: flex;
+            gap: 10px;
+        }
+
+        .footer-btn {
+            flex: 1;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .footer-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border-color: var(--text-dim);
+        }
+
+        /* Notifications */
+        .toast {
+            position: fixed;
+            bottom: -50px;
+            left: 20px;
+            right: 20px;
+            background: var(--accent);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 100;
+        }
+
+        .toast.show {
+            bottom: 20px;
+        }
+
+        /* Specific Icons Colors */
+        .icon-dl { background: rgba(126, 87, 194, 0.15); color: #7e57c2; }
+        .icon-ts { background: rgba(33, 150, 243, 0.15); color: #2196f3; }
+        .icon-sm { background: rgba(0, 200, 83, 0.15); color: #00c853; }
+        .icon-hl { background: rgba(255, 171, 0, 0.15); color: #ffab00; }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                    </svg>
+                </div>
+                <span class="logo-text">NWS Tools</span>
+            </div>
+            <div class="status-badge">Active</div>
+        </header>
+
+        <div class="feature-grid">
+            <div class="feature-card" id="card-download">
+                <div class="card-icon icon-dl">📥</div>
+                <div class="card-info">
+                    <h3>图片批量下载</h3>
+                    <p>一键提取高清图</p>
+                </div>
+            </div>
+            <div class="feature-card" id="card-highlight">
+                <div class="card-icon icon-hl">🎯</div>
+                <div class="card-info">
+                    <h3>元素高亮</h3>
+                    <p>深度解析页面结构</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions-list">
+            <div class="action-item" id="item-translate">
+                <div class="action-info">
+                    <div class="card-icon icon-ts" style="width:24px;height:24px;font-size:14px">🌐</div>
+                    <span>网页翻译</span>
+                </div>
+                <button class="btn-exec">执行</button>
+            </div>
+            <div class="action-item" id="item-summary">
+                <div class="action-info">
+                    <div class="card-icon icon-sm" style="width:24px;height:24px;font-size:14px">📋</div>
+                    <span>内容总结</span>
+                </div>
+                <button class="btn-exec">执行</button>
+            </div>
+        </div>
+
+        <footer>
+            <button class="footer-btn" id="btn-options">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                设置
+            </button>
+            <button class="footer-btn" id="btn-dashboard">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                控制面板
+            </button>
+        </footer>
+
+        <div id="notification" class="toast">操作已触发</div>
+    </div>
+
+    <script src="../js/options/toolspanel.js"></script>
+    <script>
+        // Simple UI interactions
+        const notify = (msg) => {
+            const toast = document.getElementById('notification');
+            toast.textContent = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        };
+
+        document.querySelectorAll('.btn-exec, .feature-card').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = el.id || el.parentElement.id;
+                notify(`已开始执行: ${action.split('-')[1]}`);
+            });
+        });
+
+        document.getElementById('btn-options').addEventListener('click', () => {
+            if (chrome.runtime.openOptionsPage) {
+                chrome.runtime.openOptionsPage();
+            } else {
+                window.open(chrome.runtime.getURL('html/options.html'));
+            }
+        });
+
+        document.getElementById('btn-dashboard').addEventListener('click', () => {
+            window.open(chrome.runtime.getURL('html/toolspanel.html'));
+        });
+    </script>
+</body>
 </html>
