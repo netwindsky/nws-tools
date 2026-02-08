@@ -1,0 +1,15 @@
+:root {
+  --nws-bg: #0a0a0c;
+  --nws-panel: #16161a;
+  --nws-panel-lighter: #1e1e24;
+  --nws-accent: #7e57c2;
+  --nws-accent-glow: rgba(126, 87, 194, 0.3);
+  --nws-text: #ffffff;
+  --nws-text-dim: #9494a0;
+  --nws-border: rgba(255, 255, 255, 0.08);
+  --nws-success: #00c853;
+  --nws-danger: #ff5252;
+  --nws-warning: #ffd600;
+  --nws-info: #00b0ff;
+  --nws-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

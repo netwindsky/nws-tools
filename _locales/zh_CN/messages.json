@@ -1,0 +1,155 @@
+{
+  "toolsbar_button_batch_download": {
+    "message": "批量下载"
+  },
+  "toolsbar_button_translate": {
+    "message": "翻译页面"
+  },
+  "toolsbar_button_summary": {
+    "message": "页面总结"
+  },
+  "toolsbar_button_highlight": {
+    "message": "元素高亮"
+  },
+  "toolsbar_button_settings": {
+    "message": "设置中心"
+  },
+  "toolsbar_modal_batch_title": {
+    "message": "批量下载图片"
+  },
+  "toolsbar_modal_batch_count": {
+    "message": "共 $1 张",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_modal_close": {
+    "message": "关闭"
+  },
+  "toolsbar_modal_toggle_all": {
+    "message": "全选 / 反选"
+  },
+  "toolsbar_modal_start_download": {
+    "message": "开始下载"
+  },
+  "toolsbar_image_alt_preview": {
+    "message": "预览"
+  },
+  "toolsbar_status_pending": {
+    "message": "等待下载"
+  },
+  "toolsbar_error_title": {
+    "message": "错误"
+  },
+  "toolsbar_loading_preparing": {
+    "message": "准备中..."
+  },
+  "toolsbar_highlight_missing": {
+    "message": "元素高亮模块未加载，请刷新页面重试"
+  },
+  "toolsbar_highlight_disable_label": {
+    "message": "关闭高亮"
+  },
+  "toolsbar_highlight_enabled_title": {
+    "message": "元素高亮已启用"
+  },
+  "toolsbar_highlight_enabled_detail": {
+    "message": "• 鼠标悬停查看元素信息<br>• 右键显示操作菜单<br>• Ctrl+C 复制选择器<br>• Ctrl+Shift+C 复制样式"
+  },
+  "toolsbar_highlight_enable_failed": {
+    "message": "启用元素高亮功能失败: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_highlight_enable_label": {
+    "message": "元素高亮"
+  },
+  "toolsbar_highlight_disabled_title": {
+    "message": "元素高亮已禁用"
+  },
+  "toolsbar_highlight_disable_failed": {
+    "message": "禁用元素高亮功能失败: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_no_images": {
+    "message": "未找到可下载的图片"
+  },
+  "toolsbar_batch_select_one": {
+    "message": "请至少选择一张图片"
+  },
+  "toolsbar_batch_preparing": {
+    "message": "正在准备..."
+  },
+  "toolsbar_status_downloading": {
+    "message": "下载中..."
+  },
+  "toolsbar_status_success": {
+    "message": "已完成"
+  },
+  "toolsbar_status_failed": {
+    "message": "失败"
+  },
+  "toolsbar_batch_downloading_progress": {
+    "message": "下载中 ($1/$2)",
+    "placeholders": {
+      "completed": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "toolsbar_batch_complete": {
+    "message": "下载完成"
+  },
+  "toolsbar_translate_mode_replace": {
+    "message": "替换模式"
+  },
+  "toolsbar_translate_mode_bilingual": {
+    "message": "对照模式"
+  },
+  "toolsbar_translate_enable_selection": {
+    "message": "启用划词翻译"
+  },
+  "toolsbar_translate_enable_lazy": {
+    "message": "启用懒翻译（视口优先）"
+  },
+  "toolsbar_translate_hint": {
+    "message": "翻译会优先处理当前视口内容，滚动页面继续翻译"
+  },
+  "toolsbar_translate_title": {
+    "message": "页面翻译"
+  },
+  "toolsbar_translate_failed": {
+    "message": "翻译执行失败: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_translate_not_ready": {
+    "message": "翻译模块未就绪，请稍后再试或刷新页面"
+  },
+  "toolsbar_summary_failed": {
+    "message": "总结生成失败: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_summary_not_ready": {
+    "message": "总结模块未就绪，请稍后再试或刷新页面"
+  }
+}

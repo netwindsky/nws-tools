@@ -1,28 +1,42 @@
-
 /**
  * toolsbar.js - 网页右侧悬浮工具栏
  * 提供批量下载图片、翻译网页、总结网页等功能
  * 重构版本：UI内容已分离到独立的CSS和HTML模板文件
  */
 
-// 使用全局DOM工具函数，避免重复声明
-const toolbarSafeQuerySelector = window.DOMHelper?.safeQuerySelector || ((selector) => {
-    try {
-        return document.querySelector(selector);
-    } catch (e) {
-        console.warn('querySelector 失败:', selector, e);
-        return null;
-    }
-});
+const domHelper = window.DOMHelper || window.NWSModules?.utils || {};
+const sanitizeSelectorFn = typeof domHelper.sanitizeSelector === 'function' ? domHelper.sanitizeSelector : (selector) => selector;
+const baseSafeQuerySelector = typeof domHelper.safeQuerySelector === 'function' ? domHelper.safeQuerySelector : null;
+const baseSafeQuerySelectorAll = typeof domHelper.safeQuerySelectorAll === 'function' ? domHelper.safeQuerySelectorAll : null;
 
-const toolbarSafeQuerySelectorAll = window.DOMHelper?.safeQuerySelectorAll || ((selector) => {
+const toolbarSafeQuerySelector = (selector, context = document) => {
+    if (!baseSafeQuerySelector) return null;
+    return baseSafeQuerySelector(sanitizeSelectorFn(selector), context);
+};
+
+const toolbarSafeQuerySelectorAll = (selector, context = document) => {
+    if (!baseSafeQuerySelectorAll) return [];
+    return baseSafeQuerySelectorAll(sanitizeSelectorFn(selector), context);
+};
+
+const i18nService = window.I18nService || window.NWSModules?.get?.('I18nService');
+const t = (key, placeholders, fallback = '') => {
     try {
-        return document.querySelectorAll(selector);
-    } catch (e) {
-        console.warn('querySelectorAll 失败:', selector, e);
-        return [];
+        if (i18nService && typeof i18nService.t === 'function') {
+            const value = i18nService.t(key, placeholders);
+            if (value) return value;
+        }
+    } catch (error) {
+        return fallback || key;
     }
-});
+    return fallback || key;
+};
+
+const icons = {
+    error: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+    success: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+    loading: `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>`
+};
 
 // UI管理器
 class ToolbarUIManager {
@@ -62,31 +76,31 @@ class ToolbarUIManager {
             { 
                 action: 'batch-download', 
                 icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`, 
-                text: '批量下载', 
+                text: t('toolsbar_button_batch_download', null, '批量下载'), 
                 class: 'nws-button-download' 
             },
             { 
                 action: 'translate', 
                 icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`, 
-                text: '翻译页面', 
+                text: t('toolsbar_button_translate', null, '翻译页面'), 
                 class: 'nws-button-translate' 
             },
             { 
                 action: 'summary', 
                 icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>`, 
-                text: '页面总结', 
+                text: t('toolsbar_button_summary', null, '页面总结'), 
                 class: 'nws-button-summary' 
             },
             { 
                 action: 'element-highlight', 
                 icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>`, 
-                text: '元素高亮', 
+                text: t('toolsbar_button_highlight', null, '元素高亮'), 
                 class: 'nws-button-highlight' 
             },
             { 
                 action: 'settings', 
                 icon: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`, 
-                text: '设置中心', 
+                text: t('toolsbar_button_settings', null, '设置中心'), 
                 class: 'nws-button-settings' 
             }
         ];
@@ -95,7 +109,7 @@ class ToolbarUIManager {
             const button = document.createElement('button');
             button.className = `nws-toolbar-button ${btnConfig.class}`;
             button.dataset.action = btnConfig.action;
-            button.dataset.tooltip = btnConfig.text; // 设置提示文字
+            button.dataset.tooltip = btnConfig.text;
             button.innerHTML = `
                 <div class="nws-button-icon">${btnConfig.icon}</div>
             `;
@@ -107,14 +121,10 @@ class ToolbarUIManager {
     }
 
     createBatchDownloadModal(images) {
-        // 创建批量下载模态框
         const modal = document.createElement('div');
         modal.id = 'nws-batch-download-modal';
         modal.className = 'nws-batch-modal';
         
-        // 使用 all: initial 隔离外部样式，并恢复内部盒模型
-        modal.style.cssText = 'all: initial; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10001; display: flex; align-items: center; justify-content: center;';
-
         modal.innerHTML = `
             <div class="nws-batch-modal-content">
                 <div class="nws-modal-header">
@@ -123,23 +133,23 @@ class ToolbarUIManager {
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                         </div>
                         <div class="nws-title-text">
-                            <span>批量下载图片</span>
-                            <span class="nws-title-badge">共 ${images.length} 张</span>
+                            <span>${t('toolsbar_modal_batch_title', null, '批量下载图片')}</span>
+                            <span class="nws-title-badge">${t('toolsbar_modal_batch_count', [images.length], `共 ${images.length} 张`)}</span>
                         </div>
                     </div>
-                    <button class="nws-modal-close" data-action="close" title="关闭">
+                    <button class="nws-modal-close" data-action="close" title="${t('toolsbar_modal_close', null, '关闭')}">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
                 <div class="nws-modal-controls">
                     <button class="nws-button nws-button-secondary" data-action="toggle-all">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                        <span>全选 / 反选</span>
+                        <span>${t('toolsbar_modal_toggle_all', null, '全选 / 反选')}</span>
                     </button>
-                    <div style="flex: 1;"></div>
+                    <div class="nws-spacer"></div>
                     <button class="nws-button nws-button-primary" data-action="start-download">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        <span>开始下载</span>
+                        <span>${t('toolsbar_modal_start_download', null, '开始下载')}</span>
                     </button>
                 </div>
                 <div class="nws-modal-body">
@@ -148,7 +158,7 @@ class ToolbarUIManager {
             </div>
         `;
 
-        const imageGrid = modal.querySelector('#nws-image-grid');
+        const imageGrid = toolbarSafeQuerySelector('#nws-image-grid', modal);
         images.forEach((img, index) => {
             const src = img.src || img.dataset.src;
             const imageItem = document.createElement('div');
@@ -158,7 +168,7 @@ class ToolbarUIManager {
             imageItem.innerHTML = `
                 <div class="nws-image-card">
                     <div class="nws-image-wrapper">
-                        <img src="${src}" class="nws-image-thumbnail" alt="预览" loading="lazy">
+                        <img src="${src}" class="nws-image-thumbnail" alt="${t('toolsbar_image_alt_preview', null, '预览')}" loading="lazy">
                         <div class="nws-image-overlay">
                             <div class="nws-image-checkbox-custom">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -168,16 +178,15 @@ class ToolbarUIManager {
                     <div class="nws-image-info">
                         <div class="nws-image-meta">
                             <span class="nws-image-size">${img.naturalWidth || '?'} × ${img.naturalHeight || '?'}</span>
-                            <span class="nws-image-status pending">等待下载</span>
+                            <span class="nws-image-status pending">${t('toolsbar_status_pending', null, '等待下载')}</span>
                         </div>
                     </div>
-                    <input type="checkbox" class="nws-image-checkbox" checked style="display: none;">
+                    <input type="checkbox" class="nws-image-checkbox" checked>
                 </div>
             `;
             
-            // 点击图片项切换选中状态
             imageItem.addEventListener('click', (e) => {
-                const checkbox = imageItem.querySelector('.nws-image-checkbox');
+                const checkbox = toolbarSafeQuerySelector('.nws-image-checkbox', imageItem);
                 checkbox.checked = !checkbox.checked;
                 imageItem.classList.toggle('selected', checkbox.checked);
             });
@@ -191,16 +200,14 @@ class ToolbarUIManager {
     createErrorNotification(message) {
         const notification = document.createElement('div');
         notification.className = 'nws-error-notification';
-        // 使用 all: initial 隔离并应用基本样式
-        notification.style.cssText = 'all: initial; position: fixed; top: 20px; right: 20px; background: #fff8f8; border-left: 4px solid #dc3545; border-radius: 8px; padding: 12px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 10002; display: flex; align-items: center; gap: 12px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 350px; animation: nws-slideInFromRight 0.3s ease-out;';
         
         notification.innerHTML = `
-            <span class="nws-error-icon" style="font-size: 20px;">⚠️</span>
-            <div class="nws-error-content" style="flex: 1;">
-                <div class="nws-error-title" style="font-weight: 700; color: #dc3545; font-size: 14px; margin-bottom: 2px;">错误</div>
-                <div class="nws-error-message" style="color: #666; font-size: 13px; line-height: 1.4;">${message}</div>
+            <span class="nws-error-icon">${icons.error}</span>
+            <div class="nws-error-content">
+                <div class="nws-error-title">${t('toolsbar_error_title', null, '错误')}</div>
+                <div class="nws-error-message">${message}</div>
             </div>
-            <button class="nws-close-btn" data-action="close" style="background: none; border: none; color: #999; cursor: pointer; font-size: 18px; padding: 4px;">×</button>
+            <button class="nws-close-btn" data-action="close">×</button>
         `;
         return notification;
     }
@@ -208,28 +215,29 @@ class ToolbarUIManager {
     createSuccessNotification(title, content) {
         const notification = document.createElement('div');
         notification.className = 'nws-success-notification';
-        notification.style.cssText = 'all: initial; position: fixed; top: 20px; right: 20px; background: #f8fff9; border-left: 4px solid #28a745; border-radius: 8px; padding: 12px 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); z-index: 10002; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 350px; animation: nws-slideInFromRight 0.3s ease-out;';
         
         notification.innerHTML = `
-            <div class="nws-notification-title" style="font-weight: 700; color: #28a745; font-size: 14px; margin-bottom: 4px;">🎯 ${title}</div>
-            <div class="nws-notification-content" style="color: #666; font-size: 13px; line-height: 1.4;">${content}</div>
+            <div class="nws-notification-title">
+                <span class="nws-notification-icon">${icons.success}</span>
+                <span>${title}</span>
+            </div>
+            <div class="nws-notification-content">${content}</div>
         `;
         return notification;
     }
 
-    createLoadingOverlay(message, icon = '⏳') {
+    createLoadingOverlay(message, icon = icons.loading) {
         const overlay = document.createElement('div');
         overlay.className = 'nws-loading-overlay';
-        overlay.style.cssText = 'all: initial; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 10003; display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;';
         
         overlay.innerHTML = `
-            <div class="nws-loading-content" style="background: #1a1f2c; padding: 30px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 16px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); min-width: 280px;">
-                <div class="nws-loading-icon" style="font-size: 40px; animation: nws-spin 2s linear infinite;">${icon}</div>
-                <div class="nws-loading-message" style="color: white; font-size: 16px; font-weight: 500;">${message}</div>
-                <div class="nws-progress-container" style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; margin-top: 8px;">
-                    <div class="nws-progress-fill" style="width: 0%; height: 100%; background: #7e57c2; transition: width 0.3s ease;"></div>
+            <div class="nws-loading-content">
+                <div class="nws-loading-icon">${icon}</div>
+                <div class="nws-loading-message">${message}</div>
+                <div class="nws-progress-container">
+                    <div class="nws-progress-fill"></div>
                 </div>
-                <div class="nws-progress-text" style="color: rgba(255, 255, 255, 0.5); font-size: 12px;">准备中...</div>
+                <div class="nws-progress-text">${t('toolsbar_loading_preparing', null, '准备中...')}</div>
             </div>
         `;
         return overlay;
@@ -238,24 +246,22 @@ class ToolbarUIManager {
     createModernModal(title, icon, content) {
         const modal = document.createElement('div');
         modal.className = 'nws-modern-modal';
-        modal.style.cssText = 'all: initial; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5, 8, 12, 0.72); backdrop-filter: blur(10px); z-index: 10004; display: flex; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;';
         
         modal.innerHTML = `
-            <div class="nws-modal-content" style="background: var(--panel); width: 92%; max-width: 920px; max-height: 85vh; border-radius: 18px; border: 1px solid var(--border); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden; animation: nws-slide-up 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);">
-                <div class="nws-modal-header" style="padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);">
-                    <div class="nws-header-content" style="display: flex; align-items: center; gap: 12px;">
-                        <span class="nws-header-icon" style="font-size: 22px;">${icon}</span>
-                        <h2 class="nws-header-title" style="margin: 0; font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: 0.2px;">${title}</h2>
+            <div class="nws-modal-content">
+                <div class="nws-modal-header">
+                    <div class="nws-header-content">
+                        <span class="nws-header-icon">${icon}</span>
+                        <h2 class="nws-header-title">${title}</h2>
                     </div>
-                    <button class="nws-close-btn" data-action="close" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 22px; padding: 6px; border-radius: 10px;">×</button>
+                    <button class="nws-close-btn" data-action="close">×</button>
                 </div>
-                <div class="nws-modal-body" style="padding: 24px 28px 28px; overflow-y: auto; color: var(--text); line-height: 1.7; font-size: 15px; background: var(--panel);">
+                <div class="nws-modal-body">
                     ${content}
                 </div>
             </div>
         `;
         
-        // 添加关闭事件
         modal.addEventListener('click', (e) => {
             if (e.target === modal || e.target.dataset.action === 'close') {
                 modal.remove();
@@ -266,25 +272,21 @@ class ToolbarUIManager {
     }
 }
 
-// 创建全局UI管理器实例
 window.uiManager = new ToolbarUIManager();
 const uiManager = window.uiManager;
 
-// 通知显示函数
 function showErrorNotification(message) {
     const notification = uiManager.createErrorNotification(message);
     if (notification) {
         document.body.appendChild(notification);
         
-        // 5秒后自动消失
         setTimeout(() => {
             if (notification.parentElement) {
                 notification.remove();
             }
         }, 5000);
         
-        // 添加关闭按钮事件
-        const closeBtn = notification.querySelector('.nws-close-btn');
+        const closeBtn = toolbarSafeQuerySelector('.nws-close-btn', notification);
         if (closeBtn) {
             closeBtn.addEventListener('click', () => notification.remove());
         }
@@ -296,7 +298,6 @@ function showSuccessNotification(title, content) {
     if (notification) {
         document.body.appendChild(notification);
         
-        // 5秒后自动消失
         setTimeout(() => {
             if (notification.parentElement) {
                 notification.remove();
@@ -305,7 +306,7 @@ function showSuccessNotification(title, content) {
     }
 }
 
-function createLoadingOverlay(message, icon = '⏳') {
+function createLoadingOverlay(message, icon = icons.loading) {
     return uiManager.createLoadingOverlay(message, icon);
 }
 
@@ -313,31 +314,26 @@ function createModernModal(title, icon, content) {
     return uiManager.createModernModal(title, icon, content);
 }
 
-// 初始化工具栏
 async function initToolbar() {
     console.log('[Toolsbar] 开始初始化工具栏');
     
-    // 检查是否已存在工具栏
     if (document.getElementById('nws-toolbar')) {
         return;
     }
     
     try {
-        // 初始化UI管理器
         await uiManager.init();
         
-        // 创建工具栏
         const toolbar = uiManager.createToolbar();
         if (!toolbar) {
             console.error('[Toolsbar] 无法创建工具栏');
             return;
         }
         
-        // 添加事件监听器
         toolbar.addEventListener('click', handleToolbarClick);
         
-        // 添加工具栏到页面
         document.body.appendChild(toolbar);
+        applyToolbarFallbackPositioning(toolbar);
         console.log('[Toolsbar] 工具栏初始化完成');
         
     } catch (error) {
@@ -345,7 +341,21 @@ async function initToolbar() {
     }
 }
 
-// 工具栏点击事件处理
+function applyToolbarFallbackPositioning(toolbar) {
+    if (!toolbar || typeof window.getComputedStyle !== 'function') return;
+    const computed = window.getComputedStyle(toolbar);
+    const position = computed.position;
+    const right = computed.right;
+    const top = computed.top;
+    if (position !== 'fixed' || right === 'auto' || top === 'auto') {
+        toolbar.style.setProperty('position', 'fixed', 'important');
+        toolbar.style.setProperty('right', '24px', 'important');
+        toolbar.style.setProperty('top', '50%', 'important');
+        toolbar.style.setProperty('transform', 'translateY(-50%)', 'important');
+        toolbar.style.setProperty('z-index', '99999', 'important');
+    }
+}
+
 function handleToolbarClick(event) {
     const button = event.target.closest('.nws-toolbar-button');
     if (!button) return;
@@ -372,103 +382,98 @@ function handleToolbarClick(event) {
     }
 }
 
-// 批量下载图片处理函数
 function handleBatchDownload() {
     console.log('开始批量下载图片');
     batchDownloadImages();
 }
 
-// 元素高亮处理函数
-function handleElementHighlight() {
+async function handleElementHighlight() {
     console.log('切换元素高亮功能');
     
-    // 检查ElementHighlighterModule是否可用
     if (!window.NWSModules || !window.NWSModules.ElementHighlighterModule) {
-        showErrorNotification('元素高亮模块未加载，请刷新页面重试');
+        showErrorNotification(t('toolsbar_highlight_missing', null, '元素高亮模块未加载，请刷新页面重试'));
         return;
     }
     
     const highlighter = window.NWSModules.ElementHighlighterModule;
-    const button = document.querySelector('.nws-button-highlight');
-    
-    // 使用ElementHighlighterModule的enabled状态来判断
-    const isCurrentlyEnabled = highlighter.enabled;
-    console.log("当前高亮状态 - enabled:", isCurrentlyEnabled);
-    console.log("当前高亮状态 - isActive:", highlighter.isActive);
-    
-    if (!isCurrentlyEnabled) {
-        // 启用高亮功能
-        console.log(highlighter)
-        highlighter.enable().then(() => {
+    const button = toolbarSafeQuerySelector('.nws-button-highlight');
+
+    try {
+        if (!highlighter.initialized && typeof highlighter.initialize === 'function') {
+            const initSuccess = await highlighter.initialize();
+            if (!initSuccess) {
+                showErrorNotification(t('toolsbar_highlight_enable_failed', null, '元素高亮模块初始化失败'));
+                return;
+            }
+        }
+
+        const isCurrentlyEnabled = highlighter.enabled;
+        console.log("当前高亮状态 - enabled:", isCurrentlyEnabled);
+        console.log("当前高亮状态 - isActive:", highlighter.isActive);
+
+        if (!isCurrentlyEnabled) {
+            await highlighter.enable();
             if (button) {
                 button.classList.add('active');
-                const textElement = button.querySelector('.nws-button-text');
+                const textElement = toolbarSafeQuerySelector('.nws-button-text', button);
                 if (textElement) {
-                    textElement.textContent = '关闭高亮';
+                    textElement.textContent = t('toolsbar_highlight_disable_label', null, '关闭高亮');
                 }
             }
             
-            // 显示使用提示
-            showSuccessNotification('元素高亮已启用', '• 鼠标悬停查看元素信息<br>• 右键显示操作菜单<br>• Ctrl+C 复制选择器<br>• Ctrl+Shift+C 复制样式');
+            showSuccessNotification(
+                t('toolsbar_highlight_enabled_title', null, '元素高亮已启用'),
+                t('toolsbar_highlight_enabled_detail', null, '• 鼠标悬停查看元素信息<br>• 右键显示操作菜单<br>• Ctrl+C 复制选择器<br>• Ctrl+Shift+C 复制样式')
+            );
             
             console.log('[ElementHighlight] 元素高亮功能已启用');
-        }).catch(error => {
-            console.error('[ElementHighlight] 启用失败:', error);
-            showErrorNotification('启用元素高亮功能失败: ' + error.message);
-        });
-    } else {
-        // 禁用高亮功能
-        highlighter.disable().then(() => {
+        } else {
+            await highlighter.disable();
             if (button) {
                 button.classList.remove('active');
-                const textElement = button.querySelector('.nws-button-text');
+                const textElement = toolbarSafeQuerySelector('.nws-button-text', button);
                 if (textElement) {
-                    textElement.textContent = '元素高亮';
+                    textElement.textContent = t('toolsbar_highlight_enable_label', null, '元素高亮');
                 }
             }
             
-            // 显示禁用提示
-            showSuccessNotification('元素高亮已禁用', '');
+            showSuccessNotification(t('toolsbar_highlight_disabled_title', null, '元素高亮已禁用'), '');
             
             console.log('[Toolsbar] 元素高亮功能已禁用');
-        }).catch(error => {
-            console.error('[ElementHighlight] 禁用失败:', error);
-            showErrorNotification('禁用元素高亮功能失败: ' + error.message);
-        });
+        }
+    } catch (error) {
+        const message = error?.message || '未知错误';
+        console.error('[ElementHighlight] 切换失败:', error);
+        showErrorNotification(t('toolsbar_highlight_enable_failed', [message], `元素高亮切换失败: ${message}`));
     }
 }
 
 async function batchDownloadImages() {
-    const images = document.querySelectorAll('img');
+    const images = toolbarSafeQuerySelectorAll('img');
     const validImages = Array.from(images).filter(img => {
         const src = img.src || img.dataset.src;
         return src && !src.startsWith('data:') && src.length > 10;
     });
 
     if (validImages.length === 0) {
-        showErrorNotification('未找到可下载的图片');
+        showErrorNotification(t('toolsbar_no_images', null, '未找到可下载的图片'));
         return;
     }
 
-    // 创建批量下载界面
     const downloadModal = uiManager.createBatchDownloadModal(validImages);
     if (downloadModal) {
-        // 添加事件监听器
         setupModalEventListeners(downloadModal);
         document.body.appendChild(downloadModal);
     }
 }
 
-// 设置模态框事件监听器
 function setupModalEventListeners(modal) {
-    // 点击背景关闭
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
         }
     });
     
-    // 按钮事件
     modal.addEventListener('click', (e) => {
         const button = e.target.closest('[data-action]');
         if (!button) return;
@@ -489,11 +494,10 @@ function setupModalEventListeners(modal) {
     });
 }
 
-// 全选/取消功能
 function toggleAllImages(button) {
     const modal = button.closest('.nws-batch-modal');
     if (!modal) return;
-    const checkboxes = modal.querySelectorAll('.nws-image-checkbox');
+    const checkboxes = toolbarSafeQuerySelectorAll('.nws-image-checkbox', modal);
     const allChecked = Array.from(checkboxes).every(cb => cb.checked);
     
     checkboxes.forEach(cb => {
@@ -503,44 +507,40 @@ function toggleAllImages(button) {
     });
 }
 
-// 开始批量下载按钮点击处理
 function startBatchDownload(button) {
     const modal = button.closest('.nws-batch-modal');
     if (!modal) return;
     
-    const checkedItems = modal.querySelectorAll('.nws-image-checkbox:checked');
+    const checkedItems = toolbarSafeQuerySelectorAll('.nws-image-checkbox:checked', modal);
     if (checkedItems.length === 0) {
-        showErrorNotification('请至少选择一张图片');
+        showErrorNotification(t('toolsbar_batch_select_one', null, '请至少选择一张图片'));
         return;
     }
     
-    // 调用实际的下载逻辑
-    if (typeof startBatchDownloadImpl === 'function') {
-        startBatchDownloadImpl(button);
+    if (typeof window.startBatchDownloadImpl === 'function') {
+        window.startBatchDownloadImpl(button);
     } else {
         console.error('[BatchDownload] 下载实现函数未找到');
     }
 }
 
-// 全局暴露
 window.toggleAllImages = toggleAllImages;
 window.startBatchDownload = startBatchDownload;
 
-// 批量下载实现函数
 window.startBatchDownloadImpl = async function(button) {
     const modal = button.closest('.nws-batch-modal');
-    const checkedItems = modal.querySelectorAll('.nws-image-checkbox:checked');
+    const checkedItems = toolbarSafeQuerySelectorAll('.nws-image-checkbox:checked', modal);
     
     if (checkedItems.length === 0) {
-        showErrorNotification('请至少选择一张图片');
+        showErrorNotification(t('toolsbar_batch_select_one', null, '请至少选择一张图片'));
         return;
     }
     
     button.disabled = true;
     const originalHTML = button.innerHTML;
     button.innerHTML = `
-        <svg class="nws-animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-        正在准备...
+        <svg class="nws-animate-spin nws-inline-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+        ${t('toolsbar_batch_preparing', null, '正在准备...')}
     `;
     
     let completed = 0;
@@ -549,68 +549,56 @@ window.startBatchDownloadImpl = async function(button) {
     for (const checkbox of checkedItems) {
         const imageItem = checkbox.closest('.nws-image-item');
         const src = imageItem.dataset.src;
-        const statusElement = imageItem.querySelector('.nws-image-status');
+        const statusElement = toolbarSafeQuerySelector('.nws-image-status', imageItem);
         
         try {
-            statusElement.textContent = '下载中...';
+            statusElement.textContent = t('toolsbar_status_downloading', null, '下载中...');
             statusElement.className = 'nws-image-status downloading';
             
             await downloadImage(src);
             
-            statusElement.textContent = '已完成';
+            statusElement.textContent = t('toolsbar_status_success', null, '已完成');
             statusElement.className = 'nws-image-status success';
             
         } catch (error) {
             console.error('[BatchDownload] 下载失败:', src, error);
-            statusElement.textContent = '失败';
+            statusElement.textContent = t('toolsbar_status_failed', null, '失败');
             statusElement.className = 'nws-image-status error';
         }
         
         completed++;
         button.innerHTML = `
-            <svg class="nws-animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-            下载中 (${completed}/${total})
+            <svg class="nws-animate-spin nws-inline-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+            ${t('toolsbar_batch_downloading_progress', [completed, total], `下载中 (${completed}/${total})`)}
         `;
         
-        // 延迟避免浏览器压力
         await new Promise(resolve => setTimeout(resolve, 200));
     }
     
     button.disabled = false;
     button.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
-        下载完成
+        <svg class="nws-inline-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        ${t('toolsbar_batch_complete', null, '下载完成')}
     `;
     button.classList.add('success');
     
-    // 3秒后恢复按钮状态
     setTimeout(() => {
         button.innerHTML = originalHTML;
         button.classList.remove('success');
     }, 3000);
 }
 
-/**
- * 清理图片 URL，移除 CDN 处理参数（如 @, ?, ! 后缀）
- * @param {string} url 原始 URL
- * @returns {string} 清理后的 URL
- */
 function cleanImageUrl(url) {
     if (!url) return url;
     
     try {
-        // 1. 处理 @ 符号后的图片处理参数 (常用于 Bilibili, 阿里云 OSS 等)
         let cleaned = url.split('@')[0];
         
-        // 2. 处理 ? 后的查询参数
         cleaned = cleaned.split('?')[0];
         
-        // 3. 处理 ! 后的样式参数 (常用于又拍云等)
-        // 只有当 ! 出现在常见的图片扩展名之后时才切除
         const lastDotIndex = cleaned.lastIndexOf('.');
         if (lastDotIndex !== -1) {
             const afterDot = cleaned.substring(lastDotIndex + 1).toLowerCase();
-            // 常见的图片扩展名列表
             const commonExts = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'];
             
             for (const ext of commonExts) {
@@ -628,18 +616,14 @@ function cleanImageUrl(url) {
     }
 }
 
-// 下载图片到本地
 async function downloadImage(imageUrl) {
     return new Promise((resolve, reject) => {
-        // 清理 URL 移除多余参数
         const cleanedUrl = cleanImageUrl(imageUrl);
         console.log('[BatchDownload] 开始下载图片:', { original: imageUrl, cleaned: cleanedUrl });
         
-        // 创建一个临时的a标签用于下载
         const link = document.createElement('a');
         link.style.display = 'none';
         
-        // 处理跨域图片下载
         fetch(cleanedUrl)
             .then(response => {
                 if (!response.ok) {
@@ -651,18 +635,15 @@ async function downloadImage(imageUrl) {
                 const url = window.URL.createObjectURL(blob);
                 link.href = url;
                 
-                // 从清理后的 URL 中提取文件名
                 let filename = 'image';
                 try {
                     const urlObj = new URL(cleanedUrl);
                     const pathname = urlObj.pathname;
                     filename = pathname.split('/').pop() || 'image';
                 } catch (e) {
-                    // 如果 URL 解析失败，从字符串中提取
                     filename = cleanedUrl.split('/').pop() || 'image';
                 }
                 
-                // 确保文件有扩展名
                 if (!filename.includes('.')) {
                     const contentType = blob.type;
                     if (contentType.includes('jpeg') || contentType.includes('jpg')) {
@@ -674,7 +655,7 @@ async function downloadImage(imageUrl) {
                     } else if (contentType.includes('gif')) {
                         filename += '.gif';
                     } else {
-                        filename += '.jpg'; // 默认扩展名
+                        filename += '.jpg';
                     }
                 }
                 
@@ -689,7 +670,6 @@ async function downloadImage(imageUrl) {
             })
             .catch(error => {
                 console.error('[BatchDownload] 图片下载失败 (清理后):', error);
-                // 如果清理后的 URL 下载失败，尝试使用原始 URL 下载（最后的回退方案）
                 try {
                     link.href = imageUrl;
                     link.download = 'image.jpg';
@@ -707,132 +687,6 @@ async function downloadImage(imageUrl) {
 
 function createModernModal(title, icon, content, className = '') {
     return uiManager.createModernModal(title, icon, content);
-}
-
-// 添加CSS动画
-if (!document.getElementById('modern-ui-styles')) {
-    const styles = document.createElement('style');
-    styles.id = 'modern-ui-styles';
-    styles.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .nws-translation-block {
-            background: var(--panel-lighter);
-            padding: 18px 20px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
-            border-left: 4px solid var(--accent);
-            color: var(--text);
-            box-shadow: var(--shadow-sm);
-            line-height: 1.75;
-        }
-        
-        .nws-summary-content {
-            background: var(--panel-lighter);
-            padding: 22px 24px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            border-left: 4px solid var(--accent);
-            font-size: 16px;
-            line-height: 1.85;
-            color: var(--text);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .nws-translation-options {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .nws-translation-options-row {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .nws-translation-option {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 12px 14px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 0.2px;
-        }
-
-        .nws-translation-option:hover {
-            background: var(--panel-lighter);
-            border-color: var(--accent);
-            transform: translateY(-1px);
-        }
-
-        .nws-translation-toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: rgba(255, 255, 255, 0.02);
-            color: var(--text);
-            font-size: 14px;
-        }
-
-        .nws-translation-toggle input {
-            accent-color: var(--accent);
-        }
-
-        .nws-translation-hint {
-            color: var(--text-dim);
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .nws-modern-modal .nws-close-btn:hover {
-            background: rgba(255, 255, 255, 0.06);
-            color: var(--text);
-        }
-        
-        /* 思考内容样式 - 仅针对思考标签 */
-        .nws-think-content {
-            font-style: italic !important;
-            text-decoration: underline !important;
-            font-size: 8px !important;
-            color: #dc3545 !important;
-            display: block;
-            margin: 8px 0;
-            padding: 4px 8px;
-            background: rgba(220, 53, 69, 0.1);
-            border-left: 2px solid #dc3545;
-            border-radius: 4px;
-            font-family: inherit;
-            line-height: 1.4;
-        }
-    `;
-    document.head.appendChild(styles);
 }
 
 function getTranslationModuleInstance() {
@@ -878,24 +732,24 @@ function getSummaryModuleInstance() {
 function openTranslationOptionsModal(translationModule) {
     const icon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`;
     const content = `
-        <div class="nws-translation-options">
-            <div class="nws-translation-options-row">
-                <button class="nws-translation-option" data-mode="replace">替换模式</button>
-                <button class="nws-translation-option" data-mode="bilingual">对照模式</button>
+            <div class="nws-translation-options">
+                <div class="nws-translation-options-row">
+                    <button class="nws-translation-option" data-mode="replace">${t('toolsbar_translate_mode_replace', null, '替换模式')}</button>
+                    <button class="nws-translation-option" data-mode="bilingual">${t('toolsbar_translate_mode_bilingual', null, '对照模式')}</button>
+                </div>
+                <label class="nws-translation-toggle">
+                    <input class="nws-translation-toggle-input" type="checkbox" />
+                    <span>${t('toolsbar_translate_enable_selection', null, '启用划词翻译')}</span>
+                </label>
+                <label class="nws-translation-toggle">
+                    <input class="nws-translation-lazy-toggle" type="checkbox" />
+                    <span>${t('toolsbar_translate_enable_lazy', null, '启用懒翻译（视口优先）')}</span>
+                </label>
+                <div class="nws-translation-hint">${t('toolsbar_translate_hint', null, '翻译会优先处理当前视口内容，滚动页面继续翻译')}</div>
             </div>
-            <label class="nws-translation-toggle">
-                <input class="nws-translation-toggle-input" type="checkbox" />
-                <span>启用划词翻译</span>
-            </label>
-            <label class="nws-translation-toggle">
-                <input class="nws-translation-lazy-toggle" type="checkbox" />
-                <span>启用懒翻译（视口优先）</span>
-            </label>
-            <div class="nws-translation-hint">翻译会优先处理当前视口内容，滚动页面继续翻译</div>
-        </div>
     `;
 
-    const modal = window.uiManager.createModernModal('页面翻译', icon, content);
+    const modal = window.uiManager.createModernModal(t('toolsbar_translate_title', null, '页面翻译'), icon, content);
     document.body.appendChild(modal);
 
     const safeQuerySelector = window.DOMHelper?.safeQuerySelector || toolbarSafeQuerySelector;
@@ -929,7 +783,6 @@ function openTranslationOptionsModal(translationModule) {
     }
 }
 
-// 翻译页面处理函数
 async function handleTranslate(options = {}) {
     console.log('开始翻译页面');
     const translationModule = getTranslationModuleInstance();
@@ -947,11 +800,11 @@ async function handleTranslate(options = {}) {
             await translationModule.translatePage(null, mode);
         } catch (error) {
             console.error('[Toolsbar] 翻译执行失败:', error);
-            showErrorNotification('翻译执行失败: ' + error.message);
+            showErrorNotification(t('toolsbar_translate_failed', [error.message], `翻译执行失败: ${error.message}`));
         }
     } else {
         console.warn('[Toolsbar] 翻译模块未就绪:', translationModule);
-        showErrorNotification('翻译模块未就绪，请稍后再试或刷新页面');
+        showErrorNotification(t('toolsbar_translate_not_ready', null, '翻译模块未就绪，请稍后再试或刷新页面'));
     }
 }
 
@@ -973,7 +826,6 @@ function handleOpenSettings() {
     }
 }
 
-// 总结页面处理函数
 async function handleSummary() {
     console.log('开始生成页面总结');
     const summaryModule = getSummaryModuleInstance();
@@ -982,21 +834,19 @@ async function handleSummary() {
             await summaryModule.summarizePage();
         } catch (error) {
             console.error('[Toolsbar] 总结生成失败:', error);
-            showErrorNotification('总结生成失败: ' + error.message);
+            showErrorNotification(t('toolsbar_summary_failed', [error.message], `总结生成失败: ${error.message}`));
         }
     } else {
         console.warn('[Toolsbar] 总结模块未就绪:', summaryModule);
-        showErrorNotification('总结模块未就绪，请稍后再试或刷新页面');
+        showErrorNotification(t('toolsbar_summary_not_ready', null, '总结模块未就绪，请稍后再试或刷新页面'));
     }
 }
 
-// 监听来自其他扩展组件的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('[Toolsbar] 收到消息:', request);
     
     switch (request.type || request.command || request.action) {
         case 'requestSummary':
-            // 工具面板请求页面摘要
             handleSummaryRequest();
             break;
         case 'translatePage':
@@ -1012,7 +862,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             handleElementHighlight();
             break;
         case 'toggleSidebar':
-            // 侧边栏切换消息，转发给SidebarController
             if (window.NWSSidebarController) {
                 window.NWSSidebarController.toggleSidebar();
                 sendResponse({ success: true });
@@ -1027,18 +876,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
-// 更新工具栏设置
 function updateToolbarSettings(settings) {
     console.log('[Toolsbar] 更新设置:', settings);
     
-    // 获取工具栏元素
     const toolbar = document.getElementById('nws-toolbar');
     if (!toolbar) {
         console.warn('[Toolsbar] 工具栏元素不存在');
         return;
     }
     
-    // 更新工具栏显示状态
     if (settings.toolbarVisible !== undefined) {
         if (settings.toolbarVisible) {
             toolbar.style.setProperty('display', 'flex', 'important');
@@ -1049,28 +895,23 @@ function updateToolbarSettings(settings) {
         }
     }
     
-    // 更新功能开关（可以通过CSS类或直接移除/添加按钮来实现）
     if (settings.featureToggles) {
-        // 批量下载按钮
-        const downloadBtn = toolbar.querySelector('[data-action="batch-download"]');
+        const downloadBtn = toolbarSafeQuerySelector('[data-action="batch-download"]', toolbar);
         if (downloadBtn) {
             downloadBtn.style.display = settings.featureToggles.download ? 'flex' : 'none';
         }
         
-        // 翻译按钮
-        const translateBtn = toolbar.querySelector('[data-action="translate"]');
+        const translateBtn = toolbarSafeQuerySelector('[data-action="translate"]', toolbar);
         if (translateBtn) {
             translateBtn.style.display = settings.featureToggles.translate ? 'flex' : 'none';
         }
         
-        // 总结按钮
-        const summaryBtn = toolbar.querySelector('[data-action="summary"]');
+        const summaryBtn = toolbarSafeQuerySelector('[data-action="summary"]', toolbar);
         if (summaryBtn) {
             summaryBtn.style.display = settings.featureToggles.summary ? 'flex' : 'none';
         }
         
-        // 高亮按钮
-        const highlightBtn = toolbar.querySelector('[data-action="element-highlight"]');
+        const highlightBtn = toolbarSafeQuerySelector('[data-action="element-highlight"]', toolbar);
         if (highlightBtn) {
             highlightBtn.style.display = settings.featureToggles.highlight ? 'flex' : 'none';
         }
@@ -1079,7 +920,6 @@ function updateToolbarSettings(settings) {
     }
 }
 
-// 处理摘要请求
 async function handleSummaryRequest() {
     try {
         const summaryModule = getSummaryModuleInstance();
@@ -1093,36 +933,32 @@ async function handleSummaryRequest() {
     }
 }
 
-// 在页面加载完成后初始化工具栏
 document.addEventListener('DOMContentLoaded', () => {
     console.log('[Toolsbar] DOM加载完成，准备初始化工具栏');
     initToolbar().then(() => {
-        // 工具栏初始化完成后，加载并应用设置
         loadAndApplySettings();
     });
 });
 
-// 添加备用初始化方法
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     console.log('[Toolsbar] 页面已加载，直接初始化工具栏');
     initToolbar().then(() => {
-        // 工具栏初始化完成后，加载并应用设置
         loadAndApplySettings();
     });
 }
 
-// 加载并应用设置
 async function loadAndApplySettings() {
     try {
-        // 等待一段时间确保Chrome API可用
         await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const result = await chrome.storage.sync.get([
+        const chromeSettings = window.NWSModules?.ChromeSettingsModule;
+        if (!chromeSettings || typeof chromeSettings.getStorage !== 'function') {
+            throw new Error('ChromeSettingsModule 未就绪');
+        }
+        const result = await chromeSettings.getStorage([
             'toolbarVisible', 
             'featureToggles'
         ]);
         
-        // 应用设置
         updateToolbarSettings({
             toolbarVisible: result.toolbarVisible === undefined ? true : result.toolbarVisible,
             featureToggles: result.featureToggles || {

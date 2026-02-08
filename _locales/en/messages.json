@@ -1,0 +1,155 @@
+{
+  "toolsbar_button_batch_download": {
+    "message": "Batch Download"
+  },
+  "toolsbar_button_translate": {
+    "message": "Translate Page"
+  },
+  "toolsbar_button_summary": {
+    "message": "Page Summary"
+  },
+  "toolsbar_button_highlight": {
+    "message": "Element Highlight"
+  },
+  "toolsbar_button_settings": {
+    "message": "Settings"
+  },
+  "toolsbar_modal_batch_title": {
+    "message": "Batch Download Images"
+  },
+  "toolsbar_modal_batch_count": {
+    "message": "Total $1",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_modal_close": {
+    "message": "Close"
+  },
+  "toolsbar_modal_toggle_all": {
+    "message": "Select All / Deselect All"
+  },
+  "toolsbar_modal_start_download": {
+    "message": "Start Download"
+  },
+  "toolsbar_image_alt_preview": {
+    "message": "Preview"
+  },
+  "toolsbar_status_pending": {
+    "message": "Pending"
+  },
+  "toolsbar_error_title": {
+    "message": "Error"
+  },
+  "toolsbar_loading_preparing": {
+    "message": "Preparing..."
+  },
+  "toolsbar_highlight_missing": {
+    "message": "Element highlight module not loaded. Refresh and try again."
+  },
+  "toolsbar_highlight_disable_label": {
+    "message": "Disable Highlight"
+  },
+  "toolsbar_highlight_enabled_title": {
+    "message": "Element highlight enabled"
+  },
+  "toolsbar_highlight_enabled_detail": {
+    "message": "• Hover to inspect elements<br>• Right-click for actions<br>• Ctrl+C to copy selector<br>• Ctrl+Shift+C to copy styles"
+  },
+  "toolsbar_highlight_enable_failed": {
+    "message": "Failed to enable element highlight: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_highlight_enable_label": {
+    "message": "Element Highlight"
+  },
+  "toolsbar_highlight_disabled_title": {
+    "message": "Element highlight disabled"
+  },
+  "toolsbar_highlight_disable_failed": {
+    "message": "Failed to disable element highlight: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_no_images": {
+    "message": "No downloadable images found"
+  },
+  "toolsbar_batch_select_one": {
+    "message": "Select at least one image"
+  },
+  "toolsbar_batch_preparing": {
+    "message": "Preparing..."
+  },
+  "toolsbar_status_downloading": {
+    "message": "Downloading..."
+  },
+  "toolsbar_status_success": {
+    "message": "Completed"
+  },
+  "toolsbar_status_failed": {
+    "message": "Failed"
+  },
+  "toolsbar_batch_downloading_progress": {
+    "message": "Downloading ($1/$2)",
+    "placeholders": {
+      "completed": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "toolsbar_batch_complete": {
+    "message": "Download Complete"
+  },
+  "toolsbar_translate_mode_replace": {
+    "message": "Replace Mode"
+  },
+  "toolsbar_translate_mode_bilingual": {
+    "message": "Bilingual Mode"
+  },
+  "toolsbar_translate_enable_selection": {
+    "message": "Enable selection translation"
+  },
+  "toolsbar_translate_enable_lazy": {
+    "message": "Enable lazy translation (viewport first)"
+  },
+  "toolsbar_translate_hint": {
+    "message": "Translation prioritizes the current viewport. Scroll to continue."
+  },
+  "toolsbar_translate_title": {
+    "message": "Page Translation"
+  },
+  "toolsbar_translate_failed": {
+    "message": "Translation failed: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_translate_not_ready": {
+    "message": "Translation module not ready. Try again later or refresh."
+  },
+  "toolsbar_summary_failed": {
+    "message": "Summary failed: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolsbar_summary_not_ready": {
+    "message": "Summary module not ready. Try again later or refresh."
+  }
+}

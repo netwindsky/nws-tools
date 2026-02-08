@@ -327,4 +327,3 @@ function getBase64Image(url) {
         img.src = url;
     });
 }
-

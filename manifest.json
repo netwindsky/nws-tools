@@ -3,6 +3,7 @@
   "name": "NWS Tools",
   "version": "1.5",
   "description": "NWS Tools for web development",
+  "default_locale": "zh_CN",
   "permissions": [
     "storage",
     "activeTab",
@@ -36,7 +37,7 @@
   },
   "options_page": "html/options.html",
   "background": {
-    "service_worker": "js/background/background.js"
+    "service_worker": "js/app/background/background.js"
   },
   "content_scripts": [
     {
@@ -45,20 +46,29 @@
         "js/utils/dom-helper.js",
         "js/utils/error-handler.js",
         "js/modules-loader.js",
+        "js/services/i18n/I18nService.js",
         "js/utils/ConfigManager.js",
         "js/utils/StyleManager.js",
         "js/modules/core/ModuleBase.js",
         "js/modules/core/ModuleManager.js",
-        "js/modules/chrome/ChromeSettingsModule.js",
+        "js/services/chrome/ChromeSettingsModule.js",
         "js/modules/ui/NotificationModule.js",
         "js/modules/ui/SidebarModule.js",
         "js/modules/ui/SidebarView.js",
-        "js/modules/features/TranslationModule.js",
-        "js/modules/features/SummaryModule.js",
-        "js/modules/features/ImageDownloaderModule.js",
-        "js/modules/features/ElementHighlighterModule.js",
+        "js/modules/features/translation/TranslationService.js",
+        "js/modules/features/translation/TranslationView.js",
+        "js/modules/features/translation/TranslationModule.js",
+        "js/modules/features/summary/SummaryService.js",
+        "js/modules/features/summary/SummaryView.js",
+        "js/modules/features/summary/SummaryModule.js",
+        "js/modules/features/image-downloader/ImageDownloaderService.js",
+        "js/modules/features/image-downloader/ImageDownloaderView.js",
+        "js/modules/features/image-downloader/ImageDownloaderModule.js",
+        "js/modules/features/element-highlighter/ElementHighlighterService.js",
+        "js/modules/features/element-highlighter/ElementHighlighterView.js",
+        "js/modules/features/element-highlighter/ElementHighlighterModule.js",
         "js/main.js",
-        "js/content-scripts/toolsbar.js"
+        "js/app/content/toolsbar/toolsbar.js"
       ],
       "css": [
         "css/modern-control-panel.css",
@@ -77,9 +87,9 @@
         "js/modules-loader.js",
         "js/modules/core/ModuleBase.js",
         "js/modules/core/ModuleManager.js",
-        "js/modules/chrome/ChromeSettingsModule.js",
+        "js/services/chrome/ChromeSettingsModule.js",
         "js/modules/ui/NotificationModule.js",
-        "js/content-scripts/civitai.js"
+        "js/app/content/site/civitai.js"
       ],
       "css": [
         "css/content-scripts.css",
@@ -95,9 +105,9 @@
         "js/modules-loader.js",
         "js/modules/core/ModuleBase.js",
         "js/modules/core/ModuleManager.js",
-        "js/modules/chrome/ChromeSettingsModule.js",
+        "js/services/chrome/ChromeSettingsModule.js",
         "js/modules/ui/NotificationModule.js",
-        "js/content-scripts/aliyun.js"
+        "js/app/content/site/aliyun.js"
       ],
       "css": [
         "css/content-scripts.css",

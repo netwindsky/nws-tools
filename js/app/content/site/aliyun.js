@@ -60,7 +60,7 @@ downloadbtn.onclick = function () {
     });
 
 }
-intervalId = setInterval(function () {
+let intervalId = setInterval(function () {
     var next = document.getElementById("baseMainSpace");
     console.log(next)
     if(next){
