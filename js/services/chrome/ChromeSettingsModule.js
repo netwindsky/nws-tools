@@ -20,7 +20,8 @@ class ChromeSettingsModule extends ModuleBase {
             defaultConfig: {
                 autoSync: true,
                 storageQuota: 102400, // 100KB
-                syncInterval: 5000 // 5秒
+                syncInterval: 5000, // 5秒
+                blacklist: [] // 黑名单列表，存储域名或URL片段
             },
             ...options
         });
@@ -77,6 +78,30 @@ class ChromeSettingsModule extends ModuleBase {
             }
             this.safeLog('error', 'ChromeSettingsModule初始化失败:', error);
             throw error;
+        }
+    }
+
+    /**
+     * 检查当前 URL 是否在黑名单中
+     * @param {string} url - 要检查的 URL，默认为当前页面 URL
+     * @returns {boolean} 是否在黑名单中
+     */
+    isBlacklisted(url = window.location.href) {
+        try {
+            const blacklist = this.config.blacklist || [];
+            if (!Array.isArray(blacklist) || blacklist.length === 0) {
+                return false;
+            }
+
+            const hostname = new URL(url).hostname;
+            return blacklist.some(item => {
+                if (!item) return false;
+                // 支持域名匹配或关键字匹配
+                return hostname.includes(item) || url.includes(item);
+            });
+        } catch (error) {
+            this.safeLog('error', '检查黑名单失败:', error);
+            return false;
         }
     }
 

@@ -69,6 +69,17 @@ class NWSTools {
                     // 注册所有模块
                     await this.registerModules();
 
+                    // 获取并初始化设置模块，用于检查黑名单
+                    const settingsModule = this.moduleManager.get('ChromeSettingsModule');
+                    if (settingsModule) {
+                        await settingsModule.initialize();
+                        if (settingsModule.isBlacklisted()) {
+                            console.log('[NWSTools] 当前网站在黑名单中，停止加载插件');
+                            this.initialized = true; // 标记为已初始化，防止重复尝试
+                            return;
+                        }
+                    }
+
                 // 初始化所有模块
                 await this.moduleManager.initializeAll();
 

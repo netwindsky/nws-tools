@@ -408,6 +408,39 @@
             line-height: 1.6;
         }
 
+        /* Blacklist Item Styles */
+        .blacklist-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: var(--transition);
+        }
+
+        .blacklist-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .blacklist-item span {
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .blacklist-item .remove-btn {
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 4px;
+        }
+
+        .blacklist-item .remove-btn:hover {
+            color: var(--danger);
+        }
+
         /* Responsive */
         @media (max-width: 900px) {
             .settings-layout {
@@ -458,6 +491,10 @@
                 <li class="nav-item" data-target="shortcut-settings">
                     <i class="fas fa-keyboard"></i>
                     <span>快捷键</span>
+                </li>
+                <li class="nav-item" data-target="blacklist-settings">
+                    <i class="fas fa-ban"></i>
+                    <span data-i18n="options_nav_blacklist">黑名单</span>
                 </li>
                 <li class="nav-item" data-target="feature-toggles">
                     <i class="fas fa-sliders"></i>
@@ -668,6 +705,36 @@
                     <button class="btn btn-primary" id="save-shortcuts">
                         <i class="fas fa-keyboard"></i>
                         保存快捷键
+                    </button>
+                </div>
+            </section>
+
+            <!-- Blacklist Settings -->
+            <section class="section-panel" id="blacklist-settings">
+                <div class="section-header">
+                    <h2 class="section-title" data-i18n="options_blacklist_title">黑名单管理</h2>
+                    <p class="section-desc" data-i18n="options_blacklist_desc">在黑名单中的网站，插件将不会运行。支持输入域名或 URL 关键字。</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-i18n="options_blacklist_add_label">添加新站点</label>
+                    <div class="input-wrapper" style="display: flex; gap: 10px;">
+                        <div style="flex: 1; position: relative;">
+                            <i class="fas fa-globe"></i>
+                            <input type="text" class="form-control" id="blacklist-input" data-i18n-placeholder="options_blacklist_input_placeholder" placeholder="例如: example.com">
+                        </div>
+                        <button class="btn btn-primary" id="add-blacklist" style="width: auto; padding: 0 24px;" data-i18n="options_blacklist_add_btn">添加</button>
+                    </div>
+                </div>
+                <div class="blacklist-container" style="margin-top: 24px;">
+                    <label class="form-label" data-i18n="options_blacklist_current_label">当前黑名单</label>
+                    <ul id="blacklist-list" style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- 黑名单项将通过 JS 动态添加 -->
+                    </ul>
+                </div>
+                <div style="margin-top: 40px;">
+                    <button class="btn btn-primary" id="save-blacklist">
+                        <i class="fas fa-save"></i>
+                        <span data-i18n="options_blacklist_save_btn">保存黑名单</span>
                     </button>
                 </div>
             </section>

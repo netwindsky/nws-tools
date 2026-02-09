@@ -151,5 +151,35 @@
   },
   "toolsbar_summary_not_ready": {
     "message": "总结模块未就绪，请稍后再试或刷新页面"
+  },
+  "options_nav_blacklist": {
+    "message": "黑名单"
+  },
+  "options_blacklist_title": {
+    "message": "黑名单管理"
+  },
+  "options_blacklist_desc": {
+    "message": "在黑名单中的网站，插件将不会运行。支持输入域名或 URL 关键字。"
+  },
+  "options_blacklist_add_label": {
+    "message": "添加新站点"
+  },
+  "options_blacklist_input_placeholder": {
+    "message": "例如: example.com"
+  },
+  "options_blacklist_add_btn": {
+    "message": "添加"
+  },
+  "options_blacklist_current_label": {
+    "message": "当前黑名单"
+  },
+  "options_blacklist_save_btn": {
+    "message": "保存黑名单"
+  },
+  "options_saving_loading": {
+    "message": "保存中..."
+  },
+  "options_saving_saved": {
+    "message": "已保存"
   }
 }

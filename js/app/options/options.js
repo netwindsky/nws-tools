@@ -76,11 +76,13 @@ const setButtonState = (button, state) => {
         button.dataset.originalHtml = button.innerHTML;
     }
     if (state === 'loading') {
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        const loadingText = t('options_saving_loading', null, '保存中...');
+        button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${loadingText}`;
         button.style.opacity = '0.7';
         button.style.pointerEvents = 'none';
     } else if (state === 'saved') {
-        button.innerHTML = '<i class="fas fa-check"></i> 已保存';
+        const savedText = t('options_saving_saved', null, '已保存');
+        button.innerHTML = `<i class="fas fa-check"></i> ${savedText}`;
         button.style.opacity = '0.7';
         button.style.pointerEvents = 'none';
     } else if (state === 'restore') {
@@ -88,6 +90,22 @@ const setButtonState = (button, state) => {
         button.style.opacity = '1';
         button.style.pointerEvents = 'auto';
     }
+};
+
+const applyI18n = () => {
+    const elements = document.querySelectorAll('[data-i18n]');
+    elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const text = t(key, null, el.textContent);
+        if (text) el.textContent = text;
+    });
+
+    const placeholders = document.querySelectorAll('[data-i18n-placeholder]');
+    placeholders.forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const text = t(key, null, el.placeholder);
+        if (text) el.placeholder = text;
+    });
 };
 
 const handleSave = async (button, saveFn) => {
@@ -102,6 +120,32 @@ const handleSave = async (button, saveFn) => {
     } finally {
         setTimeout(() => setButtonState(button, 'restore'), 2000);
     }
+};
+
+let currentBlacklist = [];
+
+const renderBlacklist = () => {
+    const list = getEl('blacklist-list');
+    if (!list) return;
+    list.innerHTML = '';
+    currentBlacklist.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'blacklist-item';
+        li.innerHTML = `
+            <span>${item}</span>
+            <i class="fas fa-trash-can remove-btn" data-index="${index}"></i>
+        `;
+        list.appendChild(li);
+    });
+
+    // 绑定删除事件
+    list.querySelectorAll('.remove-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.target.dataset.index);
+            currentBlacklist.splice(index, 1);
+            renderBlacklist();
+        });
+    });
 };
 
 const initNavigation = () => {
@@ -187,6 +231,35 @@ const bindSaveHandlers = () => {
             });
         }));
     }
+
+    const saveBlacklist = getEl('save-blacklist');
+    if (saveBlacklist) {
+        saveBlacklist.addEventListener('click', () => handleSave(saveBlacklist, async () => {
+            const config = await getConfig(['ChromeSettingsModule']);
+            const existing = config.ChromeSettingsModule || {};
+            await setConfig('ChromeSettingsModule', {
+                ...existing,
+                blacklist: currentBlacklist
+            });
+        }));
+    }
+
+    const addBlacklist = getEl('add-blacklist');
+    const blacklistInput = getEl('blacklist-input');
+    if (addBlacklist && blacklistInput) {
+        const addFn = () => {
+            const val = blacklistInput.value.trim();
+            if (val && !currentBlacklist.includes(val)) {
+                currentBlacklist.push(val);
+                blacklistInput.value = '';
+                renderBlacklist();
+            }
+        };
+        addBlacklist.addEventListener('click', addFn);
+        blacklistInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addFn();
+        });
+    }
 };
 
 const bindToggleHandlers = () => {
@@ -228,8 +301,14 @@ const loadSavedSettings = async () => {
         'TranslationModule',
         'contentSettings',
         'shortcutSettings',
-        'featureToggles'
+        'featureToggles',
+        'ChromeSettingsModule'
     ]);
+
+    if (config.ChromeSettingsModule && config.ChromeSettingsModule.blacklist) {
+        currentBlacklist = config.ChromeSettingsModule.blacklist;
+        renderBlacklist();
+    }
 
     if (config.userData) {
         setValue('username', config.userData.username);
@@ -280,4 +359,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     bindSaveHandlers();
     bindToggleHandlers();
     await loadSavedSettings();
+    applyI18n();
 });
