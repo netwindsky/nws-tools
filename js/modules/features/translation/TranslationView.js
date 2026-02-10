@@ -56,7 +56,7 @@
                 .nws-translation-block {
                     display: block;
                     margin: 8px 0 12px;
-                    padding: 2px 0;
+                    padding: 3px 16px;
                     color: #888;
                     font-size: 0.95em;
                     line-height: 1.6;
@@ -64,24 +64,23 @@
                 }
 
                 .nws-translation-style {
-                    display: block;
-                    position: static;
+                    display: block !important;
+                    position: relative !important;
                     z-index: 0;
-                    width: 100%;
-                    min-width: 100%;
+                    width: 100% !important;
+                    min-width: 100% !important;
                     box-sizing: border-box;
                     margin: 8px 0;
                     padding: 8px 12px;
                     white-space: pre-wrap;
                     background-color: transparent;
-                    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+                    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); 
                     border-radius: 4px;
                     line-height: 1.45;
-                    flex: 0 0 100%;
-                    max-width: 100%;
-                    align-self: stretch;
-                    clear: both;
-                    float: none;
+                    flex-basis: 100% !important;
+                    flex-grow: 1 !important;
+                    clear: both !important;
+                    float: none !important;
                 }
 
                 .nws-translation-paragraph {
@@ -281,16 +280,18 @@
 
             const paragraphs = this.splitTranslatedResult(translatedText);
             const block = document.createElement('div');
-            block.className = 'nws-translation-block';
-            block.setAttribute('data-nws-translation-role', 'block');
+            //block.className = 'nws-translation-block';
+            block.className = 'nws-translation-style';
+           //block.setAttribute('data-nws-translation-role', 'block');
             paragraphs.forEach((para) => {
                 const line = para.trim();
                 if (!line) return;
                 ////console.log('fuck:>>>执行我了', element);
                 const p = document.createElement(element.tagName);
-                p.className = 'nws-translation-paragraph';
+                //p.className = 'nws-translation-paragraph';
                 if (computedStyle) {
-                    p.style.color = computedStyle.color || '';
+                    p.style.color =computedStyle.color || '';
+                    //p.style.padding = '5px 0';
                     p.style.fontSize = computedStyle.fontSize || '';
                     p.style.fontFamily = computedStyle.fontFamily || '';
                     p.style.fontWeight = computedStyle.fontWeight || '';
@@ -367,6 +368,16 @@
                     nextSibling.parentNode.removeChild(nextSibling);
                 }
             }
+        }
+
+        removeAllTranslationBlocks() {
+            const blocks = document.querySelectorAll('.nws-translation-block, .nws-translation-style');
+            blocks.forEach(block => {
+                if (block.parentNode) {
+                    block.parentNode.removeChild(block);
+                }
+            });
+            this.blockNodeCache = new WeakMap();
         }
 
         splitTranslatedResult(text) {

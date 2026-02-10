@@ -808,7 +808,13 @@ async function handleTranslate(options = {}) {
     if (translationModule) {
         try {
             let translatedCount = null;
-            if (!options.mode && !options.directStart && translationModule.isActive && typeof translationModule.stopTranslation === 'function') {
+            // 检查是否应该停止翻译
+            // 使用新属性 isPageTranslationActive (如果存在)，否则回退到 isActive (但 isActive 可能因划词翻译而为 true)
+            const isRunning = translationModule.isPageTranslationActive !== undefined 
+                ? translationModule.isPageTranslationActive 
+                : translationModule.isActive;
+
+            if (!options.mode && !options.directStart && isRunning && typeof translationModule.stopTranslation === 'function') {
                 await translationModule.stopTranslation();
                 showSuccessNotification(t('toolsbar_translate_disabled', null, '翻译已关闭'), '');
                 return;
