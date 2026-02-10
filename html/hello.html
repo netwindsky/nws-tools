@@ -6,15 +6,15 @@
     <title>NWS Tools</title>
     <style>
         :root {
-            --bg: #0a0a0c;
-            --panel: #16161a;
-            --accent: #7e57c2;
-            --accent-glow: rgba(126, 87, 194, 0.3);
-            --text: #ffffff;
-            --text-dim: #9494a0;
-            --border: rgba(255, 255, 255, 0.08);
-            --success: #00c853;
-            --danger: #ff5252;
+            --nws-bg: #0d1117;
+            --nws-panel: #1a1f2c;
+            --nws-accent: #7e57c2;
+            --nws-accent-glow: rgba(126, 87, 194, 0.3);
+            --nws-text: #ffffff;
+            --nws-text-dim: #9494a0;
+            --nws-border: rgba(255, 255, 255, 0.08);
+            --nws-success: #00c853;
+            --nws-danger: #ff5252;
         }
 
         * {
@@ -26,14 +26,14 @@
 
         body {
             width: 360px;
-            background: var(--bg);
-            color: var(--text);
+            background: var(--nws-bg);
+            color: var(--nws-text);
             overflow: hidden;
         }
 
         .app-container {
             padding: 20px;
-            background: radial-gradient(circle at top right, var(--accent-glow), transparent 70%);
+            background: radial-gradient(circle at top right, var(--nws-accent-glow), transparent 70%);
         }
 
         header {
@@ -52,12 +52,12 @@
         .logo-icon {
             width: 32px;
             height: 32px;
-            background: var(--accent);
+            background: var(--nws-accent);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 15px var(--accent-glow);
+            box-shadow: 0 0 15px var(--nws-accent-glow);
         }
 
         .logo-text {
@@ -70,7 +70,7 @@
             font-size: 11px;
             padding: 4px 10px;
             background: rgba(0, 200, 83, 0.1);
-            color: var(--success);
+            color: var(--nws-success);
             border-radius: 20px;
             border: 1px solid rgba(0, 200, 83, 0.2);
         }
@@ -83,8 +83,8 @@
         }
 
         .feature-card {
-            background: var(--panel);
-            border: 1px solid var(--border);
+            background: var(--nws-panel);
+            border: 1px solid var(--nws-border);
             border-radius: 16px;
             padding: 16px;
             cursor: pointer;
@@ -95,7 +95,7 @@
         }
 
         .feature-card:hover {
-            border-color: var(--accent);
+            border-color: var(--nws-accent);
             transform: translateY(-2px);
             background: rgba(126, 87, 194, 0.05);
         }
@@ -118,12 +118,12 @@
 
         .card-info p {
             font-size: 11px;
-            color: var(--text-dim);
+            color: var(--nws-text-dim);
         }
 
         .actions-list {
-            background: var(--panel);
-            border: 1px solid var(--border);
+            background: var(--nws-panel);
+            border: 1px solid var(--nws-border);
             border-radius: 16px;
             overflow: hidden;
             margin-bottom: 20px;
@@ -134,7 +134,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 14px 16px;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--nws-border);
             transition: background 0.2s;
             cursor: pointer;
         }
@@ -159,7 +159,7 @@
         }
 
         .btn-exec {
-            background: var(--accent);
+            background: var(--nws-accent);
             color: white;
             border: none;
             padding: 6px 12px;
@@ -182,8 +182,8 @@
         .footer-btn {
             flex: 1;
             background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-dim);
+            border: 1px solid var(--nws-border);
+            color: var(--nws-text-dim);
             padding: 10px;
             border-radius: 10px;
             font-size: 12px;
@@ -198,8 +198,8 @@
 
         .footer-btn:hover {
             background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            border-color: var(--text-dim);
+            color: var(--nws-text);
+            border-color: var(--nws-text-dim);
         }
 
         /* Notifications */
@@ -208,7 +208,7 @@
             bottom: -50px;
             left: 20px;
             right: 20px;
-            background: var(--accent);
+            background: var(--nws-accent);
             padding: 12px;
             border-radius: 12px;
             text-align: center;

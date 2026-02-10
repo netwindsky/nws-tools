@@ -76,7 +76,7 @@ function initErrorHandler() {
         console.error('[Error Handler] 未处理的Promise rejection:', reason);
     });
     
-    console.log('[Error Handler] 全局错误处理器已初始化');
+    //console.log('[Error Handler] 全局错误处理器已初始化');
 }
 
 /**

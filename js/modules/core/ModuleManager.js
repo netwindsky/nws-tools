@@ -31,7 +31,7 @@ class ModuleManager {
         this.modules.set(name, moduleInstance);
         window.NWSModules[name] = moduleInstance;
         
-        console.log(`[ModuleManager] 模块 ${name} 注册成功`);
+        //console.log(`[ModuleManager] 模块 ${name} 注册成功`);
         return moduleInstance;
     }
 
@@ -70,7 +70,7 @@ class ModuleManager {
             return;
         }
 
-        console.log('[ModuleManager] 开始初始化所有模块');
+        //console.log('[ModuleManager] 开始初始化所有模块');
         
         // 计算加载顺序（基于依赖关系）
         this.calculateLoadOrder();
@@ -87,7 +87,7 @@ class ModuleManager {
         }
         
         this.initialized = true;
-        console.log('[ModuleManager] 所有模块初始化完成');
+        //console.log('[ModuleManager] 所有模块初始化完成');
     }
 
     /**
@@ -154,7 +154,7 @@ class ModuleManager {
      * 销毁所有模块
      */
     async destroyAll() {
-        console.log('[ModuleManager] 开始销毁所有模块');
+        //console.log('[ModuleManager] 开始销毁所有模块');
         
         // 按相反顺序销毁模块
         const reverseOrder = [...this.loadOrder].reverse();
@@ -171,7 +171,7 @@ class ModuleManager {
         }
         
         this.initialized = false;
-        console.log('[ModuleManager] 所有模块销毁完成');
+        //console.log('[ModuleManager] 所有模块销毁完成');
     }
 
     /**
@@ -190,7 +190,7 @@ class ModuleManager {
                 await module.initialize();
             }
             await module.enable();
-            console.log(`[ModuleManager] 模块 ${name} 启用成功`);
+            //console.log(`[ModuleManager] 模块 ${name} 启用成功`);
             return true;
         } catch (error) {
             console.error(`[ModuleManager] 模块 ${name} 启用失败:`, error);
@@ -211,7 +211,7 @@ class ModuleManager {
 
         try {
             await module.disable();
-            console.log(`[ModuleManager] 模块 ${name} 禁用成功`);
+            //console.log(`[ModuleManager] 模块 ${name} 禁用成功`);
             return true;
         } catch (error) {
             console.error(`[ModuleManager] 模块 ${name} 禁用失败:`, error);
@@ -235,7 +235,7 @@ class ModuleManager {
                 await module.destroy();
             }
             await module.initialize();
-            console.log(`[ModuleManager] 模块 ${name} 重新加载成功`);
+            //console.log(`[ModuleManager] 模块 ${name} 重新加载成功`);
             return true;
         } catch (error) {
             console.error(`[ModuleManager] 模块 ${name} 重新加载失败:`, error);
@@ -283,7 +283,7 @@ class ModuleManager {
         }
 
         this.loadOrder = order;
-        console.log('[ModuleManager] 模块加载顺序:', order);
+        //console.log('[ModuleManager] 模块加载顺序:', order);
     }
 
     /**

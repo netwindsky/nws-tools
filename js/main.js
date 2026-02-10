@@ -26,7 +26,9 @@
         ? window.initErrorHandler 
         : (ErrorHandler && typeof ErrorHandler.initErrorHandler === 'function') 
             ? ErrorHandler.initErrorHandler 
-            : function() { console.log('[NWSTools] 使用默认错误处理器'); };
+            : function() { 
+                console.log('[NWSTools] 使用默认错误处理器'); 
+            };
 
 class NWSTools {
     constructor() {
@@ -57,7 +59,7 @@ class NWSTools {
         const maxRetries = 3;
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
-                    console.log(`[NWSTools] 开始初始化（第${attempt}次尝试）...`);
+                    //console.log(`[NWSTools] 开始初始化（第${attempt}次尝试）...`);
 
                     // 初始化全局错误处理器
                     try {
@@ -74,7 +76,7 @@ class NWSTools {
                     if (settingsModule) {
                         await settingsModule.initialize();
                         if (settingsModule.isBlacklisted()) {
-                            console.log('[NWSTools] 当前网站在黑名单中，停止加载插件');
+                            //console.log('[NWSTools] 当前网站在黑名单中，停止加载插件');
                             this.initialized = true; // 标记为已初始化，防止重复尝试
                             return;
                         }
@@ -87,7 +89,7 @@ class NWSTools {
                 this.setupGlobalAccess();
 
                 this.initialized = true;
-                console.log('[NWSTools] 初始化完成');
+                //console.log('[NWSTools] 初始化完成');
 
                 // 触发初始化完成事件
                 this.dispatchEvent('initialized');
@@ -151,7 +153,7 @@ class NWSTools {
      * 注册所有模块
      */
     async registerModules() {
-        console.log('[NWSTools] 开始注册模块...');
+        //console.log('[NWSTools] 开始注册模块...');
         
         // 模块已经通过各个模块文件直接注册到 window.NWSModules
         // 现在将它们注册到 ModuleManager 进行统一管理
@@ -176,13 +178,13 @@ class NWSTools {
                     throw new Error(`模块 ${name} 不可用`);
                 }
             }
-            console.log(`[NWSTools] 模块 ${name} 可用，注册到管理器`);
+            //console.log(`[NWSTools] 模块 ${name} 可用，注册到管理器`);
             
             // 注册到 ModuleManager
             this.moduleManager.register(name, moduleClass);
         }
 
-        console.log('[NWSTools] 模块注册完成');
+        //console.log('[NWSTools] 模块注册完成');
     }
 
     /**
@@ -207,7 +209,7 @@ class NWSTools {
         // 设置全局应用实例
         window.NWSTools = this;
 
-        console.log('[NWSTools] 全局访问设置完成');
+        //console.log('[NWSTools] 全局访问设置完成');
     }
 
     /**
@@ -227,7 +229,7 @@ class NWSTools {
         const module = this.getModule(name);
         if (module) {
             await module.enable();
-            console.log(`[NWSTools] 模块 ${name} 已启用`);
+            //console.log(`[NWSTools] 模块 ${name} 已启用`);
         }
     }
 
@@ -239,7 +241,7 @@ class NWSTools {
         const module = this.getModule(name);
         if (module) {
             await module.disable();
-            console.log(`[NWSTools] 模块 ${name} 已禁用`);
+            //console.log(`[NWSTools] 模块 ${name} 已禁用`);
         }
     }
 
@@ -252,7 +254,7 @@ class NWSTools {
         if (module) {
             await module.disable();
             await module.enable();
-            console.log(`[NWSTools] 模块 ${name} 已重新加载`);
+            //console.log(`[NWSTools] 模块 ${name} 已重新加载`);
         }
     }
 
@@ -285,7 +287,7 @@ class NWSTools {
         }
 
         try {
-            console.log('[NWSTools] 开始销毁...');
+            //console.log('[NWSTools] 开始销毁...');
 
             // 销毁所有模块
             await this.moduleManager.destroyAll();
@@ -295,7 +297,7 @@ class NWSTools {
             delete window.NWSTools;
 
             this.initialized = false;
-            console.log('[NWSTools] 销毁完成');
+            //console.log('[NWSTools] 销毁完成');
 
             // 触发销毁完成事件
             this.dispatchEvent('destroyed');

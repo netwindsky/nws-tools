@@ -13,7 +13,7 @@ NWS Tools 是一个模块化的Chrome扩展开发框架，提供了统一的模�
 ```javascript
 // 等待应用初始化完成
 document.addEventListener('nws:initialized', () => {
-    console.log('NWS Tools 已准备就绪');
+    //console.log('NWS Tools 已准备就绪');
     
     // 访问模块
     const notification = window.NWSModules.NotificationModule;
@@ -73,7 +73,7 @@ await highlighter.enable();
 
 // 监听高亮事件
 highlighter.on('elementHighlighted', (data) => {
-    console.log('当前高亮元素:', data.element);
+    //console.log('当前高亮元素:', data.element);
 });
 
 // 复制选择器
@@ -125,7 +125,7 @@ class MyCustomModule extends ModuleBase {
 
     async onInitialize() {
         // 模块初始化逻辑
-        console.log(`${this.name} 初始化完成`);
+        //console.log(`${this.name} 初始化完成`);
         
         // 获取依赖模块
         this.notification = window.NWSModules.NotificationModule;
@@ -137,7 +137,7 @@ class MyCustomModule extends ModuleBase {
     async onDestroy() {
         // 清理资源
         this.removeEventListeners();
-        console.log(`${this.name} 已销毁`);
+        //console.log(`${this.name} 已销毁`);
     }
 
     async onEnable() {
@@ -152,7 +152,7 @@ class MyCustomModule extends ModuleBase {
 
     // 自定义方法
     doSomething() {
-        console.log('执行自定义功能');
+        //console.log('执行自定义功能');
         this.emit('customAction', { data: 'value' });
     }
 
@@ -197,7 +197,7 @@ const myModule = window.NWSModules.MyCustomModule;
 
 // 监听自定义事件
 myModule.on('customAction', (data) => {
-    console.log('自定义事件触发:', data);
+    //console.log('自定义事件触发:', data);
 });
 
 // 调用自定义方法
@@ -220,7 +220,7 @@ const module = window.NWSModules.SomeModule;
 
 // 获取当前配置
 const config = module.getConfig();
-console.log(config);
+//console.log(config);
 
 // 更新配置
 module.updateConfig({
@@ -230,7 +230,7 @@ module.updateConfig({
 
 // 监听配置变化
 module.on('configUpdated', (newConfig) => {
-    console.log('配置已更新:', newConfig);
+    //console.log('配置已更新:', newConfig);
 });
 ```
 
@@ -263,16 +263,16 @@ const module = window.NWSModules.SomeModule;
 
 // 监听事件
 module.on('eventName', (data) => {
-    console.log('事件数据:', data);
+    //console.log('事件数据:', data);
 });
 
 // 一次性监听
 module.once('eventName', (data) => {
-    console.log('只触发一次');
+    //console.log('只触发一次');
 });
 
 // 移除监听
-const handler = (data) => console.log(data);
+const handler = (data) => //console.log(data);
 module.on('eventName', handler);
 module.off('eventName', handler);
 ```
@@ -282,11 +282,11 @@ module.off('eventName', handler);
 ```javascript
 // 监听应用事件
 document.addEventListener('nws:initialized', () => {
-    console.log('应用初始化完成');
+    //console.log('应用初始化完成');
 });
 
 document.addEventListener('nws:moduleEnabled', (event) => {
-    console.log('模块已启用:', event.detail.moduleName);
+    //console.log('模块已启用:', event.detail.moduleName);
 });
 
 // 触发自定义应用事件
@@ -336,12 +336,12 @@ window.addEventListener('unhandledrejection', (event) => {
 
 ```javascript
 // 在控制台中访问模块
-console.log(window.NWSModules);
-console.log(window.NWSTools);
+//console.log(window.NWSModules);
+//console.log(window.NWSTools);
 
 // 查看模块状态
 const app = window.NWSTools;
-console.log(app.getModulesStatus());
+//console.log(app.getModulesStatus());
 
 // 手动控制模块
 await app.enableModule('SomeModule');
@@ -355,7 +355,7 @@ await app.reloadModule('SomeModule');
 // 在模块中添加日志
 class MyModule extends ModuleBase {
     log(message, level = 'info') {
-        console.log(`[${this.name}] ${message}`);
+        //console.log(`[${this.name}] ${message}`);
     }
 
     async onInitialize() {
@@ -377,7 +377,7 @@ await module.someOperation();
 console.timeEnd('模块操作');
 
 // 监控内存使用
-console.log('内存使用:', performance.memory);
+//console.log('内存使用:', performance.memory);
 ```
 
 ## 常见问题
@@ -407,7 +407,7 @@ moduleA.emit('dataReady', { data: 'value' });
 
 // 模块B监听事件
 moduleB.on('dataReady', (eventData) => {
-    console.log('收到数据:', eventData.data);
+    //console.log('收到数据:', eventData.data);
 });
 ```
 

@@ -138,6 +138,21 @@
       }
     }
   },
+  "toolsbar_translate_failed_default": {
+    "message": "未知错误"
+  },
+  "toolsbar_translate_error_translation_init_failed": {
+    "message": "翻译模块初始化失败"
+  },
+  "toolsbar_translate_error_translation_service_not_ready": {
+    "message": "翻译服务未就绪"
+  },
+  "toolsbar_translate_empty": {
+    "message": "未发现可翻译内容"
+  },
+  "toolsbar_translate_disabled": {
+    "message": "翻译已关闭"
+  },
   "toolsbar_translate_not_ready": {
     "message": "翻译模块未就绪，请稍后再试或刷新页面"
   },

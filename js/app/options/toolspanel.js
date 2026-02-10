@@ -209,7 +209,7 @@ function refreshAnalysis() {
     if (panel.progressText) panel.progressText.textContent = '0%';
     if (panel.summaryElement) {
         panel.summaryElement.innerHTML = `
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--text-dim);">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--nws-text-dim);">
                 <div class="spinner" style="width: 32px; height: 32px; margin-bottom: 16px;"></div>
                 <p>正在重新启动 AI 引擎...</p>
             </div>`;

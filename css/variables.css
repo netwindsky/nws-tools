@@ -1,15 +1,32 @@
 :root {
-  --nws-bg: #0a0a0c;
-  --nws-panel: #16161a;
-  --nws-panel-lighter: #1e1e24;
-  --nws-accent: #7e57c2;
-  --nws-accent-glow: rgba(126, 87, 194, 0.3);
-  --nws-text: #ffffff;
-  --nws-text-dim: #9494a0;
-  --nws-border: rgba(255, 255, 255, 0.08);
-  --nws-success: #00c853;
-  --nws-danger: #ff5252;
-  --nws-warning: #ffd600;
-  --nws-info: #00b0ff;
-  --nws-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Core Colors - Updated to Navy Blue Theme from reference image */
+    --nws-bg: #0d1117;
+    --nws-panel: #1a1f2c;
+    --nws-panel-lighter: #252c3d;
+    --nws-accent: #7e57c2;
+    --nws-accent-glow: rgba(126, 87, 194, 0.3);
+    --nws-text: #ffffff;
+    --nws-text-dim: #9494a0;
+    --nws-border: rgba(255, 255, 255, 0.08);
+    
+    /* Semantic Colors */
+    --nws-success: #00c853;
+    --nws-danger: #ff5252;
+    --nws-warning: #ffd600;
+    --nws-info: #00b0ff;
+    
+    /* Elevations */
+    --nws-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+    --nws-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --nws-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+    
+    /* Layout */
+    --nws-radius-sm: 8px;
+    --nws-radius-md: 12px;
+    --nws-radius-lg: 16px;
+    --nws-radius-xl: 24px;
+    --nws-spacing: 20px;
+    
+    /* Transitions */
+    --nws-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

@@ -66,12 +66,12 @@ class MyModule extends ModuleBase {
     
     async onInitialize() {
         // 模块初始化逻辑
-        console.log(`${this.name} 初始化完成`);
+        //console.log(`${this.name} 初始化完成`);
     }
     
     async onDestroy() {
         // 模块销毁逻辑
-        console.log(`${this.name} 已销毁`);
+        //console.log(`${this.name} 已销毁`);
     }
 }
 ```
@@ -170,7 +170,7 @@ await chromeSettings.setStorage({
 
 // 获取数据
 const data = await chromeSettings.getStorage(['userPreference']);
-console.log(data.userPreference); // 'dark-mode'
+//console.log(data.userPreference); // 'dark-mode'
 
 // 下载文件
 await chromeSettings.downloadFile({
@@ -348,8 +348,8 @@ await highlighter.enable();
 
 // 监听元素高亮事件
 highlighter.on('elementHighlighted', (data) => {
-    console.log('高亮元素:', data.element);
-    console.log('CSS路径:', data.cssPath);
+    //console.log('高亮元素:', data.element);
+    //console.log('CSS路径:', data.cssPath);
 });
 
 // 手动高亮元素
@@ -394,7 +394,7 @@ const app = window.NWSTools;
 
 // 获取模块状态
 const status = app.getModulesStatus();
-console.log(status);
+//console.log(status);
 
 // 启用/禁用模块
 await app.enableModule('ImageDownloaderModule');
@@ -405,7 +405,7 @@ await app.reloadModule('NotificationModule');
 
 // 监听应用事件
 app.addEventListener('initialized', () => {
-    console.log('应用初始化完成');
+    //console.log('应用初始化完成');
 });
 ```
 
@@ -418,12 +418,12 @@ app.addEventListener('initialized', () => {
 ```javascript
 // 监听模块事件
 module.on('eventName', (data) => {
-    console.log('事件触发:', data);
+    //console.log('事件触发:', data);
 });
 
 // 监听应用级事件
 document.addEventListener('nws:initialized', (event) => {
-    console.log('应用初始化完成');
+    //console.log('应用初始化完成');
 });
 ```
 

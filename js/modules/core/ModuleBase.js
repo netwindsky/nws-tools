@@ -46,7 +46,7 @@ class ModuleBase {
             this.initialized = true;
             this.emit('initialized');
             
-            console.log(`[${this.name}] 模块初始化成功`);
+            //console.log(`[${this.name}] 模块初始化成功`);
             return true;
         } catch (error) {
             console.error(`[${this.name}] 模块初始化失败:`, error);
@@ -69,7 +69,7 @@ class ModuleBase {
             this.destroyed = true;
             this.initialized = false;
             
-            console.log(`[${this.name}] 模块销毁成功`);
+            //console.log(`[${this.name}] 模块销毁成功`);
         } catch (error) {
             console.error(`[${this.name}] 模块销毁失败:`, error);
         }

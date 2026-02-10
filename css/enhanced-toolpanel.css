@@ -13,9 +13,9 @@
     right: -400px;
     width: 400px;
     height: 100vh;
-    background: var(--surface-color);
+    background: var(--nws-panel);
     box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
-    transition: right var(--transition-normal);
+    transition: right var(--nws-transition);
     z-index: 10000;
     display: flex;
     flex-direction: column;
@@ -152,7 +152,7 @@
     right: 100%; /* 显示在左侧 */
     top: 50%;
     transform: translateY(-50%) translateX(-8px);
-    background: var(--panel-lighter);
+    background: var(--nws-panel-lighter);
     color: white;
     padding: 4px 10px;
     border-radius: 6px;
@@ -214,10 +214,10 @@
 }
 
 .nws-batch-modal-content {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    background: var(--nws-panel);
+    border: 1px solid var(--nws-border);
+    border-radius: var(--nws-radius-xl);
+    box-shadow: var(--nws-shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.05);
     width: 90%;
     max-width: 1000px;
     height: 85vh;
@@ -232,7 +232,7 @@
 .nws-modal-header {
     padding: 24px 30px;
     background: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--nws-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -247,9 +247,9 @@
 .nws-title-icon {
     width: 44px;
     height: 44px;
-    background: var(--accent-glow);
-    color: var(--accent);
-    border-radius: var(--radius-md);
+    background: var(--nws-accent-glow);
+    color: var(--nws-accent);
+    border-radius: var(--nws-radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -264,13 +264,13 @@
 .nws-title-text span:first-child {
     font-size: 18px;
     font-weight: 700;
-    color: var(--text);
+    color: var(--nws-text);
     letter-spacing: 0.5px;
 }
 
 .nws-title-badge {
     font-size: 12px;
-    color: var(--text-dim);
+    color: var(--nws-text-dim);
     background: rgba(255, 255, 255, 0.05);
     padding: 2px 8px;
     border-radius: 10px;
@@ -283,17 +283,17 @@
     border-radius: 50%;
     border: none;
     background: transparent;
-    color: var(--text-dim);
+    color: var(--nws-text-dim);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: var(--transition);
+    transition: var(--nws-transition);
 }
 
 .nws-modal-close:hover {
     background: rgba(255, 82, 82, 0.1);
-    color: var(--danger);
+    color: var(--nws-danger);
     transform: rotate(90deg);
 }
 
@@ -301,7 +301,7 @@
 .nws-modal-controls {
     padding: 16px 30px;
     background: rgba(255, 255, 255, 0.01);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--nws-border);
     display: flex;
     align-items: center;
     gap: 16px;
@@ -311,33 +311,33 @@
 .nws-button {
     height: 40px;
     padding: 0 20px;
-    border-radius: var(--radius-md);
+    border-radius: var(--nws-radius-md);
     font-size: 14px;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
-    transition: var(--transition);
+    transition: var(--nws-transition);
     border: 1px solid transparent;
 }
 
 .nws-button-primary {
-    background: var(--accent);
+    background: var(--nws-accent);
     color: white;
-    box-shadow: 0 4px 12px var(--accent-glow);
+    box-shadow: 0 4px 12px var(--nws-accent-glow);
 }
 
 .nws-button-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px var(--accent-glow);
+    box-shadow: 0 6px 20px var(--nws-accent-glow);
     background: #8e67d2;
 }
 
 .nws-button-secondary {
     background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
-    border: 1px solid var(--border);
+    color: var(--nws-text);
+    border: 1px solid var(--nws-border);
 }
 
 .nws-button-secondary:hover {
@@ -351,7 +351,7 @@
     overflow-y: auto;
     padding: 30px;
     scrollbar-width: thin;
-    scrollbar-color: var(--accent) transparent;
+    scrollbar-color: var(--nws-accent) transparent;
 }
 
 .nws-modal-body::-webkit-scrollbar {
@@ -359,7 +359,7 @@
 }
 
 .nws-modal-body::-webkit-scrollbar-thumb {
-    background: var(--accent);
+    background: var(--nws-accent);
     border-radius: 3px;
 }
 
@@ -546,13 +546,13 @@
 }
 
 .nws-modal-content {
-    background: var(--panel);
+    background: var(--nws-panel);
     width: 92%;
     max-width: 920px;
     max-height: 85vh;
     border-radius: 18px;
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--nws-border);
+    box-shadow: var(--nws-shadow-lg);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -561,7 +561,7 @@
 
 .nws-modern-modal .nws-modal-header {
     padding: 20px 28px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--nws-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -590,23 +590,23 @@
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: var(--text);
+    color: var(--nws-text);
     letter-spacing: 0.2px;
 }
 
 .nws-modern-modal .nws-modal-body {
     padding: 24px 28px 28px;
     overflow-y: auto;
-    color: var(--text);
+    color: var(--nws-text);
     line-height: 1.7;
     font-size: 15px;
-    background: var(--panel);
+    background: var(--nws-panel);
 }
 
 .nws-close-btn {
     background: none;
     border: none;
-    color: var(--text-dim);
+    color: var(--nws-text-dim);
     cursor: pointer;
     font-size: 22px;
     padding: 6px;
@@ -615,7 +615,7 @@
 
 .nws-modern-modal .nws-close-btn:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: var(--text);
+    color: var(--nws-text);
 }
 
 .nws-error-notification .nws-close-btn {
@@ -625,27 +625,27 @@
 }
 
 .nws-translation-block {
-    background: var(--panel-lighter);
+    background: var(--nws-panel-lighter);
     padding: 18px 20px;
     border-radius: 12px;
     margin-bottom: 16px;
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--accent);
-    color: var(--text);
-    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--nws-border);
+    border-left: 4px solid var(--nws-accent);
+    color: var(--nws-text);
+    box-shadow: var(--nws-shadow-sm);
     line-height: 1.75;
 }
 
 .nws-summary-content {
-    background: var(--panel-lighter);
+    background: var(--nws-panel-lighter);
     padding: 22px 24px;
     border-radius: 14px;
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--accent);
+    border: 1px solid var(--nws-border);
+    border-left: 4px solid var(--nws-accent);
     font-size: 16px;
     line-height: 1.85;
-    color: var(--text);
-    box-shadow: var(--shadow-sm);
+    color: var(--nws-text);
+    box-shadow: var(--nws-shadow-sm);
 }
 
 .nws-translation-options {
@@ -661,9 +661,9 @@
 }
 
 .nws-translation-option {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
+    background: var(--nws-panel);
+    border: 1px solid var(--nws-border);
+    color: var(--nws-text);
     padding: 12px 14px;
     border-radius: 12px;
     cursor: pointer;
@@ -674,8 +674,8 @@
 }
 
 .nws-translation-option:hover {
-    background: var(--panel-lighter);
-    border-color: var(--accent);
+    background: var(--nws-panel-lighter);
+    border-color: var(--nws-accent);
     transform: translateY(-1px);
 }
 
@@ -685,18 +685,18 @@
     gap: 10px;
     padding: 10px 12px;
     border-radius: 10px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--nws-border);
     background: rgba(255, 255, 255, 0.02);
-    color: var(--text);
+    color: var(--nws-text);
     font-size: 14px;
 }
 
 .nws-translation-toggle input {
-    accent-color: var(--accent);
+    accent-color: var(--nws-accent);
 }
 
 .nws-translation-hint {
-    color: var(--text-dim);
+    color: var(--nws-text-dim);
     font-size: 13px;
     line-height: 1.5;
 }
@@ -727,18 +727,18 @@
 .nws-image-item {
     cursor: pointer;
     position: relative;
-    transition: var(--transition);
+    transition: var(--nws-transition);
 }
 
 .nws-image-card {
-    background: var(--panel-lighter);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    background: var(--nws-panel-lighter);
+    border: 1px solid var(--nws-border);
+    border-radius: var(--nws-radius-lg);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 100%;
-    transition: var(--transition);
+    transition: var(--nws-transition);
 }
 
 .nws-image-wrapper {
@@ -768,7 +768,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: var(--transition);
+    transition: var(--nws-transition);
 }
 
 .nws-image-checkbox-custom {
@@ -783,13 +783,13 @@
     justify-content: center;
     opacity: 0.5;
     transform: scale(0.8);
-    transition: var(--transition);
+    transition: var(--nws-transition);
 }
 
 /* 选中状态 */
 .nws-image-item.selected .nws-image-card {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent-glow);
+    border-color: var(--nws-accent);
+    box-shadow: 0 0 0 2px var(--nws-accent-glow);
 }
 
 .nws-image-item.selected .nws-image-overlay {
@@ -797,10 +797,10 @@
 }
 
 .nws-image-item.selected .nws-image-checkbox-custom {
-    background: var(--accent);
+    background: var(--nws-accent);
     opacity: 1;
     transform: scale(1);
-    border-color: var(--accent);
+    border-color: var(--nws-accent);
 }
 
 .nws-image-item:hover .nws-image-thumbnail {
@@ -820,7 +820,7 @@
 
 .nws-image-size {
     font-size: 11px;
-    color: var(--text-dim);
+    color: var(--nws-text-dim);
     font-family: monospace;
 }
 
@@ -829,10 +829,10 @@
     font-weight: 600;
 }
 
-.nws-image-status.pending { color: var(--text-dim); }
-.nws-image-status.downloading { color: var(--info); }
-.nws-image-status.success { color: var(--success); }
-.nws-image-status.error { color: var(--danger); }
+.nws-image-status.pending { color: var(--nws-text-dim); }
+.nws-image-status.downloading { color: var(--nws-info); }
+.nws-image-status.success { color: var(--nws-success); }
+.nws-image-status.error { color: var(--nws-danger); }
 
 /* 动画 */
 @keyframes nws-fade-in {
@@ -864,7 +864,7 @@
 }
 
 .nws-modal-body::-webkit-scrollbar-thumb {
-    background: var(--border);
+    background: var(--nws-border);
     border-radius: 4px;
 }
 
@@ -874,29 +874,29 @@
 
 /* ===== 进度指示器 ===== */
 .nws-download-progress {
-    background: var(--surface-variant);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
+    background: var(--nws-panel-lighter);
+    border-radius: var(--nws-radius-lg);
+    padding: 20px;
+    margin-bottom: 20px;
 }
 
 .nws-progress-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 12px;
 }
 
 .nws-progress-title {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--nws-text);
 }
 
 .nws-progress-stats {
     display: flex;
-    gap: var(--spacing-md);
+    gap: 12px;
     font-size: 0.875rem;
-    color: var(--text-secondary);
+    color: var(--nws-text-dim);
 }
 
 /* 通用按钮样式 */
@@ -905,11 +905,11 @@
     align-items: center;
     justify-content: center;
     padding: 10px 20px;
-    border-radius: var(--radius-md);
+    border-radius: var(--nws-radius-md);
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: var(--transition);
+    transition: var(--nws-transition);
     border: 1px solid transparent;
     gap: 8px;
     outline: none;
@@ -917,15 +917,15 @@
 }
 
 .nws-button-primary {
-    background: var(--accent);
+    background: var(--nws-accent);
     color: white;
-    box-shadow: 0 4px 15px var(--accent-glow);
+    box-shadow: 0 4px 15px var(--nws-accent-glow);
 }
 
 .nws-button-primary:hover {
     background: #8e67d2;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px var(--accent-glow);
+    box-shadow: 0 6px 20px var(--nws-accent-glow);
 }
 
 .nws-button-primary:active {
@@ -934,8 +934,8 @@
 
 .nws-button-secondary {
     background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
-    border: 1px solid var(--border);
+    color: var(--nws-text);
+    border: 1px solid var(--nws-border);
 }
 
 .nws-button-secondary:hover {
@@ -949,7 +949,7 @@
 }
 
 .nws-button.success {
-    background: var(--success);
+    background: var(--nws-success);
     color: white;
     box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
 }
@@ -964,63 +964,63 @@
 .nws-sidebar-content {
     flex: 1;
     overflow-y: auto;
-    padding: var(--spacing-lg);
+    padding: 20px;
 }
 
 .nws-sidebar-section {
-    margin-bottom: var(--spacing-xl);
+    margin-bottom: 24px;
 }
 
 .nws-sidebar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 12px;
 }
 
 .nws-sidebar-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--nws-text);
 }
 
 .nws-sidebar-close {
     background: none;
     border: none;
     font-size: 1.5rem;
-    color: var(--text-secondary);
+    color: var(--nws-text-dim);
     cursor: pointer;
-    padding: var(--spacing-sm);
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
+    padding: 8px;
+    border-radius: var(--nws-radius-sm);
+    transition: all var(--nws-transition);
 }
 
 .nws-sidebar-close:hover {
-    background: var(--surface-variant);
-    color: var(--text-primary);
+    background: var(--nws-panel-lighter);
+    color: var(--nws-text);
 }
 
 /* ===== 设置面板 ===== */
 .nws-settings-panel {
-    background: var(--surface-variant);
-    border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-md);
+    background: var(--nws-panel-lighter);
+    border-radius: var(--nws-radius-lg);
+    padding: 20px;
+    margin-bottom: 12px;
 }
 
 .nws-setting-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: var(--spacing-md);
-    padding: var(--spacing-md);
-    background: var(--surface-color);
-    border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--nws-panel);
+    border-radius: var(--nws-radius-md);
+    transition: all var(--nws-transition);
 }
 
 .nws-setting-item:hover {
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--nws-shadow-sm);
     transform: translateY(-1px);
 }
 
@@ -1030,13 +1030,13 @@
 
 .nws-setting-label {
     font-weight: 500;
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-xs);
+    color: var(--nws-text);
+    margin-bottom: 4px;
 }
 
 .nws-setting-description {
     font-size: 0.875rem;
-    color: var(--text-secondary);
+    color: var(--nws-text-dim);
 }
 
 .nws-setting-control {
@@ -1051,7 +1051,7 @@
     }
     
     .nws-toolbar {
-        right: var(--spacing-md);
+        right: 20px;
     }
     
     .nws-toolbar-button {
@@ -1062,12 +1062,12 @@
     
     .nws-batch-modal-content {
         width: 95%;
-        margin: var(--spacing-md);
+        margin: 12px;
     }
     
     .nws-image-grid {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: var(--spacing-sm);
+        gap: 12px;
     }
     
     .nws-modal-controls {
@@ -1091,11 +1091,11 @@
     }
     
     .nws-toolbar {
-        right: var(--spacing-sm);
+        right: 12px;
     }
     
     .nws-sidebar-content {
-        padding: var(--spacing-md);
+        padding: 12px;
     }
 }
 
@@ -1122,14 +1122,14 @@
     }
     
     .nws-image-thumbnail {
-        background: var(--surface-variant);
+        background: var(--nws-panel-lighter);
     }
 }
 
 /* ===== 高对比度模式 ===== */
 @media (prefers-contrast: high) {
     .nws-toolbar-button {
-        border: 2px solid var(--text-primary);
+        border: 2px solid var(--nws-text);
     }
     
     .nws-image-item {
@@ -1137,7 +1137,7 @@
     }
     
     .nws-progress-bar {
-        border: 1px solid var(--text-primary);
+        border: 1px solid var(--nws-text);
     }
 }
 

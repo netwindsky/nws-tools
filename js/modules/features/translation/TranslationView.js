@@ -36,13 +36,14 @@
                     max-width: 360px;
                     padding: 10px 12px;
                     border-radius: 10px;
-                    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-                    background: var(--panel, #1b2233);
-                    color: var(--text, #e6ecff);
+                    border: 1px solid var(--nws-border, rgba(255, 255, 255, 0.12));
+                    background: var(--nws-panel, #1b2233);
+                    color: var(--nws-text, #e6ecff);
                     font-size: 13px;
                     line-height: 1.45;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+                    white-space: pre-wrap;
                 }
 
                 .nws-translation-inline {
@@ -62,14 +63,36 @@
                     white-space: pre-wrap;
                 }
 
-                .nws-translation-style{
+                .nws-translation-style {
                     display: block;
-                    margin: 15px 0;
+                    position: static;
+                    z-index: 0;
+                    width: 100%;
+                    min-width: 100%;
+                    box-sizing: border-box;
+                    margin: 8px 0;
                     padding: 8px 12px;
                     white-space: pre-wrap;
-                    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+                    background-color: transparent;
+                    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
                     border-radius: 4px;
                     line-height: 1.45;
+                    flex: 0 0 100%;
+                    max-width: 100%;
+                    align-self: stretch;
+                    clear: both;
+                    float: none;
+                }
+
+                .nws-translation-paragraph {
+                    margin: 0 0 8px 0;
+                    line-height: 1.6;
+                    color: var(--nws-text-dim, #888);
+                    font-size: 1em;
+                }
+
+                .nws-translation-paragraph:last-child {
+                    margin-bottom: 0;
                 }
             `;
             this.styleManager.inject(this.name, css, `nws-style-${this.name}`, { replace: true, priority: 'normal' });
@@ -108,7 +131,8 @@
 
             this.translateText(text)
                 .then((result) => {
-                    this.updateTooltip(result || '翻译结果为空');
+                    const displayResult = result ? result.replace(/\s*%%\s*/g, '\n\n') : '翻译结果为空';
+                    this.updateTooltip(displayResult);
                 })
                 .catch(() => {
                     this.updateTooltip('翻译失败，请稍后重试');
@@ -187,8 +211,34 @@
             });
         }
 
-        applyReplaceTranslationHtml(payload, translatedText) {
+        async applyReplaceTranslationHtml(payload, translatedText, retryCount = 0) {
             if (!payload || !payload.textItems || !payload.textItems.length) return;
+            // 检查翻译结果是否符合目标语言
+            const config = this.getConfig();
+            const targetLang = config.targetLanguage || '中文';
+            const isLanguageValid = this.checkLanguage(translatedText, targetLang);
+
+            // //console.log('fuck:>applyReplaceTranslationHtml', payload);
+            // //console.log('fuck:>translatedText', translatedText);
+            // //console.log('fuck:>---------------------------------------------------------------------');
+
+            
+            if (!isLanguageValid) {
+                if (retryCount < 1) {
+                    //console.log(`[TranslationView] Translation failed language check (${targetLang}). Retrying... (Attempt ${retryCount + 1})`);
+                    try {
+                        const newTranslation = await this.translateText(payload.text);
+                        // 递归调用，增加重试计数
+                        await this.applyReplaceTranslationHtml(payload, newTranslation, retryCount + 1);
+                        return;
+                    } catch (e) {
+                        console.error('[TranslationView] Retry translation failed:', e);
+                    }
+                } else {
+                    console.warn('[TranslationView] Translation still invalid after retry. Applying as is.');
+                }
+            }
+
             this.removeTranslationBlock(payload.textItems[0].node.parentElement);
             const segments = this.extractReplaceSegments(translatedText || '');
             payload.textItems.forEach((item, index) => {
@@ -199,10 +249,35 @@
             });
         }
 
+        checkLanguage(text, targetLang) {
+            if (!text) return false;
+            // 移除 HTML 标签干扰
+            const cleanText = text.replace(/<[^>]+>/g, '').trim();
+            if (!cleanText) return false; // 如果只剩下空字符串，视为无效
+
+            if (targetLang === '中文' || targetLang === 'Chinese') {
+                // 只要包含至少一个中文字符，就认为是有效的（宽松检查）
+                return /[\u4e00-\u9fa5]/.test(cleanText);
+            }
+            if (targetLang === 'English' || targetLang === '英文') {
+                // 检查是否包含拉丁字母
+                return /[a-zA-Z]/.test(cleanText);
+            }
+            // 其他语言暂默认通过
+            return true;
+        }
+
         applyBilingualTranslation(element, translatedText) {
             if (!element) return;
             if (!translatedText) return;
             this.removeTranslationBlock(element);
+
+            let computedStyle = null;
+            try {
+                computedStyle = window.getComputedStyle(element);
+            } catch (e) {
+                computedStyle = null;
+            }
 
             const paragraphs = this.splitTranslatedResult(translatedText);
             const block = document.createElement('div');
@@ -211,7 +286,18 @@
             paragraphs.forEach((para) => {
                 const line = para.trim();
                 if (!line) return;
-                const p = document.createElement('p');
+                ////console.log('fuck:>>>执行我了', element);
+                const p = document.createElement(element.tagName);
+                p.className = 'nws-translation-paragraph';
+                if (computedStyle) {
+                    p.style.color = computedStyle.color || '';
+                    p.style.fontSize = computedStyle.fontSize || '';
+                    p.style.fontFamily = computedStyle.fontFamily || '';
+                    p.style.fontWeight = computedStyle.fontWeight || '';
+                    p.style.fontStyle = computedStyle.fontStyle || '';
+                    p.style.lineHeight = computedStyle.lineHeight || '';
+                    p.style.letterSpacing = computedStyle.letterSpacing || '';
+                }
                 p.textContent = line;
                 block.appendChild(p);
             });
@@ -229,10 +315,29 @@
             const paragraphs = this.splitTranslatedResult(translatedText);
             const block = document.createElement('div');
             block.className = 'nws-translation-style';
+            
+            let computedStyle = null;
+            try {
+                computedStyle = window.getComputedStyle(element);
+            } catch (e) {
+                computedStyle = null;
+            }
+
             paragraphs.forEach((para) => {
                 const line = para.trim();
                 if (!line) return;
-                const p = document.createElement('p');
+                const p = document.createElement(element.tagName);
+                p.className = 'nws-translation-paragraph';
+                if (computedStyle) {
+                    p.style.color = computedStyle.color || '';
+                    p.style.fontSize = computedStyle.fontSize || '';
+                    p.style.fontFamily = computedStyle.fontFamily || '';
+                    p.style.fontWeight = computedStyle.fontWeight || '';
+                    p.style.fontStyle = computedStyle.fontStyle || '';
+                    p.style.lineHeight = computedStyle.lineHeight || '';
+                    p.style.letterSpacing = computedStyle.letterSpacing || '';
+                }
+                
                 p.innerHTML = line;
                 block.appendChild(p);
             });
@@ -254,8 +359,13 @@
                 cached.parentNode.removeChild(cached);
             }
             this.blockNodeCache.delete(element);
-            if (element.nextSibling && element.nextSibling.classList && element.nextSibling.classList.contains('nws-translation-block')) {
-                element.nextSibling.parentNode.removeChild(element.nextSibling);
+            
+            // 检查下一个兄弟节点是否是翻译块（兼容旧的 nws-translation-block 和新的 nws-translation-style）
+            const nextSibling = element.nextSibling;
+            if (nextSibling && nextSibling.classList) {
+                if (nextSibling.classList.contains('nws-translation-block') || nextSibling.classList.contains('nws-translation-style')) {
+                    nextSibling.parentNode.removeChild(nextSibling);
+                }
             }
         }
 
@@ -270,11 +380,22 @@
         extractReplaceSegments(translatedText) {
             if (!translatedText) return new Map();
             const results = new Map();
-            const regex = /<nws-text\s+id="(\d+)">([\s\S]*?)<\/nws-text>/gi;
+            // 极度宽松匹配：
+            // 1. id\s*=\s* 允许等号周围空格
+            // 2. ["']?(\d+) 允许有无引号
+            // 3. [^>]* 忽略 ID 后面直到 > 的所有内容（包括关闭引号缺失的情况）
+            const regex = /<nws-text\s+id\s*=\s*["']?(\d+)[^>]*>([\s\S]*?)<\/nws-text>/gi;
+            
             let match;
             while ((match = regex.exec(translatedText))) {
                 results.set(match[1], match[2]);
             }
+            
+            //console.log(`[TranslationView] Extracted ${results.size} segments from text.`);
+            if (results.size === 0 && translatedText.includes('<nws-text')) {
+                console.warn('[TranslationView] Failed to extract segments despite presence of <nws-text> tags. Raw text:', translatedText);
+            }
+            
             return results;
         }
 

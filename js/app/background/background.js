@@ -12,7 +12,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // 处理来自content script的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('[Background] 收到消息:', request);
+    //console.log('[Background] 收到消息:', request);
     
     if (request.action === 'download') {
         // 处理下载请求

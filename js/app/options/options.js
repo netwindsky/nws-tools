@@ -1,5 +1,17 @@
 const storage = chrome?.storage?.sync;
 const getEl = (id) => document.getElementById(id);
+const i18nService = window.I18nService || window.NWSModules?.get?.('I18nService');
+const t = (key, placeholders, fallback = '') => {
+    try {
+        if (i18nService && typeof i18nService.t === 'function') {
+            const value = i18nService.t(key, placeholders);
+            if (value) return value;
+        }
+    } catch (error) {
+        return fallback || key;
+    }
+    return fallback || key;
+};
 
 const getValue = (id) => {
     const el = getEl(id);
@@ -123,6 +135,23 @@ const handleSave = async (button, saveFn) => {
 };
 
 let currentBlacklist = [];
+const normalizeBlacklist = (list) => {
+    const normalized = (Array.isArray(list) ? list : [])
+        .map(item => String(item).trim())
+        .filter(item => item);
+    return Array.from(new Set(normalized));
+};
+
+const saveBlacklistConfig = async () => {
+    currentBlacklist = normalizeBlacklist(currentBlacklist);
+    renderBlacklist();
+    const config = await getConfig(['ChromeSettingsModule']);
+    const existing = config.ChromeSettingsModule || {};
+    await setConfig('ChromeSettingsModule', {
+        ...existing,
+        blacklist: currentBlacklist
+    });
+};
 
 const renderBlacklist = () => {
     const list = getEl('blacklist-list');
@@ -140,10 +169,11 @@ const renderBlacklist = () => {
 
     // 绑定删除事件
     list.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
+        btn.addEventListener('click', async (e) => {
             const index = parseInt(e.target.dataset.index);
             currentBlacklist.splice(index, 1);
             renderBlacklist();
+            await saveBlacklistConfig();
         });
     });
 };
@@ -194,12 +224,14 @@ const bindSaveHandlers = () => {
             const defaultLanguage = getValue('default-language');
             const service = getValue('translation-service');
             const translationMode = getValue('translation-mode') || 'bilingual';
+            const concurrentLimit = parseInt(getValue('concurrent-limit'), 10) || 1;
             const enableSelectionTranslation = getChecked('enable-selection-translation');
             const enableViewportTranslation = getChecked('enable-viewport-translation');
             await setConfig('translationSettings', {
                 defaultLanguage,
                 service,
                 translationMode,
+                concurrentLimit,
                 enableSelectionTranslation,
                 enableViewportTranslation
             });
@@ -216,6 +248,7 @@ const bindSaveHandlers = () => {
                 ...existing,
                 targetLanguage,
                 translationMode,
+                concurrentLimit,
                 enableSelectionTranslation,
                 enableViewportTranslation
             });
@@ -235,24 +268,20 @@ const bindSaveHandlers = () => {
     const saveBlacklist = getEl('save-blacklist');
     if (saveBlacklist) {
         saveBlacklist.addEventListener('click', () => handleSave(saveBlacklist, async () => {
-            const config = await getConfig(['ChromeSettingsModule']);
-            const existing = config.ChromeSettingsModule || {};
-            await setConfig('ChromeSettingsModule', {
-                ...existing,
-                blacklist: currentBlacklist
-            });
+            await saveBlacklistConfig();
         }));
     }
 
     const addBlacklist = getEl('add-blacklist');
     const blacklistInput = getEl('blacklist-input');
     if (addBlacklist && blacklistInput) {
-        const addFn = () => {
+        const addFn = async () => {
             const val = blacklistInput.value.trim();
             if (val && !currentBlacklist.includes(val)) {
                 currentBlacklist.push(val);
                 blacklistInput.value = '';
                 renderBlacklist();
+                await saveBlacklistConfig();
             }
         };
         addBlacklist.addEventListener('click', addFn);
@@ -294,63 +323,73 @@ const bindToggleHandlers = () => {
 };
 
 const loadSavedSettings = async () => {
-    const config = await getConfig([
-        'userData',
-        'modelSettings',
-        'translationSettings',
-        'TranslationModule',
-        'contentSettings',
-        'shortcutSettings',
-        'featureToggles',
-        'ChromeSettingsModule'
-    ]);
+    try {
+        const config = await getConfig([
+            'userData',
+            'modelSettings',
+            'translationSettings',
+            'TranslationModule',
+            'contentSettings',
+            'shortcutSettings',
+            'featureToggles',
+            'ChromeSettingsModule'
+        ]);
 
-    if (config.ChromeSettingsModule && config.ChromeSettingsModule.blacklist) {
-        currentBlacklist = config.ChromeSettingsModule.blacklist;
+        //console.log('[Options] 加载配置成功:', config);
+
+        if (config.ChromeSettingsModule) {
+            currentBlacklist = normalizeBlacklist(config.ChromeSettingsModule.blacklist);
+        } else {
+            currentBlacklist = [];
+        }
         renderBlacklist();
-    }
 
-    if (config.userData) {
-        setValue('username', config.userData.username);
-        setValue('email', config.userData.email);
-    }
-    if (config.modelSettings) {
-        setValue('model-api-url', config.modelSettings.apiUrl);
-        setValue('model-api-key', config.modelSettings.apiKey);
-        setValue('model-selection', config.modelSettings.model);
-    }
-    if (config.translationSettings || config.TranslationModule) {
-        const translationSettings = config.translationSettings || {};
-        const translationModule = config.TranslationModule || {};
-        const defaultLanguage = translationSettings.defaultLanguage || mapTargetLanguageToCode(translationModule.targetLanguage) || 'zh';
-        setValue('default-language', defaultLanguage);
-        setValue('translation-service', translationSettings.service);
-        setValue('translation-mode', translationSettings.translationMode || translationModule.translationMode || 'bilingual');
-        const selectionEnabled = typeof translationSettings.enableSelectionTranslation === 'boolean'
-            ? translationSettings.enableSelectionTranslation
-            : typeof translationModule.enableSelectionTranslation === 'boolean'
-                ? translationModule.enableSelectionTranslation
-                : true;
-        const viewportEnabled = typeof translationSettings.enableViewportTranslation === 'boolean'
-            ? translationSettings.enableViewportTranslation
-            : typeof translationModule.enableViewportTranslation === 'boolean'
-                ? translationModule.enableViewportTranslation
-                : true;
-        setChecked('enable-selection-translation', selectionEnabled);
-        setChecked('enable-viewport-translation', viewportEnabled);
-    }
-    if (config.contentSettings) {
-        setChecked('auto-save', config.contentSettings.autoSave);
-        setChecked('cloud-sync', config.contentSettings.cloudSync);
-    }
-    if (config.shortcutSettings) {
-        setValue('shortcut-main', config.shortcutSettings.main);
-        setValue('shortcut-capture', config.shortcutSettings.capture);
-    }
-    if (config.featureToggles) {
-        setChecked('enable-sidebar', config.featureToggles.sidebar);
-        setChecked('enable-darkmode', config.featureToggles.darkmode);
-        setChecked('enable-devtools', config.featureToggles.devtools);
+        if (config.userData) {
+            setValue('username', config.userData.username);
+            setValue('email', config.userData.email);
+        }
+        if (config.modelSettings) {
+            setValue('model-api-url', config.modelSettings.apiUrl);
+            setValue('model-api-key', config.modelSettings.apiKey);
+            setValue('model-selection', config.modelSettings.model);
+        }
+        if (config.translationSettings || config.TranslationModule) {
+            const translationSettings = config.translationSettings || {};
+            const translationModule = config.TranslationModule || {};
+            const defaultLanguage = translationSettings.defaultLanguage || mapTargetLanguageToCode(translationModule.targetLanguage) || 'zh';
+            setValue('default-language', defaultLanguage);
+            setValue('translation-service', translationSettings.service);
+            setValue('translation-mode', translationSettings.translationMode || translationModule.translationMode || 'bilingual');
+            setValue('concurrent-limit', translationSettings.concurrentLimit || translationModule.concurrentLimit || 1);
+            const selectionEnabled = typeof translationSettings.enableSelectionTranslation === 'boolean'
+                ? translationSettings.enableSelectionTranslation
+                : typeof translationModule.enableSelectionTranslation === 'boolean'
+                    ? translationModule.enableSelectionTranslation
+                    : true;
+            const viewportEnabled = typeof translationSettings.enableViewportTranslation === 'boolean'
+                ? translationSettings.enableViewportTranslation
+                : typeof translationModule.enableViewportTranslation === 'boolean'
+                    ? translationModule.enableViewportTranslation
+                    : true;
+            setChecked('enable-selection-translation', selectionEnabled);
+            setChecked('enable-viewport-translation', viewportEnabled);
+        }
+        if (config.contentSettings) {
+            setChecked('auto-save', config.contentSettings.autoSave);
+            setChecked('cloud-sync', config.contentSettings.cloudSync);
+        }
+        if (config.shortcutSettings) {
+            setValue('shortcut-main', config.shortcutSettings.main);
+            setValue('shortcut-capture', config.shortcutSettings.capture);
+        }
+        if (config.featureToggles) {
+            setChecked('enable-sidebar', config.featureToggles.sidebar);
+            setChecked('enable-darkmode', config.featureToggles.darkmode);
+            setChecked('enable-devtools', config.featureToggles.devtools);
+        }
+    } catch (error) {
+        console.error('[Options] 加载配置失败:', error);
+        showToast('加载配置失败，请刷新页面重试', 'error');
     }
 };
 

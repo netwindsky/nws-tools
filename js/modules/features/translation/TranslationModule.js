@@ -22,10 +22,10 @@
                 version: '1.0.0',
                 dependencies: ['ChromeSettingsModule', 'NotificationModule'],
                 defaultConfig: {
-                    enabled: true,
+                    enabled: false,
                     targetLanguage: '中文',
                     ollamaEndpoint: 'http://localhost:11434/v1/chat/completions',
-                    defaultModel: 'MedAIBase/Tencent-HY-MT1.5:1.8b',
+                    defaultModel: 'MedAIBase/Tencent-HY-MT1.5:7b',
                     maxChunkSize: 2000,
                     translationMode: 'bilingual',
                     enableSelectionTranslation: true,
@@ -41,8 +41,18 @@
             this.queue = [];
             this.activeRequests = 0;
             this.observer = null;
+            this.mutationObserver = null;
             this.pendingElements = new Map();
             this.isActive = false;
+            this.isCoolingDown = false;
+            
+            // 缓存系统初始化
+            this.translationCache = new Map();
+            this.CACHE_LIMIT = 500;
+            this.cacheKey = `nws_trans_cache_${location.hostname}`;
+            this.storage = window.chrome?.storage?.local;
+            this.saveCacheTimer = null;
+
             this.textNodeCache = new WeakMap();
             this.view = null;
             this.service = null;
@@ -93,6 +103,26 @@
                     translateText: (text) => this.translateText(text)
                 });
             }
+            
+            this.initView();
+
+            // 1. 先加载缓存，确保翻译启动时可用
+            await this.loadCache();
+
+            // 2. 如果之前是启用状态，则自动恢复全页翻译
+            if (this.config.enabled) {
+                await this.onEnable();
+                // 自动启动全页翻译 (恢复上次的模式)
+                this.startFullPageTranslate(this.config.translationMode || 'bilingual');
+            }
+        }
+
+        /**
+         * 初始化视图组件
+         */
+        initView() {
+            if (this.view) return;
+            
             const TranslationView = window.NWSModules?.TranslationView || window.NWSModules?.get?.('TranslationView');
             if (TranslationView) {
                 this.view = new TranslationView({
@@ -106,9 +136,6 @@
                     styleManager: this.styleManager
                 });
                 this.view.injectStyles();
-            }
-            if (this.config.enabled) {
-                await this.onEnable();
             }
         }
 
@@ -146,7 +173,7 @@
             while (walker.nextNode()) {
                 content.push(walker.currentNode.textContent.trim());
             }
-            //console.log('extractPageContent::>>>', content.join(' '));
+            ////console.log('extractPageContent::>>>', content.join(' '));
             return content.join(' ').replace(/\s+/g, ' ').trim();
         }
 
@@ -165,9 +192,37 @@
          */
         async onDisable() {
             this.isActive = false;
+            // 持久化禁用状态，确保下次访问或刷新时保持关闭
+            if (this.configManager) {
+                await this.configManager.updateAndSave({ enabled: false });
+            }
             this.view?.disableSelectionTranslation();
             this.stopObservation();
             this.view?.hideTooltip();
+        }
+
+        async stopTranslation() {
+            await this.disable();
+            this.queue = [];
+            this.activeRequests = 0;
+            this.pendingElements.clear();
+            this.clearTranslationArtifacts();
+        }
+
+        clearTranslationArtifacts() {
+            const safeQuerySelectorAll = this.safeQuerySelectorAll;
+            if (!safeQuerySelectorAll) return;
+            const translatedElements = safeQuerySelectorAll('[data-nws-translation-status]');
+            translatedElements.forEach(el => {
+                el.removeAttribute('data-nws-translation-status');
+                el.removeAttribute('data-nws-translation-mode');
+            });
+            const staleBlocks = safeQuerySelectorAll('.nws-translation-style, .nws-translation-block');
+            staleBlocks.forEach(block => {
+                if (block.parentNode) {
+                    block.parentNode.removeChild(block);
+                }
+            });
         }
 
         /**
@@ -175,6 +230,14 @@
          */
         async onDestroy() {
             await this.onDisable();
+            if (this.spaInterval) {
+                clearInterval(this.spaInterval);
+                this.spaInterval = null;
+            }
+            if (this.coolingTimer) {
+                clearTimeout(this.coolingTimer);
+                this.coolingTimer = null;
+            }
             this.queue = [];
             this.activeRequests = 0;
             this.pendingElements.clear();
@@ -191,6 +254,8 @@
                 } else {
                     this.view?.disableSelectionTranslation();
                 }
+                // 尝试处理队列，以防并发限制增加
+                this.processQueue();
             }
         }
 
@@ -218,7 +283,7 @@
         }
 
         /**
-         * 判断文本是否应该被翻译（过滤短文本、全数字/符号、或已是目标语言的内容）
+         * 判断文本是否应该被翻译（过滤短文本、全数字/符号、URL/邮箱、或已是目标语言的内容）
          * @param {string} text - 要检查的文本内容
          * @returns {boolean} 是否符合翻译条件
          */
@@ -231,6 +296,13 @@
             if (normalized.length < this.config.minTextLength) return false;
             // 如果文本仅由数字、标点符号或特殊字符组成，则不翻译
             if (/^[\d\W_]+$/.test(normalized)) return false;
+
+            // 过滤 URL/链接 (http/https/ftp, www, 或纯域名路径)
+            const urlRegex = /^(?:https?:\/\/|ftp:\/\/|www\.)[^\s]+$|^(?:[\w-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i;
+            if (urlRegex.test(normalized)) return false;
+
+            // 过滤邮箱
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return false;
 
             // 获取目标语言配置，默认为“中文”
             const lang = this.config.targetLanguage || '中文';
@@ -258,42 +330,43 @@
 
         /**
          * 获取页面中所有符合翻译条件的块级元素
+         * @param {Node} [root=document.body] - 搜索根节点
          * @returns {Element[]} 待翻译的元素数组
          */
-        getTranslatableElements() {
+        getTranslatableElements(root = document.body) {
             const allowedTags = new Set(['P', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'TD', 'TH', 'DIV', 'ARTICLE', 'SECTION', 'MAIN', 'ASIDE', 'FIGCAPTION', 'BLOCKQUOTE', 'ADDRESS', 'DL', 'DT', 'DD', 'CAPTION']);
             const elements = [];
             const walker = document.createTreeWalker(
-                document.body,
+                root,
                 NodeFilter.SHOW_ELEMENT,
                 {
 
                     acceptNode: (node) => {
                         const tagName = node && node.tagName ? node.tagName : 'UNKNOWN';
-                        console.log("tag:",tagName,node)
+                        ////console.log("tag:",tagName,node)
                         if (!(node instanceof Element)) {
-                            console.log('[TranslationModule] 过滤: 非元素节点');
+                            ////console.log('[TranslationModule] 过滤: 非元素节点',node);
                             return NodeFilter.FILTER_REJECT;
                         }
                         if (!allowedTags.has(node.tagName)) {
-                            console.log('[TranslationModule] 过滤: 标签不在白名单');
+                            ////console.log('[TranslationModule] 过滤: 标签不在白名单',node);
                             return NodeFilter.FILTER_SKIP;
                         }
                         if (this.isSkippableElement(node)) {
-                            console.log('[TranslationModule] 过滤: 命中跳过规则');
+                            ////console.log('[TranslationModule] 过滤: 命中跳过规则',node);
                             return NodeFilter.FILTER_REJECT;
                         }
                         if (!this.isElementActuallyVisible(node)) {
-                            console.log('[TranslationModule] 过滤: 不可见元素');
+                            ////console.log('[TranslationModule] 过滤: 不可见元素',node);
                             return NodeFilter.FILTER_REJECT;
                         }
                         if (this.hasTooManyLinks(node)) {
-                            console.log('[TranslationModule] 过滤: 链接过多');
+                            ////console.log('[TranslationModule] 过滤: 链接过多',node);
                             return NodeFilter.FILTER_REJECT;
                         }
                         const text = this.normalizeText(node.textContent || '');
                         if (!this.shouldTranslateText(text)) {
-                            console.log('[TranslationModule] 过滤: 文本不满足翻译条件');
+                            ////console.log('[TranslationModule] 过滤: 文本不满足翻译条件',node);
                             return NodeFilter.FILTER_REJECT;
                         }
                         return NodeFilter.FILTER_ACCEPT;
@@ -308,7 +381,7 @@
 
             if (!elements.length) {
                 const fallback = this.collectElementsFromTextNodes();
-                //console.log('[TranslationModule] 未找到可翻译元素，使用文本节点回溯:', fallback.length);
+                ////console.log('[TranslationModule] 未找到可翻译元素，使用文本节点回溯:', fallback.length);
                 return fallback;
             }
 
@@ -329,20 +402,20 @@
             leafElements.forEach((element) => {
                 const tagName = element && element.tagName ? element.tagName : 'UNKNOWN';
                 const text = this.normalizeText(element.textContent || '');
-                //console.log('[TranslationModule] 通过: 进入翻译队列', { tag: tagName, text }, element);
+                ////console.log('[TranslationModule] 通过: 进入翻译队列', { tag: tagName, text }, element);
             });
 
             if (!leafElements.length) {
                 const fallback = this.collectElementsFromTextNodes();
-                //console.log('[TranslationModule] 顶层元素为空，使用文本节点回溯:', fallback.length);
+                ////console.log('[TranslationModule] 顶层元素为空，使用文本节点回溯:', fallback.length);
                 return fallback;
             }
 
             return leafElements;
         }
 
-        collectElementsFromTextNodes() {
-            const nodes = this.getTextNodes(document.body);
+        collectElementsFromTextNodes(root = document.body) {
+            const nodes = this.getTextNodes(root);
             if (!nodes.length) return [];
             const seen = new Set();
             const elements = [];
@@ -511,9 +584,17 @@
             if (!text || !placeholders || placeholders.length === 0) return text;
             let output = text;
             for (const item of placeholders) {
-                output = output.split(item.openToken).join(item.openTag);
-                output = output.split(item.closeToken).join(item.closeTag);
+                // 尝试更灵活的匹配，防止 LLM 在标签周围添加空格
+                const openRegex = new RegExp(item.openToken.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'g');
+                const closeRegex = new RegExp(item.closeToken.replace(/\[/g, '\\[').replace(/\]/g, '\\]'), 'g');
+                
+                output = output.replace(openRegex, item.openTag);
+                output = output.replace(closeRegex, item.closeTag);
             }
+            
+            // 清理残留的未匹配标签（如果有）
+            output = output.replace(/\[\[\[nws-tag-\d+-(open|close)\]\]\]/g, '');
+            
             return output;
         }
 
@@ -543,7 +624,13 @@
                 return true;
             }
             if (element.isContentEditable) return true;
-            if (element.classList && (element.classList.contains('notranslate') || element.classList.contains('no-translate') || element.classList.contains('hidden'))) {
+            if (element.classList && (
+                element.classList.contains('notranslate') || 
+                element.classList.contains('no-translate') || 
+                element.classList.contains('hidden') ||
+                element.classList.contains('nws-translation-style') ||
+                element.classList.contains('nws-translation-paragraph')
+            )) {
                 return true;
             }
             return false;
@@ -618,23 +705,32 @@
          * @param {string} [mode] - 翻译模式（'replace' 或 'bilingual'）
          */
         async translatePage(targetLang, mode) {
-            //console.log('[TranslationModule] translatePage触发:', { targetLang, mode });
+            ////console.log('[TranslationModule] translatePage触发:', { targetLang, mode });
             await this.ensureModuleActive();
             const lang = targetLang || this.config.targetLanguage;
             if (lang !== this.config.targetLanguage) {
                 this.config.targetLanguage = lang;
             }
-            await this.startFullPageTranslate(mode || this.config.translationMode);
+            return await this.startFullPageTranslate(mode || this.config.translationMode);
         }
 
         async ensureModuleActive() {
+            if (!this.initialized) {
+                const initialized = await this.initialize();
+                if (!initialized) {
+                    throw new Error('translation_init_failed');
+                }
+            }
             if (this.isActive) return;
+            
+            this.initView();
+            
             this.enabled = true;
             this.isActive = true;
             if (this.configManager) {
                 await this.configManager.updateAndSave({ enabled: true });
             }
-            //console.log('[TranslationModule] 模块已自动激活');
+            ////console.log('[TranslationModule] 模块已自动激活');
             if (this.config.enableSelectionTranslation) {
                 this.view?.enableSelectionTranslation();
             }
@@ -648,6 +744,9 @@
             if (!this.isActive) {
                 await this.ensureModuleActive();
             }
+            if (!this.service || typeof this.service.translateTextRequest !== 'function') {
+                throw new Error('translation_service_not_ready');
+            }
             const targetMode = mode || this.config.translationMode || 'bilingual';
             this.config.translationMode = targetMode;
             if (this.configManager) {
@@ -658,8 +757,8 @@
             this.pendingElements.clear();
 
             const elements = this.getTranslatableElements();
-            //console.log('[TranslationModule] 待翻译元素数量:', elements.length, '模式:', targetMode);
-            if (!elements.length) return;
+            ////console.log('[TranslationModule] 待翻译元素数量:', elements.length, '模式:', targetMode);
+            if (!elements.length) return 0;
 
             if (this.config.enableViewportTranslation && typeof IntersectionObserver !== 'undefined') {
                 this.observer = new IntersectionObserver((entries) => {
@@ -684,6 +783,180 @@
                     await this.translateElement(element, targetMode);
                 }
             }
+            
+            // 启动 DOM 变动监听，处理动态加载内容（如无限滚动）
+            this.startMutationObserver(targetMode);
+
+            // 启动 SPA 路由变化监听
+            this.setupSPAListener();
+            return elements.length;
+        }
+
+        /**
+         * 设置 SPA 路由监听 (通过轮询检测 URL 变化)
+         */
+        setupSPAListener() {
+            if (this.spaInterval) {
+                clearInterval(this.spaInterval);
+            }
+            this.lastUrl = location.href;
+            this.isCoolingDown = false;
+            
+            // 每 500ms 检查一次 URL 变化
+            this.spaInterval = setInterval(() => {
+                if (location.href !== this.lastUrl) {
+                    this.handleUrlChange(location.href);
+                }
+            }, 500);
+        }
+
+        /**
+         * 处理 URL 变化 (SPA 场景)
+         * @param {string} newUrl - 新的 URL
+         */
+        handleUrlChange(newUrl) {
+            //console.log('[TranslationModule] 检测到 URL 变化:', newUrl);
+            this.lastUrl = newUrl;
+            
+            // 1. 清空当前队列和挂起任务
+            this.queue = [];
+            this.activeRequests = 0;
+            this.pendingElements.clear();
+            
+            // 2. 开启冷却期 (暂停 MutationObserver 处理)
+            this.isCoolingDown = true;
+
+            // 定义清理函数
+            const performCleanup = () => {
+                // A. 清理所有已标记为“已翻译”的原文元素状态
+                const translatedElements = document.querySelectorAll('[data-nws-translation-status]');
+                translatedElements.forEach(el => {
+                    el.removeAttribute('data-nws-translation-status');
+                    el.removeAttribute('data-nws-translation-mode');
+                });
+
+                // B. 强制移除所有残留的翻译块
+                const staleBlocks = document.querySelectorAll('.nws-translation-style, .nws-translation-block');
+                staleBlocks.forEach(block => {
+                    if (block.parentNode) {
+                        block.parentNode.removeChild(block);
+                    }
+                });
+            };
+
+            // 3. 执行多次清理策略 (应对 SPA 异步渲染)
+            // 立即清理
+            performCleanup();
+            
+            // 500ms 后再次清理 (应对 React/Vue 渲染延迟)
+            setTimeout(performCleanup, 500);
+
+            // 4. 1秒后解除冷却，并重新扫描页面
+            if (this.coolingTimer) clearTimeout(this.coolingTimer);
+            this.coolingTimer = setTimeout(() => {
+                // 最后再做一次清理，确保万无一失
+                performCleanup();
+                
+                this.isCoolingDown = false;
+                //console.log('[TranslationModule] SPA 冷却期结束，重新扫描页面');
+                if (this.isActive && this.config.enabled) {
+                     // 重新触发全页翻译流程
+                     const currentMode = this.config.translationMode || 'bilingual';
+                     const elements = this.getTranslatableElements();
+                     
+                     if (this.config.enableViewportTranslation && this.observer) {
+                         elements.forEach((element) => {
+                             if (this.isElementInViewport(element)) {
+                                 this.translateElement(element, currentMode);
+                             } else {
+                                 this.observer.observe(element);
+                             }
+                         });
+                     } else {
+                         elements.forEach(el => this.translateElement(el, currentMode));
+                     }
+                }
+            }, 1000);
+        }
+
+        /**
+         * 启动 DOM 变动观察器（支持无限滚动加载）
+         * @param {string} mode - 翻译模式
+         */
+        startMutationObserver(mode) {
+            if (this.mutationObserver) return;
+
+            this.mutationObserver = new MutationObserver((mutations) => {
+                if (!this.isActive) return;
+                
+                // 冷却期不处理 DOM 变动
+                if (this.isCoolingDown) return;
+
+                const addedElements = [];
+                for (const mutation of mutations) {
+                    if (mutation.type !== 'childList') continue;
+                    for (const node of mutation.addedNodes) {
+                        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+                        // 忽略插件自身的注入元素
+                        if (node.tagName === 'NWS-CONTAINER' || 
+                            node.classList.contains('nws-translation-block') || 
+                            node.classList.contains('nws-translation-style') || 
+                            node.id === 'nws-notifications-container') continue;
+                        if (this.isSkippableElement(node)) continue;
+                        addedElements.push(node);
+                    }
+                }
+
+                if (!addedElements.length) return;
+
+                // 使用 requestIdleCallback 或 setTimeout 避免阻塞主线程，并等待 DOM 稳定
+                const processNodes = () => {
+                    const newTranslatableElements = [];
+                    for (const element of addedElements) {
+                        // 再次检查是否还在文档中
+                        if (!document.body.contains(element)) continue;
+                        
+                        const subElements = this.getTranslatableElements(element);
+                        newTranslatableElements.push(...subElements);
+                    }
+
+                    if (!newTranslatableElements.length) return;
+
+                    ////console.log(`[TranslationModule] 检测到动态加载内容: 发现 ${newTranslatableElements.length} 个新元素`);
+
+                    if (this.config.enableViewportTranslation && this.observer) {
+                        newTranslatableElements.forEach((element) => {
+                            if (this.pendingElements.has(element)) return;
+                            
+                            // 检查是否已经翻译过（避免重复处理）
+                            if (element.hasAttribute('data-nws-translation-status')) return;
+
+                            if (this.isElementInViewport(element)) {
+                                this.translateElement(element, mode);
+                            } else {
+                                this.pendingElements.set(element, true);
+                                this.observer.observe(element);
+                            }
+                        });
+                    } else {
+                        newTranslatableElements.forEach((element) => {
+                            if (element.hasAttribute('data-nws-translation-status')) return;
+                            this.translateElement(element, mode);
+                        });
+                    }
+                };
+
+                if (window.requestIdleCallback) {
+                    window.requestIdleCallback(processNodes, { timeout: 1000 });
+                } else {
+                    setTimeout(processNodes, 200);
+                }
+            });
+
+            this.mutationObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
         }
 
         /**
@@ -694,6 +967,10 @@
                 this.observer.disconnect();
                 this.observer = null;
             }
+            if (this.mutationObserver) {
+                this.mutationObserver.disconnect();
+                this.mutationObserver = null;
+            }
         }
 
         /**
@@ -703,23 +980,44 @@
          */
         async translateElement(element, mode) {
             if (!element || !this.isActive) {
-                //console.log('[TranslationModule] translateElement跳过:', { hasElement: Boolean(element), isActive: this.isActive });
+                ////console.log('[TranslationModule] translateElement跳过:', { hasElement: Boolean(element), isActive: this.isActive });
                 return;
             }
+
+            // 1. 冷却期检查 (SPA 路由切换保护)
+            if (this.isCoolingDown) {
+                ////console.log('[TranslationModule] translateElement跳过: 处于 SPA 冷却期');
+                return;
+            }
+
+            // 2. 存在性检查 (防重复翻译核心)
+            // 检查下一个兄弟节点是否已经是翻译块
+            const nextSibling = element.nextElementSibling;
+            if (nextSibling && (
+                nextSibling.classList.contains('nws-translation-style') || 
+                nextSibling.classList.contains('nws-translation-block')
+            )) {
+                // 如果已存在翻译块，直接标记为已翻译，防止重复入队
+                element.setAttribute('data-nws-translation-status', 'translated');
+                element.setAttribute('data-nws-translation-mode', mode);
+                ////console.log('[TranslationModule] translateElement跳过: 检测到已存在的翻译块');
+                return;
+            }
+
             if (element.getAttribute('data-nws-translation-status') === 'translating') {
-                //console.log('[TranslationModule] translateElement跳过: 正在翻译');
+                ////console.log('[TranslationModule] translateElement跳过: 正在翻译');
                 return;
             }
             const lastMode = element.getAttribute('data-nws-translation-mode');
             if (element.getAttribute('data-nws-translation-status') === 'translated' && lastMode === mode) {
-                //console.log('[TranslationModule] translateElement跳过: 已翻译且模式相同');
+                ////console.log('[TranslationModule] translateElement跳过: 已翻译且模式相同');
                 return;
             }
 
             const textItems = this.getTextItems(element);
 
             if (!textItems.length) {
-                //console.log('[TranslationModule] translateElement跳过: 无可翻译文本');
+                ////console.log('[TranslationModule] translateElement跳过: 无可翻译文本');
                 return;
             }
 
@@ -777,7 +1075,7 @@
                             stats.hidden += 1;
                             return NodeFilter.FILTER_REJECT;
                         }
-                        if (parent.closest && parent.closest('.nws-translation-block')) {
+                        if (parent.closest && (parent.closest('.nws-translation-block') || parent.closest('.nws-translation-style'))) {
                             stats.inBlock += 1;
                             return NodeFilter.FILTER_REJECT;
                         }
@@ -794,7 +1092,7 @@
                 nodes.push(walker.currentNode);
             }
             if (!nodes.length) {
-                //console.log('[TranslationModule] 文本节点过滤统计:', stats);
+                ////console.log('[TranslationModule] 文本节点过滤统计:', stats);
             }
             return nodes;
         }
@@ -827,10 +1125,65 @@
         async translateText(text) {
             const normalized = this.normalizeText(text);
             if (!normalized) {
-                //console.log('[TranslationModule] translateText跳过: 空文本');
+                ////console.log('[TranslationModule] translateText跳过: 空文本');
                 return '';
             }
             return await this.enqueueTranslation(normalized);
+        }
+
+        /**
+         * 从存储中加载翻译缓存
+         */
+        async loadCache() {
+            if (!this.storage) return;
+            try {
+                const result = await this.storage.get(this.cacheKey);
+                if (result && result[this.cacheKey]) {
+                    // 从数组条目重建 Map
+                    this.translationCache = new Map(result[this.cacheKey]);
+                    //console.log(`[TranslationModule] 已加载缓存: ${this.translationCache.size} 条`);
+                }
+            } catch (e) {
+                //console.error('[TranslationModule] 加载缓存失败:', e);
+            }
+        }
+
+        /**
+         * 保存翻译缓存到存储 (防抖)
+         */
+        saveCache() {
+            if (!this.storage) return;
+            try {
+                // 将 Map 转换为数组条目以便存储
+                const entries = Array.from(this.translationCache.entries());
+                this.storage.set({ [this.cacheKey]: entries });
+                //console.log(`[TranslationModule] 已保存缓存: ${entries.length} 条`);
+            } catch (e) {
+                //console.error('[TranslationModule] 保存缓存失败:', e);
+            }
+        }
+
+        /**
+         * 更新缓存并触发保存
+         * @param {string} text - 原文
+         * @param {string} result - 译文
+         */
+        updateCache(text, result) {
+            // 如果已存在，先删除以更新 LRU 位置
+            if (this.translationCache.has(text)) {
+                this.translationCache.delete(text);
+            }
+            this.translationCache.set(text, result);
+            
+            // 如果超过最大限制，删除最旧的 (第一个)
+            if (this.translationCache.size > this.CACHE_LIMIT) {
+                const firstKey = this.translationCache.keys().next().value;
+                this.translationCache.delete(firstKey);
+            }
+            
+            // 防抖保存 (2秒延迟)
+            if (this.saveCacheTimer) clearTimeout(this.saveCacheTimer);
+            this.saveCacheTimer = setTimeout(() => this.saveCache(), 2000);
         }
 
         /**
@@ -839,10 +1192,20 @@
          * @returns {Promise<string>}
          */
         enqueueTranslation(text) {
+            // 1. 检查缓存
+            if (this.translationCache.has(text)) {
+                // 命中缓存：更新 LRU 顺序（先删后加）
+                const result = this.translationCache.get(text);
+                this.translationCache.delete(text);
+                this.translationCache.set(text, result);
+                //console.log('[TranslationModule] 命中缓存:', text);
+                return Promise.resolve(result);
+            }
+
             // 返回一个 Promise 对象，以便外部可以使用 await 或 .then() 获取翻译结果
             return new Promise((resolve, reject) => {
                 // 输出入队日志，记录待翻译文本以及 Promise 的回调函数
-                //console.log('[TranslationModule] 入队翻译任务:', text, resolve, reject);
+                ////console.log('[TranslationModule] 入队翻译任务:', text, resolve, reject);
                 // 将翻译任务（文本及回调）推入处理队列中
                 this.queue.push({ text, resolve, reject });
                 // 立即尝试触发队列处理逻辑
@@ -858,7 +1221,7 @@
             const limit = Math.max(1, this.config.concurrentLimit || 1);
             // 如果队列为空，输出调试日志
             if (!this.queue.length) {
-                //console.log('[TranslationModule] 翻译队列为空');
+                ////console.log('[TranslationModule] 翻译队列为空');
             }
             // 当当前活动请求数小于限制且队列中还有任务时，继续循环处理
             while (this.activeRequests < limit && this.queue.length > 0) {
@@ -867,12 +1230,16 @@
                 // 增加活动请求计数
                 this.activeRequests += 1;
                 // 输出当前处理状态日志
-                //console.log('[TranslationModule] 处理翻译任务:', { active: this.activeRequests, remaining: this.queue.length, text: task.text });
+                ////console.log('[TranslationModule] 处理翻译任务:', { active: this.activeRequests, remaining: this.queue.length, text: task.text });
                 // 调用底层的翻译请求方法
                 this.translateTextRequest(task.text)
                     .then((result) => {
                         // 请求成功后，减少活动请求计数
-                        this.activeRequests -= 1;
+                        this.activeRequests = Math.max(0, this.activeRequests - 1);
+                        
+                        // 更新缓存
+                        this.updateCache(task.text, result);
+
                         // 完成 Promise，返回结果
                         task.resolve(result);
                         // 递归调用以处理队列中的下一个任务
@@ -880,7 +1247,7 @@
                     })
                     .catch((error) => {
                         // 请求失败后，减少活动请求计数
-                        this.activeRequests -= 1;
+                        this.activeRequests = Math.max(0, this.activeRequests - 1);
                         // 输出错误日志
                         //console.error('[TranslationModule] 翻译任务失败:', error);
                         // 拒绝 Promise，返回错误信息

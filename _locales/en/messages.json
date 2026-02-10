@@ -138,6 +138,21 @@
       }
     }
   },
+  "toolsbar_translate_failed_default": {
+    "message": "Unknown error"
+  },
+  "toolsbar_translate_error_translation_init_failed": {
+    "message": "Translation module initialization failed"
+  },
+  "toolsbar_translate_error_translation_service_not_ready": {
+    "message": "Translation service is not ready"
+  },
+  "toolsbar_translate_empty": {
+    "message": "No translatable content found"
+  },
+  "toolsbar_translate_disabled": {
+    "message": "Translation disabled"
+  },
   "toolsbar_translate_not_ready": {
     "message": "Translation module not ready. Try again later or refresh."
   },

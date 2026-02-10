@@ -150,8 +150,9 @@ IMPORTANT rules:
         buildTranslationMessages(text, lang) {
             const prepared = this.prepareTextForPrompt(text);
             const outputMode = prepared.hasMulti ? 'multi' : 'single';
+            const hasNwsTags = text.includes('<nws-text');
 
-            const systemPrompt = `You are a professional ${lang} native translator.
+            let systemPrompt = `You are a professional ${lang} native translator.
 Translate ONLY the text between <text> and </text>.
 Do NOT translate or repeat any instruction outside <text>.
 
@@ -160,7 +161,18 @@ Rules:
 2. Keep the same number of paragraphs and formatting.
 3. Preserve HTML tags and keep them in correct positions.
 4. Keep proper nouns, code, and non-translatable content unchanged.
-5. If input contains "%%", use "%%" as paragraph separators in output; otherwise do not add "%%".
+5. If input contains "%%", use "%%" as paragraph separators in output; otherwise do not add "%%".`;
+
+            if (hasNwsTags) {
+                systemPrompt += `
+6. CRITICAL: The input contains <nws-text id="..."> tags. You MUST preserve these tags EXACTLY as they are (including IDs). Translate ONLY the content inside the tags.
+
+Example:
+Input: <nws-text id="1">Hello world</nws-text>
+Output: <nws-text id="1">你好世界</nws-text>`;
+            }
+
+            systemPrompt += `
 
 Output:
 - single paragraph → output translation only

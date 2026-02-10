@@ -7,19 +7,19 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0c;
-            --panel: #16161a;
-            --panel-lighter: #1e1e24;
-            --accent: #7e57c2;
-            --accent-glow: rgba(126, 87, 194, 0.3);
-            --text: #ffffff;
-            --text-dim: #9494a0;
-            --border: rgba(255, 255, 255, 0.08);
-            --success: #00c853;
-            --danger: #ff5252;
-            --warning: #ffd600;
-            --info: #00b0ff;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --nws-bg: #0d1117;
+            --nws-panel: #1a1f2c;
+            --nws-panel-lighter: #252c3d;
+            --nws-accent: #7e57c2;
+            --nws-accent-glow: rgba(126, 87, 194, 0.3);
+            --nws-text: #ffffff;
+            --nws-text-dim: #9494a0;
+            --nws-border: rgba(255, 255, 255, 0.08);
+            --nws-success: #00c853;
+            --nws-danger: #ff5252;
+            --nws-warning: #ffd600;
+            --nws-info: #00b0ff;
+            --nws-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -29,8 +29,8 @@
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
+            background-color: var(--nws-bg);
+            color: var(--nws-text);
             font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
@@ -68,8 +68,8 @@
 
         /* Sidebar Navigation */
         .sidebar {
-            background: var(--panel);
-            border: 1px solid var(--border);
+            background: var(--nws-panel);
+            border: 1px solid var(--nws-border);
             border-radius: 24px;
             padding: 24px;
             height: fit-content;
@@ -89,12 +89,12 @@
         .brand-logo {
             width: 32px;
             height: 32px;
-            background: var(--accent);
+            background: var(--nws-accent);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 20px var(--accent-glow);
+            box-shadow: 0 0 20px var(--nws-accent-glow);
         }
 
         .brand-name {
@@ -111,14 +111,16 @@
         }
 
         .nav-item {
-            padding: 12px 16px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: var(--transition);
             display: flex;
             align-items: center;
             gap: 12px;
-            color: var(--text-dim);
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--nws-text-dim);
+            text-decoration: none;
+            transition: var(--nws-transition);
+            margin-bottom: 4px;
+            cursor: pointer;
             font-weight: 500;
         }
 
@@ -129,14 +131,14 @@
         }
 
         .nav-item:hover {
-            background: rgba(255, 255, 255, 0.03);
-            color: var(--text);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--nws-text);
         }
 
         .nav-item.active {
-            background: var(--accent);
-            color: #ffffff;
-            box-shadow: 0 4px 15px var(--accent-glow);
+            background: var(--nws-accent);
+            color: white;
+            box-shadow: 0 4px 15px var(--nws-accent-glow);
         }
 
         /* Content Area */
@@ -147,8 +149,8 @@
         }
 
         .section-panel {
-            background: var(--panel);
-            border: 1px solid var(--border);
+            background: var(--nws-panel);
+            border: 1px solid var(--nws-border);
             border-radius: 24px;
             padding: 32px;
             display: none;
@@ -176,7 +178,7 @@
         }
 
         .section-desc {
-            color: var(--text-dim);
+            color: var(--nws-text-dim);
             font-size: 14px;
         }
 
@@ -190,7 +192,7 @@
             margin-bottom: 10px;
             font-size: 14px;
             font-weight: 600;
-            color: var(--text-dim);
+            color: var(--nws-text-dim);
         }
 
         .input-wrapper {
@@ -202,26 +204,26 @@
             left: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--text-dim);
+            color: var(--nws-text-dim);
             pointer-events: none;
         }
 
         .form-control {
             width: 100%;
             background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
+            border: 1px solid var(--nws-border);
             border-radius: 12px;
             padding: 14px 16px 14px 44px;
-            color: var(--text);
+            color: var(--nws-text);
             font-size: 15px;
-            transition: var(--transition);
+            transition: var(--nws-transition);
         }
 
         .form-control:focus {
             outline: none;
-            border-color: var(--accent);
+            border-color: var(--nws-accent);
             background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 0 0 4px var(--accent-glow);
+            box-shadow: 0 0 0 4px var(--nws-accent-glow);
         }
 
         .form-select {
@@ -237,9 +239,9 @@
             padding: 16px;
             background: rgba(255, 255, 255, 0.02);
             border-radius: 16px;
-            border: 1px solid var(--border);
+            border: 1px solid var(--nws-border);
             margin-bottom: 12px;
-            transition: var(--transition);
+            transition: var(--nws-transition);
         }
 
         .toggle-group:hover {
@@ -255,7 +257,7 @@
 
         .toggle-info p {
             font-size: 13px;
-            color: var(--text-dim);
+            color: var(--nws-text-dim);
         }
 
         .switch {
@@ -296,7 +298,7 @@
         }
 
         input:checked + .slider {
-            background-color: var(--accent);
+            background-color: var(--nws-accent);
         }
 
         input:checked + .slider:before {
@@ -310,7 +312,7 @@
             font-weight: 600;
             font-size: 15px;
             cursor: pointer;
-            transition: var(--transition);
+            transition: var(--nws-transition);
             border: none;
             display: inline-flex;
             align-items: center;
@@ -319,21 +321,21 @@
         }
 
         .btn-primary {
-            background: var(--accent);
+            background: var(--nws-accent);
             color: white;
-            box-shadow: 0 4px 15px var(--accent-glow);
+            box-shadow: 0 4px 15px var(--nws-accent-glow);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px var(--accent-glow);
+            box-shadow: 0 6px 20px var(--nws-accent-glow);
             filter: brightness(1.1);
         }
 
         .btn-secondary {
             background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            border: 1px solid var(--border);
+            color: var(--nws-text);
+            border: 1px solid var(--nws-border);
         }
 
         .btn-secondary:hover {
@@ -345,8 +347,8 @@
             position: fixed;
             bottom: 32px;
             right: 32px;
-            background: var(--panel);
-            border: 1px solid var(--border);
+            background: var(--nws-panel);
+            border: 1px solid var(--nws-border);
             padding: 16px 24px;
             border-radius: 16px;
             display: flex;
@@ -368,8 +370,8 @@
             font-size: 20px;
         }
 
-        .toast.success i { color: var(--success); }
-        .toast.error i { color: var(--danger); }
+        .toast.success i { color: var(--nws-success); }
+        .toast.error i { color: var(--nws-danger); }
 
         /* Help Section Cards */
         .help-grid {
@@ -380,21 +382,21 @@
 
         .help-card {
             background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
+            border: 1px solid var(--nws-border);
             border-radius: 20px;
             padding: 24px;
-            transition: var(--transition);
+            transition: var(--nws-transition);
         }
 
         .help-card:hover {
             background: rgba(255, 255, 255, 0.04);
-            border-color: var(--accent);
+            border-color: var(--nws-accent);
             transform: translateY(-4px);
         }
 
         .help-card i {
             font-size: 24px;
-            color: var(--accent);
+            color: var(--nws-accent);
             margin-bottom: 16px;
         }
 
@@ -404,7 +406,7 @@
 
         .help-card p {
             font-size: 14px;
-            color: var(--text-dim);
+            color: var(--nws-text-dim);
             line-height: 1.6;
         }
 
@@ -415,9 +417,9 @@
             justify-content: space-between;
             padding: 12px 16px;
             background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
+            border: 1px solid var(--nws-border);
             border-radius: 12px;
-            transition: var(--transition);
+            transition: var(--nws-transition);
         }
 
         .blacklist-item:hover {
@@ -427,18 +429,18 @@
 
         .blacklist-item span {
             font-size: 14px;
-            color: var(--text);
+            color: var(--nws-text);
         }
 
         .blacklist-item .remove-btn {
-            color: var(--text-dim);
+            color: var(--nws-text-dim);
             cursor: pointer;
-            transition: var(--transition);
+            transition: var(--nws-transition);
             padding: 4px;
         }
 
         .blacklist-item .remove-btn:hover {
-            color: var(--danger);
+            color: var(--nws-danger);
         }
 
         /* Responsive */
@@ -613,6 +615,13 @@
                             <option value="bilingual">对照模式</option>
                             <option value="replace">替换模式</option>
                         </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">并发翻译数量</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-layer-group"></i>
+                        <input type="number" class="form-control" id="concurrent-limit" min="1" max="5" value="1">
                     </div>
                 </div>
                 <div class="toggle-group">

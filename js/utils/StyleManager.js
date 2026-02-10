@@ -20,7 +20,7 @@ class StyleManager {
         // 全局样式缓存
         this.globalCache = new Map();
         
-        console.log('[StyleManager] 样式管理器初始化完成');
+        //console.log('[StyleManager] 样式管理器初始化完成');
     }
 
     /**
@@ -73,7 +73,7 @@ class StyleManager {
                 });
             }
 
-            console.log(`[StyleManager] 样式 ${styleId} 注入成功`);
+            //console.log(`[StyleManager] 样式 ${styleId} 注入成功`);
             
             // 通知观察者
             this.notifyObservers({
@@ -185,7 +185,7 @@ class StyleManager {
                 data.updatedAt = Date.now();
             }
 
-            console.log(`[StyleManager] 样式 ${styleId} 更新成功`);
+            //console.log(`[StyleManager] 样式 ${styleId} 更新成功`);
             
             // 通知观察者
             this.notifyObservers({
@@ -217,7 +217,7 @@ class StyleManager {
         this.injectedStyles.delete(styleId);
         this.styleData.delete(styleId);
 
-        console.log(`[StyleManager] 样式 ${styleId} 移除成功`);
+        //console.log(`[StyleManager] 样式 ${styleId} 移除成功`);
         
         // 通知观察者
         this.notifyObservers({
@@ -244,7 +244,7 @@ class StyleManager {
             this.remove(styleId);
         });
         
-        console.log(`[StyleManager] 模块 ${moduleName} 的 ${removedCount} 个样式已移除`);
+        //console.log(`[StyleManager] 模块 ${moduleName} 的 ${removedCount} 个样式已移除`);
         return removedCount;
     }
 
@@ -319,7 +319,7 @@ class StyleManager {
         this.injectedStyles.clear();
         this.styleData.clear();
         
-        console.log(`[StyleManager] 所有样式已清理，共 ${count} 个`);
+        //console.log(`[StyleManager] 所有样式已清理，共 ${count} 个`);
         
         // 通知观察者
         this.notifyObservers({
@@ -386,7 +386,7 @@ class StyleManager {
 
         style.disabled = !enabled;
         
-        console.log(`[StyleManager] 样式 ${styleId} 已${enabled ? '启用' : '禁用'}`);
+        //console.log(`[StyleManager] 样式 ${styleId} 已${enabled ? '启用' : '禁用'}`);
         
         // 通知观察者
         this.notifyObservers({
@@ -474,7 +474,7 @@ class StyleManager {
             }
         }
         
-        console.log(`[StyleManager] 导入完成，共 ${count} 个样式`);
+        //console.log(`[StyleManager] 导入完成，共 ${count} 个样式`);
         return count;
     }
 
@@ -486,7 +486,7 @@ class StyleManager {
         this.observers.clear();
         this.globalCache.clear();
         
-        console.log('[StyleManager] 样式管理器已销毁');
+        //console.log('[StyleManager] 样式管理器已销毁');
     }
 
     /**

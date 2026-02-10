@@ -41,7 +41,7 @@ class ConfigManager {
                 ...savedConfig
             });
             
-            console.log(`[ConfigManager] ${this.moduleName} 配置加载完成:`, this.config);
+            //console.log(`[ConfigManager] ${this.moduleName} 配置加载完成:`, this.config);
             return this.config;
         } catch (error) {
             console.error(`[ConfigManager] ${this.moduleName} 加载配置失败:`, error);
@@ -70,7 +70,7 @@ class ConfigManager {
                     [this.moduleName]: validatedConfig
                 });
                 
-                console.log(`[ConfigManager] ${this.moduleName} 配置保存成功:`, validatedConfig);
+                //console.log(`[ConfigManager] ${this.moduleName} 配置保存成功:`, validatedConfig);
                 
                 // 通知观察者
                 this.notifyObservers(validatedConfig);
@@ -315,7 +315,7 @@ class ConfigManager {
     destroy() {
         this.observers.clear();
         this.validators.clear();
-        console.log(`[ConfigManager] ${this.moduleName} 已销毁`);
+        //console.log(`[ConfigManager] ${this.moduleName} 已销毁`);
     }
 
     /**

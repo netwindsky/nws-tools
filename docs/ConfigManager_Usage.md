@@ -50,9 +50,9 @@ await ConfigManager.setBatchConfig(configs);
 try {
     const success = await ConfigManager.setConfig('userData', newData);
     if (success) {
-        console.log('配置保存成功');
+        //console.log('配置保存成功');
     } else {
-        console.log('配置保存失败');
+        //console.log('配置保存失败');
     }
 } catch (error) {
     console.error('配置操作异常:', error);

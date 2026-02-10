@@ -314,11 +314,29 @@ function createModernModal(title, icon, content) {
     return uiManager.createModernModal(title, icon, content);
 }
 
+async function isToolbarAllowed() {
+    const chromeSettings = window.NWSModules?.ChromeSettingsModule;
+    if (chromeSettings && typeof chromeSettings.isBlacklisted === 'function') {
+        if (!chromeSettings.initialized && typeof chromeSettings.initialize === 'function') {
+            await chromeSettings.initialize();
+        }
+        if (chromeSettings.isBlacklisted()) {
+            //console.log('[Toolsbar] 当前网站在黑名单中，跳过工具栏加载');
+            return false;
+        }
+    }
+    return true;
+}
+
 async function initToolbar() {
-    console.log('[Toolsbar] 开始初始化工具栏');
+    //console.log('[Toolsbar] 开始初始化工具栏');
     
     if (document.getElementById('nws-toolbar')) {
-        return;
+        return false;
+    }
+    const allowed = await isToolbarAllowed();
+    if (!allowed) {
+        return false;
     }
     
     try {
@@ -327,17 +345,18 @@ async function initToolbar() {
         const toolbar = uiManager.createToolbar();
         if (!toolbar) {
             console.error('[Toolsbar] 无法创建工具栏');
-            return;
+            return false;
         }
         
         toolbar.addEventListener('click', handleToolbarClick);
         
         document.body.appendChild(toolbar);
         applyToolbarFallbackPositioning(toolbar);
-        console.log('[Toolsbar] 工具栏初始化完成');
-        
+        //console.log('[Toolsbar] 工具栏初始化完成');
+        return true;
     } catch (error) {
         console.error('[Toolsbar] 初始化失败:', error);
+        return false;
     }
 }
 
@@ -383,12 +402,12 @@ function handleToolbarClick(event) {
 }
 
 function handleBatchDownload() {
-    console.log('开始批量下载图片');
+    //console.log('开始批量下载图片');
     batchDownloadImages();
 }
 
 async function handleElementHighlight() {
-    console.log('切换元素高亮功能');
+    //console.log('切换元素高亮功能');
     
     if (!window.NWSModules || !window.NWSModules.ElementHighlighterModule) {
         showErrorNotification(t('toolsbar_highlight_missing', null, '元素高亮模块未加载，请刷新页面重试'));
@@ -408,8 +427,8 @@ async function handleElementHighlight() {
         }
 
         const isCurrentlyEnabled = highlighter.enabled;
-        console.log("当前高亮状态 - enabled:", isCurrentlyEnabled);
-        console.log("当前高亮状态 - isActive:", highlighter.isActive);
+        //console.log("当前高亮状态 - enabled:", isCurrentlyEnabled);
+        //console.log("当前高亮状态 - isActive:", highlighter.isActive);
 
         if (!isCurrentlyEnabled) {
             await highlighter.enable();
@@ -426,7 +445,7 @@ async function handleElementHighlight() {
                 t('toolsbar_highlight_enabled_detail', null, '• 鼠标悬停查看元素信息<br>• 右键显示操作菜单<br>• Ctrl+C 复制选择器<br>• Ctrl+Shift+C 复制样式')
             );
             
-            console.log('[ElementHighlight] 元素高亮功能已启用');
+            //console.log('[ElementHighlight] 元素高亮功能已启用');
         } else {
             await highlighter.disable();
             if (button) {
@@ -439,7 +458,7 @@ async function handleElementHighlight() {
             
             showSuccessNotification(t('toolsbar_highlight_disabled_title', null, '元素高亮已禁用'), '');
             
-            console.log('[Toolsbar] 元素高亮功能已禁用');
+            //console.log('[Toolsbar] 元素高亮功能已禁用');
         }
     } catch (error) {
         const message = error?.message || '未知错误';
@@ -619,7 +638,7 @@ function cleanImageUrl(url) {
 async function downloadImage(imageUrl) {
     return new Promise((resolve, reject) => {
         const cleanedUrl = cleanImageUrl(imageUrl);
-        console.log('[BatchDownload] 开始下载图片:', { original: imageUrl, cleaned: cleanedUrl });
+        //console.log('[BatchDownload] 开始下载图片:', { original: imageUrl, cleaned: cleanedUrl });
         
         const link = document.createElement('a');
         link.style.display = 'none';
@@ -665,7 +684,7 @@ async function downloadImage(imageUrl) {
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);
                 
-                console.log('[BatchDownload] 图片下载完成:', filename);
+                //console.log('[BatchDownload] 图片下载完成:', filename);
                 resolve(filename);
             })
             .catch(error => {
@@ -760,7 +779,7 @@ function openTranslationOptionsModal(translationModule) {
     Array.from(optionButtons).forEach((button) => {
         button.addEventListener('click', async () => {
             const mode = button.dataset.mode;
-            console.log('[Toolsbar] 点击翻译模式按钮:', mode, '模块:', translationModule);
+            //console.log('[Toolsbar] 点击翻译模式按钮:', mode, '模块:', translationModule);
             modal.remove();
             await translationModule.translatePage(null, mode);
         });
@@ -784,23 +803,32 @@ function openTranslationOptionsModal(translationModule) {
 }
 
 async function handleTranslate(options = {}) {
-    console.log('开始翻译页面');
+    //console.log('开始翻译页面');
     const translationModule = getTranslationModuleInstance();
     if (translationModule) {
         try {
+            let translatedCount = null;
+            if (!options.mode && !options.directStart && translationModule.isActive && typeof translationModule.stopTranslation === 'function') {
+                await translationModule.stopTranslation();
+                showSuccessNotification(t('toolsbar_translate_disabled', null, '翻译已关闭'), '');
+                return;
+            }
             if (options.mode) {
-                await translationModule.translatePage(null, options.mode);
-                return;
+                translatedCount = await translationModule.translatePage(null, options.mode);
+            } else if (options.directStart) {
+                translatedCount = await translationModule.translatePage();
+            } else {
+                const mode = translationModule.config?.translationMode || 'bilingual';
+                translatedCount = await translationModule.translatePage(null, mode);
             }
-            if (options.directStart) {
-                await translationModule.translatePage();
-                return;
+            if (translatedCount === 0) {
+                showErrorNotification(t('toolsbar_translate_empty', null, '未发现可翻译内容'));
             }
-            const mode = translationModule.config?.translationMode || 'bilingual';
-            await translationModule.translatePage(null, mode);
         } catch (error) {
             console.error('[Toolsbar] 翻译执行失败:', error);
-            showErrorNotification(t('toolsbar_translate_failed', [error.message], `翻译执行失败: ${error.message}`));
+            const rawMessage = error?.message || '';
+            const localizedMessage = t(`toolsbar_translate_error_${rawMessage}`, null, rawMessage || t('toolsbar_translate_failed_default', null, '未知错误'));
+            showErrorNotification(t('toolsbar_translate_failed', [localizedMessage], `翻译执行失败: ${localizedMessage}`));
         }
     } else {
         console.warn('[Toolsbar] 翻译模块未就绪:', translationModule);
@@ -827,7 +855,7 @@ function handleOpenSettings() {
 }
 
 async function handleSummary() {
-    console.log('开始生成页面总结');
+    //console.log('开始生成页面总结');
     const summaryModule = getSummaryModuleInstance();
     if (summaryModule && typeof summaryModule.summarizePage === 'function') {
         try {
@@ -843,7 +871,7 @@ async function handleSummary() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('[Toolsbar] 收到消息:', request);
+    //console.log('[Toolsbar] 收到消息:', request);
     
     switch (request.type || request.command || request.action) {
         case 'requestSummary':
@@ -871,13 +899,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
             break;
         default:
-            console.log('[Toolsbar] 未处理的消息类型:', request.type || request.command || request.action);
+            //console.log('[Toolsbar] 未处理的消息类型:', request.type || request.command || request.action);
             sendResponse({ success: false, error: '未支持的操作' });
     }
 });
 
 function updateToolbarSettings(settings) {
-    console.log('[Toolsbar] 更新设置:', settings);
+    //console.log('[Toolsbar] 更新设置:', settings);
     
     const toolbar = document.getElementById('nws-toolbar');
     if (!toolbar) {
@@ -888,10 +916,10 @@ function updateToolbarSettings(settings) {
     if (settings.toolbarVisible !== undefined) {
         if (settings.toolbarVisible) {
             toolbar.style.setProperty('display', 'flex', 'important');
-            console.log('[Toolsbar] 工具栏已显示');
+            //console.log('[Toolsbar] 工具栏已显示');
         } else {
             toolbar.style.setProperty('display', 'none', 'important');
-            console.log('[Toolsbar] 工具栏已隐藏');
+            //console.log('[Toolsbar] 工具栏已隐藏');
         }
     }
     
@@ -916,7 +944,7 @@ function updateToolbarSettings(settings) {
             highlightBtn.style.display = settings.featureToggles.highlight ? 'flex' : 'none';
         }
         
-        console.log('[Toolsbar] 功能开关已更新');
+        //console.log('[Toolsbar] 功能开关已更新');
     }
 }
 
@@ -934,16 +962,20 @@ async function handleSummaryRequest() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('[Toolsbar] DOM加载完成，准备初始化工具栏');
-    initToolbar().then(() => {
-        loadAndApplySettings();
+    //console.log('[Toolsbar] DOM加载完成，准备初始化工具栏');
+    initToolbar().then((created) => {
+        if (created) {
+            loadAndApplySettings();
+        }
     });
 });
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    console.log('[Toolsbar] 页面已加载，直接初始化工具栏');
-    initToolbar().then(() => {
-        loadAndApplySettings();
+    //console.log('[Toolsbar] 页面已加载，直接初始化工具栏');
+    initToolbar().then((created) => {
+        if (created) {
+            loadAndApplySettings();
+        }
     });
 }
 

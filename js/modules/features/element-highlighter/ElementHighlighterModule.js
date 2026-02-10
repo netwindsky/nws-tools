@@ -162,14 +162,14 @@ class ElementHighlighterModule extends ModuleBase {
             this.view = null;
             this.service = null;
             
-            console.log('[ElementHighlighter] 模块已销毁');
+            //console.log('[ElementHighlighter] 模块已销毁');
         } catch (error) {
             console.error('[ElementHighlighter] 销毁模块时出错:', error);
         }
     }
 
     async onEnable() {
-        console.log("ElementHighlighterModule:onEnable")
+        //console.log("ElementHighlighterModule:onEnable")
         this.isActive = true;
         this.addEventListeners();
     }
@@ -390,7 +390,7 @@ class ElementHighlighterModule extends ModuleBase {
             if (toggleSettings && toggleSettings.toggleSettings) {
                 const isEnabled = toggleSettings.toggleSettings.elementHighlighter;
                 this.config.enabled = isEnabled !== undefined ? isEnabled : this.defaultConfig.enabled;
-                console.log('[ElementHighlighter] 配置加载完成，启用状态:', this.config.enabled);
+                //console.log('[ElementHighlighter] 配置加载完成，启用状态:', this.config.enabled);
             } else {
                 // 如果没有存储的设置，使用默认配置
                 this.config = { ...this.defaultConfig };
@@ -414,7 +414,7 @@ class ElementHighlighterModule extends ModuleBase {
                         const wasEnabled = this.config.enabled;
                         this.config.enabled = newSettings.elementHighlighter;
                         
-                        console.log('[ElementHighlighter] 配置更新，启用状态:', this.config.enabled);
+                        //console.log('[ElementHighlighter] 配置更新，启用状态:', this.config.enabled);
                         
                         // 根据新配置启用或禁用功能
                         if (this.config.enabled && !wasEnabled) {

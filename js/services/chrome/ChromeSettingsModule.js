@@ -88,12 +88,24 @@ class ChromeSettingsModule extends ModuleBase {
      */
     isBlacklisted(url = window.location.href) {
         try {
-            const blacklist = this.config.blacklist || [];
+            const parsedUrl = new URL(url);
+            const isLocalhost = parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1' || parsedUrl.hostname === '[::1]';
+            if (isLocalhost && parsedUrl.port === '8188') {
+                return true;
+            }
+
+            let blacklist = Array.isArray(this.config.blacklist) ? this.config.blacklist : [];
+            if (blacklist.length === 0) {
+                const cachedConfig = this.storageCache.get(this.name);
+                if (cachedConfig && Array.isArray(cachedConfig.blacklist)) {
+                    blacklist = cachedConfig.blacklist;
+                }
+            }
             if (!Array.isArray(blacklist) || blacklist.length === 0) {
                 return false;
             }
 
-            const hostname = new URL(url).hostname;
+            const hostname = parsedUrl.hostname;
             return blacklist.some(item => {
                 if (!item) return false;
                 // 支持域名匹配或关键字匹配
@@ -529,6 +541,13 @@ class ChromeSettingsModule extends ModuleBase {
                 Object.entries(syncData).forEach(([key, value]) => {
                     this.storageCache.set(key, value);
                 });
+                const moduleConfig = syncData[this.name];
+                if (moduleConfig && typeof moduleConfig === 'object') {
+                    this.config = { ...this.defaultConfig, ...moduleConfig };
+                    if (this.config.enabled !== undefined) {
+                        this.enabled = this.config.enabled;
+                    }
+                }
                 
                 this.safeLog('debug', `加载了 ${Object.keys(syncData).length} 个设置到缓存`);
                 
@@ -572,6 +591,13 @@ class ChromeSettingsModule extends ModuleBase {
                                     this.storageCache.delete(key);
                                 }
                             });
+                            const moduleChange = changes[this.name];
+                            if (moduleChange && moduleChange.newValue && typeof moduleChange.newValue === 'object') {
+                                this.config = { ...this.config, ...moduleChange.newValue };
+                                if (this.config.enabled !== undefined) {
+                                    this.enabled = this.config.enabled;
+                                }
+                            }
 
                             this.emit('storageChanged', { changes, namespace });
                         } catch (error) {

@@ -7,6 +7,17 @@
  * 重构版本：已分离内联样式
  */
 
+(async () => {
+    const chromeSettings = window.NWSModules?.ChromeSettingsModule;
+    if (chromeSettings && typeof chromeSettings.isBlacklisted === 'function') {
+        if (!chromeSettings.initialized && typeof chromeSettings.initialize === 'function') {
+            await chromeSettings.initialize();
+        }
+        if (chromeSettings.isBlacklisted()) {
+            return;
+        }
+    }
+
 // 加载样式
 function loadStyles() {
     const link = document.createElement('link');
@@ -26,7 +37,7 @@ function receiveMsg() {
         if (request.message === 'pathChange') {
             arr = request.url.split("/");
             filename = arr[arr.length - 1];
-            //console.log(filename) // new url is now in content scripts!
+            ////console.log(filename) // new url is now in content scripts!
             //window.addEventListener('load', windowLoadedHandler,false)
             //window.onload = windowLoadedHandler();
 
@@ -68,20 +79,20 @@ setTimeout(function () {
 }, 1000);
 function getModelInfo() {
     jsonobj["civitaipath"] = window.location.href;
-    //console.log(arr[arr.length - 1]);
+    ////console.log(arr[arr.length - 1]);
     //模型区
     let $model = $("div.mantine-mwqi5l");
     let $child = $model.children();
     let models = "#Model:\n";
     let modelsjson = [];
     $child.each(function (index, element) {
-        //console.log(index,element);
+        ////console.log(index,element);
         if ($(element).hasClass("mantine-4xj3rk")) {
             let name = $(element).find("div.mantine-p6jtwo").text()
             let type = $(element).find("div.mantine-1m0j8uq").text()
             let href = "https://civitai.com" + element.getAttribute("href")
             modelsjson.push({ "name": name, "type": type, "href": href });
-            //console.log(name,type,href);
+            ////console.log(name,type,href);
             models += "**模型：**" + name + "\n**类型：**" + type + "\n**地址：**" + href + "\n\r";
             models += "\n";
         }
@@ -94,23 +105,23 @@ function getDataInfo() {
     let datajson = {}
     let $general = $("div.mantine-Text-root.mantine-6bst0b");
     $.each($general, function (index, element) {
-        //console.log(index);
-        //console.log(element);
+        ////console.log(index);
+        ////console.log(element);
         let parent = $(element).parent()[0];
-        //console.log(parent);
+        ////console.log(parent);
         let key = $(parent).find("div.mantine-6bst0b").text();
         let value = $(parent).find("[dir='ltr']").text();
         datajson[key] = value;
         data += "**" + key + "**:" + value + "\n";
-        //console.log(key, value);
+        ////console.log(key, value);
     });
 
     let keywordjson = {};
     let keyword = "#KEYWORD:\n";
     let $prompt = $("div.mantine-Stack-root.mantine-1qlxz9s");
     $.each($prompt, function (index, element) {
-        //console.log(index);
-        //console.log(element);
+        ////console.log(index);
+        ////console.log(element);
         let parent = $(element).parent()[0];
         if ($(parent).hasClass("mantine-zyu68o")) {
             let key = $(element).find("div.mantine-Text-root.mantine-1ercuvb").text();
@@ -119,13 +130,13 @@ function getDataInfo() {
             //data+="**"+key+"**:"+value+"\n";
             keyword += "**" + key + "**:" + value + "\n\r";
             keywordjson[key] = value;
-            //console.log(key, value);
+            ////console.log(key, value);
         }
         jsonobj["keyword"] = keywordjson;
         jsonobj["data"] = datajson;
         //let key=$(parent).find("div.mantine-Stack-root.mantine-zyu68o").text();
         //let value=$(parent).find("[dir='ltr']").text();
-        //console.log(parent);
+        ////console.log(parent);
     });
 }
 
@@ -184,7 +195,7 @@ let imagejson = {};
 function getImageInfo() {
     //图片区
     let $image = $("div.mantine-1ynvwjz img");
-    console.log($image[0])
+    //console.log($image[0])
     let imagepath = $image[0].getAttribute("src");
 
     let images;
@@ -192,7 +203,7 @@ function getImageInfo() {
     //imagejson= { "path": imagepath };
     //let imageBase64;
     imagejson["data"] = "";
-    //console.log(base64String);
+    ////console.log(base64String);
     jsonobj["image"] = imagejson
     
     downloadImage(imagepath)
@@ -210,14 +221,14 @@ function getImageInfo() {
         //imageBase64=base64String;
         //images = "#Image:\n  ![图片](" + base64String + ")\n";
         //imagejson["data"] = base64String;
-        //console.log(base64String);
+        ////console.log(base64String);
         //jsonobj["image"] = imagejson
         imageCompleted(base64String);
 
     }).catch(err => {
         console.error(err);
     });*/
-    //console.log(imagejson);
+    ////console.log(imagejson);
 
 }
 
@@ -251,11 +262,11 @@ function uploadImage(blob) {
                 sendsuccess(data);
                 switch (data) {
                     case "success":
-                        console.log("上传成功");
+                        //console.log("上传成功");
                         resolve(data);
                         break;
                     case "hasit":
-                        console.log("文件已存在");
+                        //console.log("文件已存在");
                         resolve(data);
                         break;
                     default:
@@ -272,14 +283,14 @@ function uploadImage(blob) {
     });
 }
 function sendsuccess(cmd) {
-    //console.log("sendsuccess",chrome.runtime);
+    ////console.log("sendsuccess",chrome.runtime);
     //let cmd="success";
     chrome.runtime.sendMessage(
         {
             command : cmd
         },
             function(response) {
-            console.log('收到来自后台的回复：' + response);
+            //console.log('收到来自后台的回复：' + response);
         }
     );
 }
@@ -287,10 +298,10 @@ function sendsuccess(cmd) {
 function imageCompleted(base64String) {
     let images;
     //let imagejson = { "path": imagepath };
-    //console.log("imageCompleted");
+    ////console.log("imageCompleted");
     images = "#Image:\n  ![图片](" + base64String + ")\n";
     imagejson["data"] = base64String;
-    //console.log(base64String);
+    ////console.log(base64String);
     jsonobj["image"] = imagejson
 
     const b = document.createElement("a");
@@ -298,10 +309,6 @@ function imageCompleted(base64String) {
     b.download = filename + ".json";
     b.click();
 }
-
-
-
-
 
 //更具图片地址转换Base64
 function getBase64Image(url) {
@@ -327,3 +334,5 @@ function getBase64Image(url) {
         img.src = url;
     });
 }
+
+})();

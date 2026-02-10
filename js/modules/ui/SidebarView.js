@@ -90,7 +90,7 @@ class SidebarView {
      * 加载内容
      */
     async loadTemplateContent() {
-        console.log('[SidebarView] 使用内置模板加载内容');
+        //console.log('[SidebarView] 使用内置模板加载内容');
         this.loadFallbackContent();
     }
     
@@ -331,7 +331,7 @@ class SidebarView {
      * 处理功能点击
      */
     handleFeatureClick(feature, event) {
-        console.log(`[SidebarView] 点击功能: ${feature}`);
+        //console.log(`[SidebarView] 点击功能: ${feature}`);
         
         switch (feature) {
             case 'element-highlight':
@@ -824,7 +824,7 @@ class SidebarView {
      * 刷新内容
      */
     refreshContent() {
-        console.log('[SidebarView] 刷新内容');
+        //console.log('[SidebarView] 刷新内容');
         this.loadTemplateContent();
     }
     
@@ -834,7 +834,7 @@ class SidebarView {
     clearCache() {
         if (this.templateManager) {
             this.templateManager.clearCache();
-            console.log('[SidebarView] 缓存已清除');
+            //console.log('[SidebarView] 缓存已清除');
         }
     }
     
@@ -917,7 +917,7 @@ class SidebarView {
      * 处理功能开关
      */
     handleFeatureToggle(moduleName, enabled) {
-        console.log(`[SidebarView] 切换功能: ${moduleName}, 启用: ${enabled}`);
+        //console.log(`[SidebarView] 切换功能: ${moduleName}, 启用: ${enabled}`);
         
         if (window.NWSModules && window.NWSModules[moduleName]) {
             const module = window.NWSModules[moduleName];

@@ -118,7 +118,7 @@ class ImageDownloaderModule extends ModuleBase {
             this.view = null;
             this.service = null;
             
-            console.log('[ImageDownloader] 模块已销毁');
+            //console.log('[ImageDownloader] 模块已销毁');
         } catch (error) {
             console.error('[ImageDownloader] 销毁模块时出错:', error);
         }

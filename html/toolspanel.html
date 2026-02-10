@@ -9,23 +9,23 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0c;
-            --panel: #16161a;
-            --panel-lighter: #1e1e24;
-            --accent: #7e57c2;
-            --accent-glow: rgba(126, 87, 194, 0.3);
-            --text: #ffffff;
-            --text-dim: #9494a0;
-            --border: rgba(255, 255, 255, 0.08);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --nws-bg: #0d1117;
+            --nws-panel: #1a1f2c;
+            --nws-panel-lighter: #252c3d;
+            --nws-accent: #7e57c2;
+            --nws-accent-glow: rgba(126, 87, 194, 0.3);
+            --nws-text: #ffffff;
+            --nws-text-dim: #9494a0;
+            --nws-border: rgba(255, 255, 255, 0.08);
+            --nws-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            background-color: var(--bg);
+            background-color: var(--nws-bg);
             background-image: 
                 radial-gradient(circle at 0% 0%, rgba(126, 87, 194, 0.1) 0%, transparent 40%),
                 radial-gradient(circle at 100% 100%, rgba(126, 87, 194, 0.05) 0%, transparent 40%);
-            color: var(--text);
+            color: var(--nws-text);
             min-height: 100vh;
             margin: 0;
             padding: 24px;
@@ -51,8 +51,8 @@
             align-items: center;
             margin-bottom: 32px;
             padding: 24px;
-            background: var(--panel);
-            border: 1px solid var(--border);
+            background: var(--nws-panel);
+            border: 1px solid var(--nws-border);
             border-radius: 24px;
             backdrop-filter: blur(10px);
         }
@@ -67,7 +67,7 @@
         }
 
         .header-info p {
-            color: var(--text-dim);
+            color: var(--nws-text-dim);
             margin: 0;
             font-size: 14px;
         }
@@ -81,12 +81,12 @@
             border-radius: 12px;
             font-size: 13px;
             font-weight: 600;
-            background: var(--panel-lighter);
-            border: 1px solid var(--border);
-            transition: var(--transition);
+            background: var(--nws-panel-lighter);
+            border: 1px solid var(--nws-border);
+            transition: var(--nws-transition);
         }
 
-        .status-badge.loading { border-color: var(--accent); color: var(--accent); }
+        .status-badge.loading { border-color: var(--nws-accent); color: var(--nws-accent); }
         .status-badge.success { border-color: #4caf50; color: #4caf50; }
         .status-badge.error { border-color: #f44336; color: #f44336; }
 
@@ -94,7 +94,7 @@
             width: 16px;
             height: 16px;
             border: 2px solid rgba(126, 87, 194, 0.2);
-            border-top: 2px solid var(--accent);
+            border-top: 2px solid var(--nws-accent);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -105,8 +105,8 @@
 
         /* 主要内容卡片 */
         .main-card {
-            background: var(--panel);
-            border: 1px solid var(--border);
+            background: var(--nws-panel);
+            border: 1px solid var(--nws-border);
             border-radius: 24px;
             padding: 32px;
             margin-bottom: 24px;
@@ -122,12 +122,12 @@
             gap: 12px;
         }
 
-        .card-title i { color: var(--accent); }
+        .card-title i { color: var(--nws-accent); }
 
         /* 内容分析区域 */
         .analysis-area {
-            background: var(--bg);
-            border: 1px solid var(--border);
+            background: var(--nws-bg);
+            border: 1px solid var(--nws-border);
             border-radius: 16px;
             padding: 24px;
             min-height: 400px;
@@ -137,12 +137,12 @@
 
         /* Markdown 内容定制 */
         .markdown-content {
-            color: var(--text);
+            color: var(--nws-text);
             line-height: 1.7;
         }
 
         .markdown-content h1, .markdown-content h2 {
-            color: var(--accent);
+            color: var(--nws-accent);
             margin-top: 24px;
             margin-bottom: 16px;
             font-weight: 600;
@@ -154,7 +154,7 @@
         .markdown-content li { margin-bottom: 8px; color: #d1d1d6; }
 
         .markdown-content blockquote {
-            border-left: 4px solid var(--accent);
+            border-left: 4px solid var(--nws-accent);
             background: rgba(126, 87, 194, 0.05);
             margin: 20px 0;
             padding: 16px 20px;
@@ -167,7 +167,7 @@
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
-            background: var(--panel-lighter);
+            background: var(--nws-panel-lighter);
             border-radius: 12px;
             overflow: hidden;
         }
@@ -175,12 +175,12 @@
         .markdown-content th, .markdown-content td {
             padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid var(--nws-border);
         }
 
         .markdown-content th {
             background: rgba(126, 87, 194, 0.1);
-            color: var(--accent);
+            color: var(--nws-accent);
             font-weight: 600;
         }
 
@@ -193,13 +193,13 @@
         }
 
         .action-btn {
-            background: var(--panel-lighter);
-            border: 1px solid var(--border);
-            color: var(--text);
+            background: var(--nws-panel-lighter);
+            border: 1px solid var(--nws-border);
+            color: var(--nws-text);
             padding: 12px;
             border-radius: 12px;
             cursor: pointer;
-            transition: var(--transition);
+            transition: var(--nws-transition);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -209,15 +209,15 @@
         }
 
         .action-btn:hover {
-            background: var(--accent);
-            border-color: var(--accent);
+            background: var(--nws-accent);
+            border-color: var(--nws-accent);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px var(--accent-glow);
+            box-shadow: 0 4px 12px var(--nws-accent-glow);
         }
 
         .action-btn.primary {
-            background: var(--accent);
-            border-color: var(--accent);
+            background: var(--nws-accent);
+            border-color: var(--nws-accent);
         }
 
         /* 吐司通知 */
@@ -225,8 +225,8 @@
             position: fixed;
             bottom: 32px;
             right: 32px;
-            background: var(--panel-lighter);
-            border: 1px solid var(--accent);
+            background: var(--nws-panel-lighter);
+            border: 1px solid var(--nws-accent);
             padding: 16px 24px;
             border-radius: 16px;
             display: flex;
@@ -240,7 +240,7 @@
         }
 
         .toast.show { transform: translateY(0); opacity: 1; }
-        .toast i { color: var(--accent); font-size: 20px; }
+        .toast i { color: var(--nws-accent); font-size: 20px; }
     </style>
 </head>
 <body>
@@ -287,18 +287,16 @@
             <!-- 进度条 -->
             <div class="nws-progress-container" style="margin-bottom: 24px;">
                 <div class="nws-progress-label">
-                    <span style="color: var(--text-dim); font-size: 13px;">AI 深度分析进度</span>
-                    <span id="progressText" style="color: var(--accent); font-weight: 600;">0%</span>
+                    <span style="color: var(--nws-text-dim); font-size: 13px;">AI 深度分析进度</span>
+                    <span id="progressText" style="color: var(--nws-accent); font-weight: 600;">0%</span>
                 </div>
-                <div class="nws-progress">
-                    <div class="nws-progress-bar" id="progressBar" style="width: 0%;"></div>
+                <div class="nws-progress-container" style="background: rgba(255,255,255,0.05);">
+                    <div id="progressBar" class="nws-progress-fill"></div>
                 </div>
             </div>
 
-            <!-- 分析内容 -->
-            <div class="analysis-area">
-                <div id="pageSummary">
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--text-dim);">
+            <div id="aiSummaryEmpty" class="nws-empty-state">
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: var(--nws-text-dim);">
                         <div class="spinner" style="width: 32px; height: 32px; margin-bottom: 16px;"></div>
                         <p>正在启动 AI 引擎，请稍候...</p>
                     </div>

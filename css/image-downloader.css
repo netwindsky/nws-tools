@@ -29,7 +29,7 @@
 /* 下载按钮 */
 .nws-download-button {
     position: absolute !important;
-    background: var(--panel, #1a1f2c) !important;
+    background: var(--nws-panel) !important;
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -56,7 +56,7 @@
 }
 
 .nws-download-button:hover {
-    background: var(--accent, #7e57c2) !important;
+    background: var(--nws-accent) !important;
     border-color: rgba(255, 255, 255, 0.2) !important;
     transform: scale(1.1) translateY(-2px) !important;
     box-shadow: 0 6px 20px rgba(126, 87, 194, 0.4) !important;
@@ -89,7 +89,7 @@
     position: absolute;
     top: 5px;
     left: 5px;
-    background: var(--panel, #1a1f2c);
+    background: var(--nws-panel);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     border: 1px solid rgba(255, 255, 255, 0.1);

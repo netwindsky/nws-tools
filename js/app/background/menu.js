@@ -3,7 +3,7 @@ chrome.contextMenus.onClicked.addListener(genericOnClick);
 
 // 菜单点击回调函数
 function genericOnClick(info) {
-  console.log(info);
+  //console.log(info);
   switch (info.menuItemId) {
     case 'elementHighlight':
       sendMessage('toggleElementHighlight');
@@ -43,7 +43,7 @@ function genericOnClick(info) {
       }
       break;
     default:
-      console.log('未知的菜单项被点击');
+      //console.log('未知的菜单项被点击');
   }
 }
 
