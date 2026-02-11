@@ -166,5 +166,97 @@
   },
   "toolsbar_summary_not_ready": {
     "message": "Summary module not ready. Try again later or refresh."
-  }
+  },
+  "options_nav_blacklist": {
+    "message": "Blacklist"
+  },
+  "options_blacklist_title": {
+    "message": "Blacklist Management"
+  },
+  "options_blacklist_desc": {
+    "message": "Sites in the blacklist will not run the extension. Supports domain or URL keywords."
+  },
+  "options_blacklist_add_label": {
+    "message": "Add New Site"
+  },
+  "options_blacklist_input_placeholder": {
+    "message": "e.g. example.com"
+  },
+  "options_blacklist_add_btn": {
+    "message": "Add"
+  },
+  "options_blacklist_current_label": {
+    "message": "Current Blacklist"
+  },
+  "options_blacklist_save_btn": {
+    "message": "Save Blacklist"
+  },
+  "options_saving_loading": {
+    "message": "Saving..."
+  },
+  "options_saving_saved": {
+    "message": "Saved"
+  },
+  "popup_title": { "message": "NWS Tools" },
+  "popup_status_active": { "message": "Active" },
+  "feature_batch_download_title": { "message": "Batch Image Download" },
+  "feature_batch_download_desc": { "message": "One-click HD extraction" },
+  "feature_highlight_title": { "message": "Element Highlight" },
+  "feature_highlight_desc": { "message": "Deep page structure analysis" },
+  "action_translate_page": { "message": "Translate Page" },
+  "action_page_summary": { "message": "Content Summary" },
+  "btn_execute": { "message": "Execute" },
+  "footer_settings": { "message": "Settings" },
+  "footer_dashboard": { "message": "Control Panel" },
+  "toast_operation_triggered": { "message": "Operation Triggered" },
+  "panel_title": { "message": "NWS Tools Control Panel" },
+  "panel_subtitle": { "message": "Intelligent Web Dev Assistant · Deep Page Analysis" },
+  "panel_analyzing": { "message": "Analyzing" },
+  "stat_elements": { "message": "Elements" },
+  "stat_images": { "message": "Images" },
+  "stat_links": { "message": "Links" },
+  "stat_modules": { "message": "Active Modules" },
+  "panel_content_analysis": { "message": "Page Content Analysis" },
+  "panel_analysis_progress": { "message": "AI Deep Analysis Progress" },
+  "panel_ai_starting": { "message": "Starting AI Engine, please wait..." },
+  "btn_refresh_analysis": { "message": "Re-analyze" },
+  "btn_export_report": { "message": "Export Report" },
+  "btn_advanced_settings": { "message": "Advanced Settings" },
+  "feature_element_detect_title": { "message": "Element Detect" },
+  "feature_element_detect_desc": { "message": "Deep DOM Identification" },
+  "feature_asset_extract_title": { "message": "Asset Extraction" },
+  "feature_asset_extract_desc": { "message": "One-click Media Download" },
+  "feature_perf_monitor_title": { "message": "Performance Monitor" },
+  "feature_perf_monitor_desc": { "message": "Real-time Page Score" },
+  "feature_ext_settings_title": { "message": "Extension Settings" },
+  "feature_ext_settings_desc": { "message": "Customize Assistant Behavior" },
+  "options_title": { "message": "NWS Tools Settings" },
+  "nav_user_mgmt": { "message": "User Management" },
+  "nav_ai_model": { "message": "AI Model" },
+  "nav_trans_pref": { "message": "Translation Preferences" },
+  "nav_content_mgmt": { "message": "Content Management" },
+  "nav_shortcuts": { "message": "Shortcuts" },
+  "nav_features": { "message": "Features" },
+  "nav_help": { "message": "Help Center" },
+  "section_user_mgmt_title": { "message": "User Management" },
+  "section_user_mgmt_desc": { "message": "Configure your profile and enable cross-device sync." },
+  "label_username": { "message": "Username" },
+  "placeholder_username": { "message": "Enter your nickname" },
+  "label_email": { "message": "Email Address" },
+  "placeholder_email": { "message": "example@email.com" },
+  "btn_save_changes": { "message": "Save Changes" },
+  "section_ai_model_title": { "message": "AI Model Configuration" },
+  "section_ai_model_desc": { "message": "Connect your preferred AI service to power intelligent analysis." },
+  "label_api_endpoint": { "message": "API Endpoint" },
+  "label_api_key": { "message": "API Key" },
+  "label_preferred_model": { "message": "Preferred Model" },
+  "btn_connect_save": { "message": "Connect & Save" },
+  "section_trans_settings_title": { "message": "Translation Settings" },
+  "section_trans_settings_desc": { "message": "Customize your reading experience with multiple translation engines." },
+  "label_target_lang": { "message": "Target Language" },
+  "label_trans_engine": { "message": "Translation Engine" },
+  "label_trans_mode": { "message": "Translation Mode" },
+  "label_concurrent_limit": { "message": "Concurrent Translation Limit" },
+  "toggle_selection_trans_title": { "message": "Selection Translation" },
+  "toggle_selection_trans_desc": { "message": "Show instant translation when selecting text" }
 }

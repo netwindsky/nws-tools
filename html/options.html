@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NWS Tools Settings</title>
+    <title data-i18n="options_title">NWS Tools Settings</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -101,6 +101,9 @@
             font-size: 20px;
             font-weight: 700;
             letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .nav-list {
@@ -471,28 +474,28 @@
                 <div class="brand-logo">
                     <i class="fas fa-shield-halved"></i>
                 </div>
-                <h1 class="brand-name">NWS Tools</h1>
+                <h1 class="brand-name" data-i18n="options_title">NWS Tools</h1>
             </div>
             <ul class="nav-list">
                 <li class="nav-item active" data-target="user-management">
                     <i class="fas fa-user-gear"></i>
-                    <span>用户管理</span>
+                    <span data-i18n="nav_user_mgmt">用户管理</span>
                 </li>
                 <li class="nav-item" data-target="model-settings">
                     <i class="fas fa-brain"></i>
-                    <span>AI 模型</span>
+                    <span data-i18n="nav_ai_model">AI 模型</span>
                 </li>
                 <li class="nav-item" data-target="translation-settings">
                     <i class="fas fa-language"></i>
-                    <span>翻译偏好</span>
+                    <span data-i18n="nav_trans_pref">翻译偏好</span>
                 </li>
                 <li class="nav-item" data-target="content-settings">
                     <i class="fas fa-file-invoice"></i>
-                    <span>内容管理</span>
+                    <span data-i18n="nav_content_mgmt">内容管理</span>
                 </li>
                 <li class="nav-item" data-target="shortcut-settings">
                     <i class="fas fa-keyboard"></i>
-                    <span>快捷键</span>
+                    <span data-i18n="nav_shortcuts">快捷键</span>
                 </li>
                 <li class="nav-item" data-target="blacklist-settings">
                     <i class="fas fa-ban"></i>
@@ -500,11 +503,11 @@
                 </li>
                 <li class="nav-item" data-target="feature-toggles">
                     <i class="fas fa-sliders"></i>
-                    <span>功能开关</span>
+                    <span data-i18n="nav_features">功能开关</span>
                 </li>
                 <li class="nav-item" data-target="help-feedback">
                     <i class="fas fa-circle-question"></i>
-                    <span>帮助中心</span>
+                    <span data-i18n="nav_help">帮助中心</span>
                 </li>
             </ul>
         </aside>
@@ -514,27 +517,27 @@
             <!-- User Management -->
             <section class="section-panel active" id="user-management">
                 <div class="section-header">
-                    <h2 class="section-title">用户管理</h2>
-                    <p class="section-desc">配置您的个人资料，开启跨设备同步体验。</p>
+                    <h2 class="section-title" data-i18n="section_user_mgmt_title">用户管理</h2>
+                    <p class="section-desc" data-i18n="section_user_mgmt_desc">配置您的个人资料，开启跨设备同步体验。</p>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">用户名</label>
+                    <label class="form-label" data-i18n="label_username">用户名</label>
                     <div class="input-wrapper">
                         <i class="fas fa-user"></i>
-                        <input type="text" class="form-control" id="username" placeholder="输入您的昵称">
+                        <input type="text" class="form-control" id="username" data-i18n-placeholder="placeholder_username" placeholder="输入您的昵称">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">邮箱地址</label>
+                    <label class="form-label" data-i18n="label_email">邮箱地址</label>
                     <div class="input-wrapper">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" class="form-control" id="email" placeholder="example@email.com">
+                        <input type="email" class="form-control" id="email" data-i18n-placeholder="placeholder_email" placeholder="example@email.com">
                     </div>
                 </div>
                 <div style="margin-top: 40px;">
                     <button class="btn btn-primary" id="save-user">
                         <i class="fas fa-save"></i>
-                        保存更改
+                        <span data-i18n="btn_save_changes">保存更改</span>
                     </button>
                 </div>
             </section>
@@ -542,25 +545,25 @@
             <!-- AI Model Settings -->
             <section class="section-panel" id="model-settings">
                 <div class="section-header">
-                    <h2 class="section-title">AI 模型配置</h2>
-                    <p class="section-desc">连接您偏好的 AI 服务，为智能分析提供动力。</p>
+                    <h2 class="section-title" data-i18n="section_ai_model_title">AI 模型配置</h2>
+                    <p class="section-desc" data-i18n="section_ai_model_desc">连接您偏好的 AI 服务，为智能分析提供动力。</p>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">API 节点地址</label>
+                    <label class="form-label" data-i18n="label_api_endpoint">API 节点地址</label>
                     <div class="input-wrapper">
                         <i class="fas fa-link"></i>
                         <input type="url" class="form-control" id="model-api-url" placeholder="https://api.openai.com/v1">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">API 密钥</label>
+                    <label class="form-label" data-i18n="label_api_key">API 密钥</label>
                     <div class="input-wrapper">
                         <i class="fas fa-key"></i>
                         <input type="password" class="form-control" id="model-api-key" placeholder="sk-...">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">首选模型</label>
+                    <label class="form-label" data-i18n="label_preferred_model">首选模型</label>
                     <div class="input-wrapper">
                         <i class="fas fa-robot"></i>
                         <select class="form-control form-select" id="model-selection">
@@ -573,7 +576,7 @@
                 <div style="margin-top: 40px;">
                     <button class="btn btn-primary" id="save-model">
                         <i class="fas fa-plug"></i>
-                        连接并保存
+                        <span data-i18n="btn_connect_save">连接并保存</span>
                     </button>
                 </div>
             </section>
@@ -581,11 +584,11 @@
             <!-- Translation Settings -->
             <section class="section-panel" id="translation-settings">
                 <div class="section-header">
-                    <h2 class="section-title">翻译设置</h2>
-                    <p class="section-desc">定制您的阅读体验，支持多种翻译引擎。</p>
+                    <h2 class="section-title" data-i18n="section_trans_settings_title">翻译设置</h2>
+                    <p class="section-desc" data-i18n="section_trans_settings_desc">定制您的阅读体验，支持多种翻译引擎。</p>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">目标语言</label>
+                    <label class="form-label" data-i18n="label_target_lang">目标语言</label>
                     <div class="input-wrapper">
                         <i class="fas fa-globe"></i>
                         <select class="form-control form-select" id="default-language">
@@ -597,7 +600,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">翻译引擎</label>
+                    <label class="form-label" data-i18n="label_trans_engine">翻译引擎</label>
                     <div class="input-wrapper">
                         <i class="fas fa-server"></i>
                         <select class="form-control form-select" id="translation-service">
@@ -608,7 +611,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">翻译模式</label>
+                    <label class="form-label" data-i18n="label_trans_mode">翻译模式</label>
                     <div class="input-wrapper">
                         <i class="fas fa-align-left"></i>
                         <select class="form-control form-select" id="translation-mode">
@@ -618,7 +621,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">并发翻译数量</label>
+                    <label class="form-label" data-i18n="label_concurrent_limit">并发翻译数量</label>
                     <div class="input-wrapper">
                         <i class="fas fa-layer-group"></i>
                         <input type="number" class="form-control" id="concurrent-limit" min="1" max="5" value="1">
@@ -626,199 +629,22 @@
                 </div>
                 <div class="toggle-group">
                     <div class="toggle-info">
-                        <h4>划词翻译</h4>
-                        <p>选中文本时显示即时翻译提示</p>
+                        <h4 data-i18n="toggle_selection_trans_title">划词翻译</h4>
+                        <p data-i18n="toggle_selection_trans_desc">选中文本时显示即时翻译提示</p>
                     </div>
                     <label class="switch">
                         <input type="checkbox" id="enable-selection-translation" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div class="toggle-group">
-                    <div class="toggle-info">
-                        <h4>懒翻译</h4>
-                        <p>视口内内容才触发自动翻译</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="enable-viewport-translation" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div style="margin-top: 40px;">
-                    <button class="btn btn-primary" id="save-translation">
-                        <i class="fas fa-check"></i>
-                        应用设置
-                    </button>
-                </div>
-            </section>
-
-            <!-- Content Management -->
-            <section class="section-panel" id="content-settings">
-                <div class="section-header">
-                    <h2 class="section-title">内容管理</h2>
-                    <p class="section-desc">管理存储的数据、导出配置或清空缓存。</p>
-                </div>
-                <div class="toggle-group">
-                    <div class="toggle-info">
-                        <h4>自动保存记录</h4>
-                        <p>分析完成后自动保存结果到本地库</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="auto-save" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="toggle-group">
-                    <div class="toggle-info">
-                        <h4>同步到云端</h4>
-                        <p>将您的配置同步到其他已登录设备</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="cloud-sync">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div style="margin-top: 32px; display: flex; gap: 12px;">
-                    <button class="btn btn-secondary" id="export-config">
-                        <i class="fas fa-download"></i>
-                        导出备份
-                    </button>
-                    <button class="btn btn-secondary" id="clear-cache" style="color: var(--danger);">
-                        <i class="fas fa-trash-can"></i>
-                        清空缓存
-                    </button>
-                </div>
-            </section>
-
-            <!-- Shortcuts -->
-            <section class="section-panel" id="shortcut-settings">
-                <div class="section-header">
-                    <h2 class="section-title">键盘快捷键</h2>
-                    <p class="section-desc">通过快捷键快速触发功能，提升操作效率。</p>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">唤起主面板</label>
-                    <div class="input-wrapper">
-                        <i class="fas fa-keyboard"></i>
-                        <input type="text" class="form-control" id="shortcut-main" value="Alt + Shift + P">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">快速截屏分析</label>
-                    <div class="input-wrapper">
-                        <i class="fas fa-camera"></i>
-                        <input type="text" class="form-control" id="shortcut-capture" value="Alt + Shift + S">
-                    </div>
-                </div>
-                <div style="margin-top: 40px;">
-                    <button class="btn btn-primary" id="save-shortcuts">
-                        <i class="fas fa-keyboard"></i>
-                        保存快捷键
-                    </button>
-                </div>
-            </section>
-
-            <!-- Blacklist Settings -->
-            <section class="section-panel" id="blacklist-settings">
-                <div class="section-header">
-                    <h2 class="section-title" data-i18n="options_blacklist_title">黑名单管理</h2>
-                    <p class="section-desc" data-i18n="options_blacklist_desc">在黑名单中的网站，插件将不会运行。支持输入域名或 URL 关键字。</p>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" data-i18n="options_blacklist_add_label">添加新站点</label>
-                    <div class="input-wrapper" style="display: flex; gap: 10px;">
-                        <div style="flex: 1; position: relative;">
-                            <i class="fas fa-globe"></i>
-                            <input type="text" class="form-control" id="blacklist-input" data-i18n-placeholder="options_blacklist_input_placeholder" placeholder="例如: example.com">
-                        </div>
-                        <button class="btn btn-primary" id="add-blacklist" style="width: auto; padding: 0 24px;" data-i18n="options_blacklist_add_btn">添加</button>
-                    </div>
-                </div>
-                <div class="blacklist-container" style="margin-top: 24px;">
-                    <label class="form-label" data-i18n="options_blacklist_current_label">当前黑名单</label>
-                    <ul id="blacklist-list" style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
-                        <!-- 黑名单项将通过 JS 动态添加 -->
-                    </ul>
-                </div>
-                <div style="margin-top: 40px;">
-                    <button class="btn btn-primary" id="save-blacklist">
-                        <i class="fas fa-save"></i>
-                        <span data-i18n="options_blacklist_save_btn">保存黑名单</span>
-                    </button>
-                </div>
-            </section>
-
-            <!-- Feature Toggles -->
-            <section class="section-panel" id="feature-toggles">
-                <div class="section-header">
-                    <h2 class="section-title">功能实验室</h2>
-                    <p class="section-desc">开启或关闭核心功能模块。</p>
-                </div>
-                <div class="toggle-group">
-                    <div class="toggle-info">
-                        <h4>智能侧边栏</h4>
-                        <p>在页面右侧显示悬浮工具栏</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="enable-sidebar" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="toggle-group">
-                    <div class="toggle-info">
-                        <h4>深色模式适配</h4>
-                        <p>自动检测并为页面应用深色风格</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="enable-darkmode">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="toggle-group">
-                    <div class="toggle-info">
-                        <h4>开发者工具集成</h4>
-                        <p>在 F12 面板中显示分析选项卡</p>
-                    </div>
-                    <label class="switch">
-                        <input type="checkbox" id="enable-devtools" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-            </section>
-
-            <!-- Help & Feedback -->
-            <section class="section-panel" id="help-feedback">
-                <div class="section-header">
-                    <h2 class="section-title">帮助与支持</h2>
-                    <p class="section-desc">遇到问题？查看文档或联系我们。</p>
-                </div>
-                <div class="help-grid">
-                    <div class="help-card">
-                        <i class="fas fa-book"></i>
-                        <h4>使用文档</h4>
-                        <p>详细了解 NWS Tools 的各项功能与高级用法。</p>
-                    </div>
-                    <div class="help-card">
-                        <i class="fas fa-comments"></i>
-                        <h4>提交反馈</h4>
-                        <p>发现 Bug 或有新想法？随时向我们提交建议。</p>
-                    </div>
-                    <div class="help-card">
-                        <i class="fas fa-star"></i>
-                        <h4>支持我们</h4>
-                        <p>如果您喜欢这个工具，请在 Chrome 商店给我们好评！</p>
-                    </div>
-                </div>
             </section>
         </main>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast">
-        <i id="toast-icon"></i>
-        <span id="toast-message"></span>
-    </div>
+    <!-- UI Internationalization Helper -->
+    <script src="../js/utils/ui-i18n.js"></script>
 
+    <!-- Scripts -->
     <script src="../js/app/options/options.js"></script>
 </body>
 </html>

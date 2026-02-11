@@ -102,7 +102,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // 转发页面摘要到工具面板
         chrome.tabs.query({}, (tabs) => {
             tabs.forEach(tab => {
-                if (tab.url && tab.url.includes('toolspanel.html')) {
+                if (tab.url && tab.url.includes('control-panel.html')) {
                     chrome.tabs.sendMessage(tab.id, {
                         type: 'pageSummary',
                         summary: request.summary
