@@ -7,6 +7,7 @@
             this.onDownload = typeof options.onDownload === 'function' ? options.onDownload : () => {};
             this.safeQuerySelectorAll = options.safeQuerySelectorAll || null;
             this.downloadButtons = new WeakMap();
+            this.resizeObservers = new WeakMap();
         }
 
         hasDownloadButton(img) {
@@ -14,81 +15,60 @@
         }
 
         addDownloadButton(img) {
-            const container = this.createImageContainer(img);
+            const overlay = this.createOverlay(img);
             const button = this.createDownloadButton(img);
-            container.appendChild(button);
-            this.downloadButtons.set(img, { container, button });
-            this.setupImageEvents(img, container, button);
+            overlay.appendChild(button);
+            this.downloadButtons.set(img, { overlay, button });
+            this.setupImageEvents(img, overlay, button);
+            this.setupResizeObserver(img, overlay);
         }
 
-        createImageContainer(img) {
-            if (img.parentNode && img.parentNode.classList.contains('nws-image-container')) {
-                return img.parentNode;
-            }
+        createOverlay(img) {
+            const overlay = document.createElement('div');
+            overlay.className = 'nws-image-overlay';
+            overlay.dataset.nwsOverlay = 'true';
 
-            const container = document.createElement('div');
-            container.className = 'nws-image-container';
-            
-            const style = window.getComputedStyle(img);
+            this.updateOverlayPosition(img, overlay);
+
+            document.body.appendChild(overlay);
+
+            return overlay;
+        }
+
+        updateOverlayPosition(img, overlay) {
             const rect = img.getBoundingClientRect();
-            
-            if (style.position !== 'static') {
-                container.style.position = style.position;
-                container.style.top = style.top;
-                container.style.right = style.right;
-                container.style.bottom = style.bottom;
-                container.style.left = style.left;
-                container.style.zIndex = style.zIndex;
-                container.style.transform = style.transform;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            overlay.style.position = 'absolute';
+            overlay.style.left = `${rect.left + scrollLeft}px`;
+            overlay.style.top = `${rect.top + scrollTop}px`;
+            overlay.style.width = `${rect.width}px`;
+            overlay.style.height = `${rect.height}px`;
+            overlay.style.pointerEvents = 'none';
+            overlay.style.zIndex = '999999';
+        }
+
+        setupResizeObserver(img, overlay) {
+            const updatePosition = () => {
+                if (document.body.contains(img)) {
+                    this.updateOverlayPosition(img, overlay);
+                }
+            };
+
+            window.addEventListener('scroll', updatePosition, { passive: true });
+            window.addEventListener('resize', updatePosition, { passive: true });
+
+            let mutationObserver;
+            if (typeof MutationObserver !== 'undefined') {
+                mutationObserver = new MutationObserver(updatePosition);
+                const parent = img.parentElement;
+                if (parent) {
+                    mutationObserver.observe(parent, { attributes: true, childList: true, subtree: true });
+                }
             }
 
-            if (style.display === 'block') {
-                container.style.display = 'block';
-            } else {
-                container.style.display = 'inline-block';
-            }
-            container.style.verticalAlign = style.verticalAlign;
-
-            container.style.float = style.float;
-            container.style.margin = style.margin;
-            
-            let width = rect.width || img.offsetWidth;
-            let height = rect.height || img.offsetHeight;
-            
-            if (!width || width === 0) {
-                width = img.naturalWidth || (style.width !== 'auto' ? style.width : null);
-            }
-            if (!height || height === 0) {
-                height = img.naturalHeight || (style.height !== 'auto' ? style.height : null);
-            }
-            
-            if (width) {
-                container.style.width = typeof width === 'number' ? `${width}px` : width;
-            } else if (style.width === '100%' || style.maxWidth === '100%') {
-                container.style.width = '100%';
-            }
-            
-            if (height) {
-                container.style.height = typeof height === 'number' ? `${height}px` : height;
-            }
-            
-            container.style.maxWidth = style.maxWidth;
-            container.style.maxHeight = style.maxHeight;
-            container.style.flex = style.flex;
-            container.style.gridArea = style.gridArea;
-            container.style.objectFit = style.objectFit;
-
-            img.parentNode.insertBefore(container, img);
-            container.appendChild(img);
-            
-            img.style.position = 'static';
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.margin = '0';
-            img.style.padding = '0';
-            img.style.border = 'none';
-            
-            return container;
+            this.resizeObservers.set(img, { updatePosition, mutationObserver });
         }
 
         createDownloadButton(img) {
@@ -103,7 +83,8 @@
                 </svg>
             `;
             button.title = '下载图片';
-            
+            button.style.pointerEvents = 'auto';
+
             button.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -113,17 +94,32 @@
             return button;
         }
 
-        setupImageEvents(img, container, button) {
-            container.addEventListener('mouseenter', () => {
-                button.style.display = 'flex';
-            });
+        setupImageEvents(img, overlay, button) {
+            const showButton = () => {
+                button.classList.add('nws-visible');
+                overlay.style.pointerEvents = 'auto';
+            };
 
-            container.addEventListener('mouseleave', () => {
-                button.style.display = 'none';
-            });
+            const hideButton = (e) => {
+                const relatedTarget = e.relatedTarget;
+                if (relatedTarget && (relatedTarget === img || relatedTarget === overlay || overlay.contains(relatedTarget))) {
+                    return;
+                }
+                button.classList.remove('nws-visible');
+                overlay.style.pointerEvents = 'none';
+            };
+
+            img.addEventListener('mouseenter', showButton);
+            img.addEventListener('mouseleave', hideButton);
+            overlay.addEventListener('mouseenter', showButton);
+            overlay.addEventListener('mouseleave', hideButton);
 
             img.addEventListener('error', () => {
                 this.removeDownloadButton(img);
+            });
+
+            img.addEventListener('load', () => {
+                this.updateOverlayPosition(img, overlay);
             });
         }
 
@@ -131,15 +127,20 @@
             const buttonData = this.downloadButtons.get(img);
             if (!buttonData) return;
 
-            const { container, button } = buttonData;
-            
-            if (button.parentNode) {
-                button.parentNode.removeChild(button);
+            const { overlay } = buttonData;
+            const observerData = this.resizeObservers.get(img);
+
+            if (observerData) {
+                window.removeEventListener('scroll', observerData.updatePosition);
+                window.removeEventListener('resize', observerData.updatePosition);
+                if (observerData.mutationObserver) {
+                    observerData.mutationObserver.disconnect();
+                }
+                this.resizeObservers.delete(img);
             }
 
-            if (container.children.length === 1 && container.children[0] === img) {
-                container.parentNode.insertBefore(img, container);
-                container.parentNode.removeChild(container);
+            if (overlay && overlay.parentNode) {
+                overlay.parentNode.removeChild(overlay);
             }
 
             this.downloadButtons.delete(img);
@@ -150,6 +151,7 @@
                 this.removeDownloadButton(img);
             }
             this.downloadButtons = new WeakMap();
+            this.resizeObservers = new WeakMap();
         }
 
         getDownloadButtonsCount() {

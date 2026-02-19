@@ -9,23 +9,29 @@
     class SelectionManager {
         constructor(moduleInstance) {
             this.module = moduleInstance;
-            
-            if (window.NWSModules?.TranslationUtils) {
-                this.utils = new window.NWSModules.TranslationUtils(() => this.module.config);
-            } else {
-                console.error('[SelectionManager] TranslationUtils missing');
-                this.utils = {
-                    normalizeText: t => t,
-                    shouldTranslateText: () => false,
-                    isSkippableElement: () => true
-                };
-            }
+            this._utils = null;
             
             this.view = this.module.view;
             this.service = this.module.service;
             
             this.selectionListener = null;
             this.isActive = false;
+        }
+
+        get utils() {
+            if (!this._utils) {
+                if (window.NWSModules?.TranslationUtils) {
+                    this._utils = new window.NWSModules.TranslationUtils(() => this.module.config);
+                } else {
+                    console.error('[SelectionManager] TranslationUtils missing');
+                    this._utils = {
+                        normalizeText: t => t,
+                        shouldTranslateText: () => false,
+                        isSkippableElement: () => true
+                    };
+                }
+            }
+            return this._utils;
         }
 
         enable() {
@@ -56,23 +62,42 @@
         async handleSelectionMouseUp(event) {
             // 再次检查配置，确保实时性
             const config = this.module.config;
-            if (!this.isActive || !config.enableSelectionTranslation) return;
+            if (!this.isActive || !config?.enableSelectionTranslation) {
+                console.log('[SelectionManager] 划词翻译未启用或配置无效', { isActive: this.isActive, enableSelectionTranslation: config?.enableSelectionTranslation });
+                return;
+            }
 
             const selection = window.getSelection();
-            if (!selection || selection.isCollapsed) return;
+            if (!selection || selection.isCollapsed) {
+                console.log('[SelectionManager] 没有选中文本');
+                return;
+            }
 
             const text = selection.toString().trim();
+            console.log('[SelectionManager] 选中文本:', text);
+            
             // 使用 Utils 检查文本是否有效
-            if (!this.utils.shouldTranslateText(text)) return;
+            const shouldTranslate = this.utils.shouldTranslateText(text);
+            console.log('[SelectionManager] 是否应该翻译:', shouldTranslate);
+            if (!shouldTranslate) return;
 
             const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-            if (!range) return;
+            if (!range) {
+                console.log('[SelectionManager] 无法获取选区范围');
+                return;
+            }
 
             const rect = range.getBoundingClientRect();
-            if (!rect || rect.width === 0 || rect.height === 0) return;
+            if (!rect || rect.width === 0 || rect.height === 0) {
+                console.log('[SelectionManager] 选区范围无效');
+                return;
+            }
 
             // 检查点击位置是否在插件 UI 内
-            if (this.isNwsElement(event.target)) return;
+            if (this.isNwsElement(event.target)) {
+                console.log('[SelectionManager] 点击在插件元素内');
+                return;
+            }
 
             // 计算 Tooltip 位置
             const position = this.clampTooltipPosition(
@@ -80,7 +105,7 @@
                 rect.bottom + window.scrollY + 8
             );
 
-            // 显示“正在翻译...”
+            // 显示"正在翻译..."
             this.view.showTooltip(position.x, position.y, '正在翻译...');
 
             try {

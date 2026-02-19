@@ -20,19 +20,30 @@
                 const filename = this.generateFilename(img, src);
                 
                 if (this.chromeSettings) {
-                    const downloadId = await this.chromeSettings.downloadFile({
-                        url: src,
-                        filename: filename,
-                        saveAs: false
-                    });
+                    try {
+                        const downloadId = await this.chromeSettings.downloadFile({
+                            url: src,
+                            filename: filename,
+                            saveAs: false
+                        });
 
-                    this.emit('imageDownloaded', { img, src, filename, downloadId });
-                    
-                    if (this.notification) {
-                        this.notification.success(`图片下载开始: ${filename}`);
+                        this.emit('imageDownloaded', { img, src, filename, downloadId });
+                        
+                        if (this.notification) {
+                            this.notification.success(`图片下载开始: ${filename}`);
+                        }
+                    } catch (downloadError) {
+                        if (downloadError.message && downloadError.message.includes('Could not establish connection')) {
+                            await this.fallbackDownload(src, filename);
+                            if (this.notification) {
+                                this.notification.info(`已使用备用方式下载: ${filename}`);
+                            }
+                        } else {
+                            throw downloadError;
+                        }
                     }
                 } else {
-                    this.fallbackDownload(src, filename);
+                    await this.fallbackDownload(src, filename);
                 }
 
             } catch (error) {
@@ -44,15 +55,42 @@
             }
         }
 
-        fallbackDownload(src, filename) {
-            const link = document.createElement('a');
-            link.href = src;
-            link.download = filename;
-            link.style.display = 'none';
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        async fallbackDownload(src, filename) {
+            try {
+                const response = await fetch(src, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                
+            } catch (error) {
+                const link = document.createElement('a');
+                link.href = src;
+                link.download = filename;
+                link.target = '_blank';
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         }
 
         async batchDownload(images = []) {

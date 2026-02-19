@@ -35,31 +35,92 @@
          * @returns {boolean} 是否符合翻译条件
          */
         shouldTranslateText(text) {
-            if (!text) return false;
+            console.log('[TranslationUtils] shouldTranslateText 输入:', text);
+            if (!text) {
+                console.log('[TranslationUtils] 文本为空');
+                return false;
+            }
             const normalized = this.normalizeText(text);
+            console.log('[TranslationUtils] 规范化后:', normalized);
             
             // 检查最小长度
-            const minLength = this.config.minTextLength || 2;
-            if (normalized.length < minLength) return false;
+            const minLength = this.config?.minTextLength || 2;
+            console.log('[TranslationUtils] 最小长度:', minLength, '实际长度:', normalized.length);
+            if (normalized.length < minLength) {
+                console.log('[TranslationUtils] 长度不足');
+                return false;
+            }
 
             // 过滤纯数字/符号
-            if (/^[\d\W_]+$/.test(normalized)) return false;
+            // 使用 Unicode 属性转义来检测所有语言的字母（包括中文、日文、韩文、阿拉伯文、泰文、缅甸文等）
+            try {
+                // 检测是否包含任何字母字符（L = Letter，包括大写、小写、标题case）
+                const hasLetters = /\p{L}/u.test(normalized);
+                // 检测是否只有数字和标点符号
+                const onlyDigitsAndPunctuation = /^[\d\s\p{P}\p{S}]+$/u.test(normalized);
+                if (!hasLetters || onlyDigitsAndPunctuation) {
+                    console.log('[TranslationUtils] 纯数字/符号');
+                    return false;
+                }
+            } catch (e) {
+                // 如果浏览器不支持 Unicode 属性转义，回退到基础检测
+                const hasBasicLetters = /[a-zA-Z]/.test(normalized);
+                const hasCJK = /[\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(normalized);
+                if (!hasBasicLetters && !hasCJK) {
+                    console.log('[TranslationUtils] 纯数字/符号（回退检测）');
+                    return false;
+                }
+            }
 
             // 过滤 URL/链接
             const urlRegex = /^(?:https?:\/\/|ftp:\/\/|www\.)[^\s]+$|^(?:[\w-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i;
-            if (urlRegex.test(normalized)) return false;
-
-            // 过滤邮箱
-            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) return false;
-
-            // 检查目标语言是否为中文，避免重复翻译中文内容
-            const lang = this.config.targetLanguage || '中文';
-            const isTargetChinese = /中文|Chinese/i.test(lang);
-            if (isTargetChinese) {
-                const chineseChars = (normalized.match(/[\u4e00-\u9fa5]/g) || []).length;
-                if (chineseChars / normalized.length > 0.5) return false;
+            if (urlRegex.test(normalized)) {
+                console.log('[TranslationUtils] 是URL');
+                return false;
             }
 
+            // 过滤邮箱
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+                console.log('[TranslationUtils] 是邮箱');
+                return false;
+            }
+
+            // 检查目标语言是否为中文，避免重复翻译中文内容
+            const lang = this.config?.targetLanguage || '中文';
+            const isTargetChinese = /中文|Chinese/i.test(lang);
+            console.log('[TranslationUtils] 目标语言:', lang, 'isTargetChinese:', isTargetChinese);
+            if (isTargetChinese) {
+                // 首先检查是否包含日文假名（平假名或片假名）
+                // 平假名：\u3040-\u309F，片假名：\u30A0-\u30FF，全角片假名扩展：\u31F0-\u31FF
+                const japaneseKana = (normalized.match(/[\u3040-\u309F\u30A0-\u30FF\u31F0-\u31FF]/g) || []).length;
+                console.log('[TranslationUtils] 日文假名数量:', japaneseKana);
+                if (japaneseKana > 0) {
+                    // 包含日文假名，需要翻译
+                    console.log('[TranslationUtils] 包含日文假名，返回 true');
+                    return true;
+                }
+                
+                // 检查是否包含韩文
+                // 韩文音节：\uAC00-\uD7AF，韩文字母：\u1100-\u11FF，韩文兼容字母：\u3130-\u318F
+                const koreanChars = (normalized.match(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g) || []).length;
+                console.log('[TranslationUtils] 韩文字符数量:', koreanChars);
+                if (koreanChars > 0) {
+                    // 包含韩文，需要翻译
+                    console.log('[TranslationUtils] 包含韩文，返回 true');
+                    return true;
+                }
+                
+                // 纯汉字检查：只有当汉字比例很高且没有其他亚洲文字时才跳过
+                const chineseChars = (normalized.match(/[\u4e00-\u9fa5]/g) || []).length;
+                const chineseRatio = chineseChars / normalized.length;
+                console.log('[TranslationUtils] 汉字数量:', chineseChars, '比例:', chineseRatio);
+                if (chineseRatio > 0.7) {
+                    console.log('[TranslationUtils] 汉字比例过高，返回 false');
+                    return false;
+                }
+            }
+
+            console.log('[TranslationUtils] 默认返回 true');
             return true;
         }
 
@@ -89,8 +150,12 @@
             
             const sanitizeSelector = window.DOMHelper?.sanitizeSelector || ((selector) => selector);
             for (const selector of skipSelectors) {
-                const safeSelector = sanitizeSelector(selector);
-                if (safeSelector && element.closest(safeSelector)) return true;
+                try {
+                    const safeSelector = sanitizeSelector(selector);
+                    if (safeSelector && element.closest(safeSelector)) return true;
+                } catch (e) {
+                    // 忽略无效选择器错误
+                }
             }
 
             // 检查 class

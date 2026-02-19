@@ -376,8 +376,14 @@ function applyToolbarFallbackPositioning(toolbar) {
 }
 
 function handleToolbarClick(event) {
+    // 阻止事件冒泡，防止触发页面上其他元素的点击事件
+    // 对工具栏内的所有点击都生效，不仅仅是按钮
+    event.stopPropagation();
+
     const button = event.target.closest('.nws-toolbar-button');
     if (!button) return;
+    
+    event.preventDefault();
     
     const action = button.dataset.action;
     switch (action) {
@@ -843,20 +849,43 @@ async function handleTranslate(options = {}) {
 }
 
 function handleOpenSettings() {
-    try {
-        if (chrome?.runtime?.openOptionsPage) {
-            chrome.runtime.openOptionsPage();
-            return;
+    // 优先使用消息传递打开设置页面，这是最可靠的方式
+    // 它可以处理扩展上下文失效、后台唤醒等情况
+    if (chrome?.runtime?.sendMessage) {
+        try {
+            chrome.runtime.sendMessage({ action: 'openOptionsPage' }, (response) => {
+                // 必须在回调中检查 lastError 以消除控制台错误 "Unchecked runtime.lastError"
+                if (chrome.runtime.lastError) {
+                    console.warn('[Toolsbar] 发送打开设置请求失败:', chrome.runtime.lastError.message);
+                    // 如果消息发送失败（例如后台未响应），尝试直接打开URL
+                    openSettingsByUrl();
+                } else if (response && response.error) {
+                     console.warn('[Toolsbar] 后台打开设置失败:', response.error);
+                     openSettingsByUrl();
+                }
+            });
+        } catch (error) {
+            console.warn('[Toolsbar] 发送消息异常 (可能是上下文失效):', error);
+            openSettingsByUrl();
         }
-        if (chrome?.runtime?.sendMessage) {
-            chrome.runtime.sendMessage({ action: 'openOptionsPage' }, () => {});
-            return;
-        } else if (chrome?.runtime?.getURL) {
+    } else {
+        // 如果 runtime 不可用，直接尝试 URL
+        openSettingsByUrl();
+    }
+}
+
+function fallbackOpenSettings() {
+    handleOpenSettings();
+}
+
+function openSettingsByUrl() {
+    if (chrome?.runtime?.getURL) {
+        try {
             const url = chrome.runtime.getURL('html/options.html');
             window.open(url, '_blank', 'noopener,noreferrer');
+        } catch (e) {
+            console.error('[Toolsbar] 无法构建设置页面 URL:', e);
         }
-    } catch (error) {
-        console.warn('[Toolsbar] 无法打开设置页面:', error);
     }
 }
 

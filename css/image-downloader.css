@@ -3,27 +3,17 @@
  * 从ImageDownloaderModule.js中分离出来的样式定义
  */
 
-/* 图片容器 */
-.nws-image-container {
-    position: relative; /* 允许通过 JS 覆盖为 absolute/fixed */
-    display: inline-block; /* 允许通过 JS 覆盖为 block/flex */
-    max-width: 100%;
-    vertical-align: top; /* 防止下方出现空白间隙 */
-}
-
-/* 处理可能导致的 0x0 问题 */
-.nws-image-container:empty {
-    display: none !important;
-}
-
-/* 确保内部图片在容器内正确显示 */
-.nws-image-container img {
-    /* 移除可能导致 0x0 循环的 max-width: 100% */
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: none !important;
-    max-height: none !important;
+/* 图片覆盖层 - 绝对定位覆盖在原图片上，不修改原图片样式 */
+.nws-image-overlay {
+    position: absolute !important;
+    pointer-events: none !important;
+    z-index: 999999 !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
 }
 
 /* 下载按钮 */
@@ -36,7 +26,7 @@
     border-radius: 8px !important;
     color: white !important;
     cursor: pointer !important;
-    display: none !important;
+    display: none;
     align-items: center !important;
     justify-content: center !important;
     width: 32px !important;
@@ -46,6 +36,11 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
     padding: 6px !important;
     pointer-events: auto !important;
+}
+
+/* 按钮显示状态 - 通过 JS 添加/移除此类名 */
+.nws-download-button.nws-visible {
+    display: flex !important;
 }
 
 .nws-download-button svg {
@@ -58,18 +53,24 @@
 .nws-download-button:hover {
     background: var(--nws-accent) !important;
     border-color: rgba(255, 255, 255, 0.2) !important;
-    transform: scale(1.1) translateY(-2px) !important;
+    transform: translateX(-50%) scale(1.1) translateY(-2px) !important;
     box-shadow: 0 6px 20px rgba(126, 87, 194, 0.4) !important;
 }
 
-/* 下载按钮位置 */
-.nws-download-button-top-right { top: 8px !important; right: 8px !important; }
-.nws-download-button-top-left { top: 8px !important; left: 8px !important; }
-.nws-download-button-bottom-right { bottom: 8px !important; right: 8px !important; }
-.nws-download-button-bottom-left { bottom: 8px !important; left: 8px !important; }
+/* 下载按钮位置 - 居中底部 */
+.nws-download-button-top-right,
+.nws-download-button-top-left,
+.nws-download-button-bottom-right,
+.nws-download-button-bottom-left {
+    bottom: 12px !important;
+    left: 50% !important;
+    top: auto !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+}
 
-/* 悬停时显示下载按钮 */
-.nws-image-container:hover .nws-download-button {
+/* 悬停时显示下载按钮 - 通过 JS 控制显示，此处保留备用 */
+.nws-image-overlay:hover .nws-download-button {
     display: flex !important;
     opacity: 1 !important;
 }

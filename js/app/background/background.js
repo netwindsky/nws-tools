@@ -75,9 +75,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'openOptionsPage') {
-        chrome.runtime.openOptionsPage();
+        chrome.runtime.openOptionsPage(() => {
+            if (chrome.runtime.lastError) {
+                console.warn('[Background] 打开设置页面失败:', chrome.runtime.lastError.message);
+            }
+        });
         sendResponse({ success: true });
-        return true;
+        return false; // 同步响应，无需保持通道
     }
     
     // 处理配置变化通知
