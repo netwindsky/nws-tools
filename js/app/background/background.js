@@ -10,9 +10,59 @@ chrome.runtime.onInstalled.addListener(() => {
         contexts: ['all']
     });
 
+    // 创建子菜单
+    chrome.contextMenus.create({
+        id: 'toggleSidebar',
+        parentId: 'nwsTools',
+        title: '切换侧边栏',
+        contexts: ['all']
+    });
+
+    chrome.contextMenus.create({
+        id: 'saveAsMD',
+        parentId: 'nwsTools',
+        title: '保存为 Markdown',
+        contexts: ['all']
+    });
+
+    chrome.contextMenus.create({
+        id: 'collectInfo',
+        parentId: 'nwsTools',
+        title: '采集信息',
+        contexts: ['all']
+    });
+
+    chrome.contextMenus.create({
+        id: 'convertToVue',
+        parentId: 'nwsTools',
+        title: '转换为 Vue 组件',
+        contexts: ['all']
+    });
+
+    chrome.contextMenus.create({
+        id: 'copySelector',
+        parentId: 'nwsTools',
+        title: '复制选择器',
+        contexts: ['all']
+    });
+
+    chrome.contextMenus.create({
+        id: 'copyStyle',
+        parentId: 'nwsTools',
+        title: '复制样式',
+        contexts: ['all']
+    });
+    
+    chrome.contextMenus.create({
+        id: "openOptions",
+        title: "选项",
+        contexts: ["action"]
+    });
+});
+
 // 处理来自content script的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    //console.log('[Background] 收到消息:', request);
+    console.log('[Background] 收到消息:', request);
     
     if (request.action === 'download') {
         // 处理下载请求
@@ -66,8 +116,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'openSidePanel') {
         // 打开原生侧边面板
         if (sender.tab) {
-            chrome.sidePanel.open({ windowId: sender.tab.windowId });
-            sendResponse({ success: true });
+            chrome.sidePanel.open({ windowId: sender.tab.windowId })
+                .then(() => {
+                    sendResponse({ success: true });
+                })
+                .catch(error => {
+                    console.error('[Background] 打开 Side Panel 失败:', error);
+                    sendResponse({ success: false, error: error.message });
+                });
         } else {
             sendResponse({ success: false, error: '无法获取标签页信息' });
         }
@@ -102,76 +158,85 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
     
-    if (request.type === 'pageSummary') {
-        // 转发页面摘要到工具面板
+    // 处理转发到 Side Panel 的消息
+    if (request.action === 'forwardToSidePanel') {
+        console.log('[Background] 收到转发到 Side Panel 的请求:', request.data);
+        
+        const message = request.data;
+        
+        // 方法1: 保存到 storage，让 Side Panel 主动读取
+        chrome.storage.local.set({
+            'nws_pending_summary': {
+                message: message,
+                timestamp: Date.now()
+            }
+        }).then(() => {
+            console.log('[Background] 消息已保存到 storage');
+        }).catch(err => {
+            console.log('[Background] 保存到 storage 失败:', err);
+        });
+        
+        // 方法2: 通过 tabs.query 查找 Side Panel 标签页
         chrome.tabs.query({}, (tabs) => {
+            let sent = false;
             tabs.forEach(tab => {
                 if (tab.url && tab.url.includes('control-panel.html')) {
-                    chrome.tabs.sendMessage(tab.id, {
-                        type: 'pageSummary',
-                        summary: request.summary
-                    }).catch(() => {
-                        // 忽略发送失败（页面可能已关闭）
+                    console.log('[Background] 找到 Side Panel 标签页，发送消息');
+                    chrome.tabs.sendMessage(tab.id, message).then(() => {
+                        console.log('[Background] 消息已发送到 Side Panel (tabs)');
+                        sent = true;
+                    }).catch((err) => {
+                        console.log('[Background] 发送到 Side Panel 失败:', err);
                     });
                 }
             });
+            
+            // 如果没有通过 tabs 发送成功，尝试通过 runtime 发送
+            if (!sent) {
+                console.log('[Background] 尝试通过 runtime 发送消息');
+                chrome.runtime.sendMessage(message).then(() => {
+                    console.log('[Background] 消息已发送到 Side Panel (runtime)');
+                }).catch(() => {});
+            }
         });
-        
-        // 也尝试发送到所有打开的扩展页面
-        chrome.runtime.sendMessage(request).catch(() => {});
         
         sendResponse({ success: true });
         return true;
     }
-});
-
-    // 创建子菜单
-    chrome.contextMenus.create({
-        id: 'toggleSidebar',
-        parentId: 'nwsTools',
-        title: '切换侧边栏',
-        contexts: ['all']
-    });
-
-    chrome.contextMenus.create({
-        id: 'saveAsMD',
-        parentId: 'nwsTools',
-        title: '保存为 Markdown',
-        contexts: ['all']
-    });
-
-    chrome.contextMenus.create({
-        id: 'collectInfo',
-        parentId: 'nwsTools',
-        title: '采集信息',
-        contexts: ['all']
-    });
-
-    chrome.contextMenus.create({
-        id: 'convertToVue',
-        parentId: 'nwsTools',
-        title: '转换为 Vue 组件',
-        contexts: ['all']
-    });
-
-    chrome.contextMenus.create({
-        id: 'copySelector',
-        parentId: 'nwsTools',
-        title: '复制选择器',
-        contexts: ['all']
-    });
-
-    chrome.contextMenus.create({
-        id: 'copyStyle',
-        parentId: 'nwsTools',
-        title: '复制样式',
-        contexts: ['all']
-    });
-    chrome.contextMenus.create({
-        id: "openOptions",
-        title: "选项",
-        contexts: ["action"]
-    });
+    
+    if (request.type === 'pageSummary') {
+        console.log('[Background] 收到页面摘要，准备转发到 Side Panel');
+        
+        // 转发页面摘要到 Side Panel
+        chrome.tabs.query({}, (tabs) => {
+            let sent = false;
+            tabs.forEach(tab => {
+                if (tab.url && tab.url.includes('control-panel.html')) {
+                    console.log('[Background] 找到 Side Panel 标签页，发送消息');
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: 'pageSummary',
+                        summary: request.summary
+                    }).then(() => {
+                        console.log('[Background] 消息已发送到 Side Panel (tabs)');
+                        sent = true;
+                    }).catch((err) => {
+                        console.log('[Background] 发送到 Side Panel 失败:', err);
+                    });
+                }
+            });
+            
+            // 如果没有通过 tabs 发送成功，尝试通过 runtime 发送
+            if (!sent) {
+                console.log('[Background] 尝试通过 runtime 发送消息');
+                chrome.runtime.sendMessage(request).then(() => {
+                    console.log('[Background] 消息已发送到 Side Panel (runtime)');
+                }).catch(() => {});
+            }
+        });
+        
+        sendResponse({ success: true });
+        return true;
+    }
 });
 
 // 处理右键菜单点击事件
@@ -194,6 +259,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             data: {
                 frameId: info.frameId
             }
+        }).catch(error => {
+            console.warn('[Background] 发送菜单消息失败:', error);
         });
     }
 });

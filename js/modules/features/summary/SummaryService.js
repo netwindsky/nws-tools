@@ -6,10 +6,14 @@
             this.getConfig = typeof options.getConfig === 'function' ? options.getConfig : () => ({});
         }
 
-        async callOllama(messages, model) {
+        async callOllama(messages, model, onStream = null) {
             const config = this.getConfig();
             const targetModel = model || config.defaultModel;
-            const endpoint = config.ollamaEndpoint;
+            const endpoint = config.ollamaEndpoint || 'http://localhost:11434/v1/chat/completions';
+            const useStream = onStream !== null;
+            
+            console.log('[SummaryService] 调用 Ollama:', { endpoint, model: targetModel, stream: useStream });
+            
             try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -17,16 +21,29 @@
                     body: JSON.stringify({
                         model: targetModel,
                         messages: messages,
-                        stream: false,
+                        stream: useStream,
                         temperature: 0.7
                     })
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error?.message || response.statusText}`);
+                    const errorText = await response.text();
+                    console.error('[SummaryService] Ollama 返回错误:', response.status, errorText);
+                    let errorData = {};
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {}
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error?.message || errorText || response.statusText}`);
                 }
+                
+                // 流式模式处理
+                if (useStream && response.body) {
+                    return await this.handleStreamResponse(response.body, onStream);
+                }
+                
+                // 非流式模式处理
                 const data = await response.json();
+                console.log('[SummaryService] Ollama 响应:', data);
 
                 if (data.choices && data.choices.length > 0 && data.choices[0].message) {
                     return data.choices[0].message.content;
@@ -36,13 +53,65 @@
                     return data.response;
                 }
 
-                throw new Error('API 返回格式不正确');
+                throw new Error('API 返回格式不正确: ' + JSON.stringify(data).substring(0, 200));
             } catch (error) {
+                console.error('[SummaryService] 调用 Ollama 失败:', error);
                 throw error;
             }
         }
 
-        async summarizeContent(content) {
+        async handleStreamResponse(body, onStream) {
+            const reader = body.getReader();
+            const decoder = new TextDecoder();
+            let fullContent = '';
+            
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+                            
+                            try {
+                                const parsed = JSON.parse(data);
+                                let content = '';
+                                
+                                // OpenAI 格式
+                                if (parsed.choices && parsed.choices[0]?.delta?.content) {
+                                    content = parsed.choices[0].delta.content;
+                                }
+                                // Ollama 原生格式
+                                else if (parsed.message?.content) {
+                                    content = parsed.message.content;
+                                }
+                                else if (parsed.response) {
+                                    content = parsed.response;
+                                }
+                                
+                                if (content) {
+                                    fullContent += content;
+                                    onStream(content, fullContent);
+                                }
+                            } catch (e) {
+                                console.warn('[SummaryService] 解析流数据失败:', line, e);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+            
+            return fullContent;
+        }
+
+        async summarizeContent(content, onStream = null) {
             const config = this.getConfig();
             const lang = config.targetLanguage || '中文';
             const systemPrompt = `你是一位专业的内容分析专家。请根据提供的网页内容，生成一份详尽、专业且结构清晰的总结报告。
@@ -69,7 +138,7 @@
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
             ];
-            return await this.callOllama(messages);
+            return await this.callOllama(messages, null, onStream);
         }
     }
 
