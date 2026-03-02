@@ -25,8 +25,8 @@
                     enabled: false,
                     enablePageTranslation: false, // 新增：独立的全页翻译开关
                     targetLanguage: '中文',
-                    ollamaEndpoint: 'http://localhost:11434/v1/chat/completions',
-                    defaultModel: 'MedAIBase/Tencent-HY-MT1.5:7b',
+                    ollamaEndpoint: 'http://localhost:8080/v1/chat/completions',
+                    defaultModel: 'hy-mt1.5-7b-q4-m',
                     maxChunkSize: 2000,
                     translationMode: 'bilingual',
                     enableSelectionTranslation: true,

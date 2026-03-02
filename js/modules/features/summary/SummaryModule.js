@@ -14,8 +14,8 @@
                 defaultConfig: {
                     enabled: true,
                     targetLanguage: '中文',
-                    ollamaEndpoint: 'http://localhost:11434/v1/chat/completions',
-                    defaultModel: 'deepseek-r1:14b'
+                    ollamaEndpoint: 'http://localhost:8080/v1/chat/completions',
+                    defaultModel: 'qwen3.5-9b-ud-q4'
                 },
                 ...options
             });
