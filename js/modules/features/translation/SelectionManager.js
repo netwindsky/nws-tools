@@ -109,8 +109,15 @@
             this.view.showTooltip(position.x, position.y, '正在翻译...');
 
             try {
-                // 调用翻译服务
-                const result = await this.module.translateText(text);
+                // 调用翻译服务（支持流式）
+                let fullResult = '';
+                const onStream = (chunk, fullContent) => {
+                    fullResult = fullContent;
+                    const displayResult = fullContent.replace(/\s*%%\s*/g, '\n\n');
+                    this.view.updateTooltip(displayResult);
+                };
+                
+                const result = await this.module.translateText(text, onStream);
                 const displayResult = result ? result.replace(/\s*%%\s*/g, '\n\n') : '翻译结果为空';
                 this.view.updateTooltip(displayResult);
             } catch (e) {

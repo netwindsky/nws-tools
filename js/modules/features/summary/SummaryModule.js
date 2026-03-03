@@ -14,7 +14,7 @@
                 defaultConfig: {
                     enabled: true,
                     targetLanguage: '中文',
-                    ollamaEndpoint: 'http://localhost:8080/v1/chat/completions',
+                    ollamaEndpoint: 'http://localhost:38520/v1/chat/completions',
                     defaultModel: 'qwen3.5-9b-ud-q4'
                 },
                 ...options

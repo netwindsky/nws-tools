@@ -41,10 +41,11 @@
             return chunks;
         }
 
-        async callOllama(messages, model) {
+        async callOllama(messages, model, onStream = null) {
             const config = this.getCurrentConfig();
             const targetModel = model || config.defaultModel;
             const endpoint = config.ollamaEndpoint;
+            const useStream = onStream !== null;
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -52,7 +53,7 @@
                 body: JSON.stringify({
                     model: targetModel,
                     messages: messages,
-                    stream: false,
+                    stream: useStream,
                     temperature: 0.3
                 })
             });
@@ -61,6 +62,13 @@
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.error?.message || response.statusText}`);
             }
+
+            // 流式模式处理
+            if (useStream && response.body) {
+                return await this.handleStreamResponse(response.body, onStream);
+            }
+
+            // 非流式模式处理
             const data = await response.json();
 
             if (data.choices && data.choices.length > 0 && data.choices[0].message) {
@@ -74,16 +82,82 @@
             throw new Error('API 返回格式不正确');
         }
 
-        async translateTextRequest(text) {
+        async handleStreamResponse(body, onStream) {
+            const reader = body.getReader();
+            const decoder = new TextDecoder();
+            let fullContent = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const parsed = JSON.parse(data);
+                                let content = '';
+
+                                // OpenAI 格式
+                                if (parsed.choices && parsed.choices[0]?.delta?.content) {
+                                    content = parsed.choices[0].delta.content;
+                                }
+                                // Ollama 原生格式
+                                else if (parsed.message?.content) {
+                                    content = parsed.message.content;
+                                }
+                                else if (parsed.response) {
+                                    content = parsed.response;
+                                }
+
+                                if (content) {
+                                    fullContent += content;
+                                    onStream(content, fullContent);
+                                }
+                            } catch (e) {
+                                console.warn('[TranslationService] 解析流数据失败:', line, e);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+
+            return fullContent;
+        }
+
+        async translateTextRequest(text, onStream = null) {
             const config = this.getCurrentConfig();
             const chunks = this.splitTextIntoChunks(text, config.maxChunkSize);
             const results = [];
             const lang = config.targetLanguage || '中文';
+            
             for (const chunk of chunks) {
                 const messages = this.buildTranslationMessages(chunk, lang);
-                const result = await this.callOllama(messages);
-                results.push(this.cleanTranslationResult(result));
+                let chunkResult = '';
+                
+                if (onStream) {
+                    // 流式模式
+                    const chunkOnStream = (content, fullContent) => {
+                        chunkResult = fullContent;
+                        onStream(content, fullContent);
+                    };
+                    chunkResult = await this.callOllama(messages, null, chunkOnStream);
+                } else {
+                    // 非流式模式
+                    chunkResult = await this.callOllama(messages);
+                }
+                
+                results.push(this.cleanTranslationResult(chunkResult));
             }
+            
             return results.join(' ');
         }
 

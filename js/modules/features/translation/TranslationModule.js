@@ -25,7 +25,7 @@
                     enabled: false,
                     enablePageTranslation: false, // 新增：独立的全页翻译开关
                     targetLanguage: '中文',
-                    ollamaEndpoint: 'http://localhost:8080/v1/chat/completions',
+                    ollamaEndpoint: 'http://localhost:38520/v1/chat/completions',
                     defaultModel: 'hy-mt1.5-7b-q4-m',
                     maxChunkSize: 2000,
                     translationMode: 'bilingual',
@@ -333,7 +333,7 @@
 
     // ==================== 翻译核心逻辑 (缓存 & 队列) ====================
 
-        async translateText(text) {
+        async translateText(text, onStream = null) {
             let normalized = text;
             let placeholders = [];
 
@@ -348,6 +348,16 @@
 
             if (!normalized) return '';
 
+            // 如果有流式回调，直接调用服务，不使用缓存
+            if (onStream) {
+                const rawResult = await this.service.translateTextRequest(normalized, onStream);
+                if (this.utils && placeholders.length > 0) {
+                    return this.utils.restorePlaceholders(rawResult, placeholders);
+                }
+                return rawResult;
+            }
+
+            // 非流式模式，使用缓存
             const rawResult = await this.enqueueTranslation(normalized);
             
             if (this.utils && placeholders.length > 0) {
