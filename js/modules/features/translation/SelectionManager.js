@@ -15,6 +15,8 @@
             this.service = this.module.service;
             
             this.selectionListener = null;
+            this.debounceTimer = null;
+            this.debounceDelay = 500; // 默认 500ms 防抖
             this.isActive = false;
         }
 
@@ -48,6 +50,12 @@
             if (!this.isActive) return;
             this.isActive = false;
             
+            // 清除防抖定时器
+            if (this.debounceTimer) {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = null;
+            }
+            
             // 解绑事件
             if (this.selectionListener) {
                 const safeRemove = window.NWSModules?.utils?.safeRemoveEventListener || ((el, ev, h, opt) => el.removeEventListener(ev, h, opt));
@@ -60,6 +68,19 @@
         }
 
         async handleSelectionMouseUp(event) {
+            // 清除之前的防抖定时器
+            if (this.debounceTimer) {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = null;
+            }
+            
+            // 设置新的防抖定时器
+            this.debounceTimer = setTimeout(async () => {
+                await this.doTranslate(event);
+            }, this.debounceDelay);
+        }
+
+        async doTranslate(event) {
             // 再次检查配置，确保实时性
             const config = this.module.config;
             if (!this.isActive || !config?.enableSelectionTranslation) {
@@ -110,9 +131,7 @@
 
             try {
                 // 调用翻译服务（支持流式）
-                let fullResult = '';
                 const onStream = (chunk, fullContent) => {
-                    fullResult = fullContent;
                     const displayResult = fullContent.replace(/\s*%%\s*/g, '\n\n');
                     this.view.updateTooltip(displayResult);
                 };
