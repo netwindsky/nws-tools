@@ -26,7 +26,14 @@
          * @returns {string} 处理后的文本
          */
         normalizeText(text) {
-            return text ? text.replace(/\s+/g, ' ').trim() : '';
+            if (!text) return '';
+            // 保留段落分隔符（换行），只合并行内多余空格
+            return text
+                .replace(/\r\n/g, '\n')
+                .split('\n')
+                .map(line => line.replace(/\s+/g, ' ').trim())
+                .filter(line => line.length > 0)
+                .join('\n');
         }
 
         /**

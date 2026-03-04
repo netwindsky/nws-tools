@@ -24,6 +24,33 @@
             this.tooltipTimer = null;
             this.tooltipOutsideListener = null;
             this.blockNodeCache = new WeakMap();
+            this.currentOriginalText = '';
+            this.currentTranslatedText = '';
+        }
+
+        // 简单的 Markdown 转 HTML 转换器
+        parseMarkdown(text) {
+            if (!text) return '';
+            let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            html = html.split(/\n\n+/).map(para => {
+                let lines = para.split(/\n/);
+                return lines.map(line => {
+                    line = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                    line = line.replace(/__(.+?)__/g, '<strong>$1</strong>');
+                    line = line.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+                    line = line.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '<em>$1</em>');
+                    line = line.replace(/`([^`]+)`/g, '<code>$1</code>');
+                    line = line.replace(/^(\s*)([-*+])\s+/, '$1<li>');
+                    return line;
+                }).join('<br>');
+            }).join('</p><p>');
+            html = html.replace(/(<\/li>)<br>(<li>)/g, '$1$2');
+            html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>');
+            if (html) html = '<p>' + html + '</p>';
+            return html;
+        }
+
+        injectStyles() {
         }
 
         injectStyles() {
@@ -34,7 +61,9 @@
                     position: absolute;
                     z-index: 10005;
                     max-width: 360px;
-                    padding: 10px 12px;
+                    padding: 14px 18px;
+                    padding-right: 32px;
+                    padding-top: 34px;
                     border-radius: 10px;
                     border: 1px solid var(--nws-border, rgba(255, 255, 255, 0.12));
                     background: var(--nws-panel, #1b2233);
@@ -44,6 +73,91 @@
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
                     white-space: pre-wrap;
+                }
+                
+                .nws-translation-copy-container {
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1;
+                }
+                
+                .nws-translation-copy-btn {
+                    all: initial;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 24px;
+                    height: 24px;
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    background: rgba(255, 255, 255, 0.03);
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    color: rgba(255, 255, 255, 0.5);
+                    backdrop-filter: blur(4px);
+                }
+                
+                .nws-translation-copy-btn:hover {
+                    background: rgba(255, 255, 255, 0.08);
+                    border-color: rgba(255, 255, 255, 0.25);
+                    color: rgba(255, 255, 255, 0.9);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                }
+                
+                .nws-translation-copy-btn:active {
+                    transform: translateY(0);
+                    background: rgba(255, 255, 255, 0.05);
+                }
+                
+                .nws-translation-copy-btn.success {
+                    color: #4ade80;
+                    border-color: rgba(74, 222, 128, 0.4);
+                    background: rgba(74, 222, 128, 0.08);
+                }
+                
+                .nws-translation-tooltip-content {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                }
+                
+                .nws-copy-toast {
+                    all: initial;
+                    position: fixed;
+                    bottom: 24px;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(20px);
+                    background: rgba(30, 30, 40, 0.95);
+                    backdrop-filter: blur(12px);
+                    color: rgba(255, 255, 255, 0.95);
+                    padding: 10px 16px;
+                    border-radius: 8px;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    font-size: 13px;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    z-index: 100000;
+                    opacity: 0;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    pointer-events: none;
+                }
+                
+                .nws-copy-toast svg {
+                    color: #4ade80;
+                    flex-shrink: 0;
+                }
+                
+                .nws-copy-toast-show {
+                    transform: translateX(-50%) translateY(0);
+                    opacity: 1;
                 }
 
                 .nws-translation-inline {
@@ -138,13 +252,51 @@
                 });
         }
 
-        showTooltip(x, y, text) {
+        showTooltip(x, y, text, originalText = '') {
             if (!this.tooltip) {
                 this.tooltip = document.createElement('div');
                 this.tooltip.className = 'nws-translation-tooltip';
+                
+                // 创建复制按钮容器
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'nws-translation-copy-container';
+                
+                // 创建精致的复制按钮（方形圆角）
+                const copyButton = document.createElement('button');
+                copyButton.className = 'nws-translation-copy-btn';
+                copyButton.title = '复制原文和译文';
+                copyButton.innerHTML = `
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                `;
+                copyButton.onclick = (e) => {
+                    e.stopPropagation();
+                    this.copyTranslationResult();
+                };
+                
+                buttonContainer.appendChild(copyButton);
+                
+                // 创建内容容器
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'nws-translation-tooltip-content';
+                
+                this.tooltip.appendChild(buttonContainer);
+                this.tooltip.appendChild(contentDiv);
+                
                 document.body.appendChild(this.tooltip);
             }
-            this.tooltip.textContent = text;
+            
+            const contentDiv = this.tooltip.querySelector('.nws-translation-tooltip-content');
+            if (contentDiv) {
+                contentDiv.innerHTML = this.parseMarkdown(text);
+            }
+            
+            // 存储原文和译文
+            this.currentOriginalText = originalText;
+            this.currentTranslatedText = text;
+            
             this.tooltip.style.left = `${x}px`;
             this.tooltip.style.top = `${y}px`;
             this.tooltip.style.display = 'block';
@@ -163,9 +315,89 @@
             }
         }
 
-        updateTooltip(text) {
+        updateTooltip(text, originalText = '') {
             if (!this.tooltip) return;
-            this.tooltip.textContent = text;
+            const contentDiv = this.tooltip.querySelector('.nws-translation-tooltip-content');
+            if (contentDiv) {
+                contentDiv.innerHTML = this.parseMarkdown(text);
+            }
+            
+            // 更新存储的原文和译文
+            if (originalText) {
+                this.currentOriginalText = originalText;
+            }
+            this.currentTranslatedText = text;
+        }
+        
+        isTooltipVisible() {
+            return this.tooltip && this.tooltip.style.display === 'block';
+        }
+        
+        copyTranslationResult() {
+            if (!this.currentOriginalText || !this.currentTranslatedText) return;
+            
+            // 格式化复制内容：原文 + 译文
+            const copyContent = `原文：${this.currentOriginalText}\n\n译文：${this.currentTranslatedText}`;
+            
+            navigator.clipboard.writeText(copyContent).then(() => {
+                const copyButton = this.tooltip?.querySelector('.nws-translation-copy-btn');
+                if (copyButton) {
+                    // 添加成功状态样式
+                    copyButton.classList.add('success');
+                    
+                    // 改变图标为对勾
+                    copyButton.innerHTML = `
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    `;
+                    
+                    // 显示"已复制"提示
+                    this.showCopySuccessToast();
+                    
+                    // 1.5 秒后恢复
+                    setTimeout(() => {
+                        copyButton.classList.remove('success');
+                        copyButton.innerHTML = `
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        `;
+                    }, 1500);
+                }
+            }).catch(err => {
+                console.error('[TranslationView] 复制失败:', err);
+            });
+        }
+        
+        showCopySuccessToast() {
+            // 创建优雅的提示
+            const toast = document.createElement('div');
+            toast.className = 'nws-copy-toast';
+            toast.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>已复制</span>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // 动画显示
+            requestAnimationFrame(() => {
+                toast.classList.add('nws-copy-toast-show');
+            });
+            
+            // 2 秒后移除
+            setTimeout(() => {
+                toast.classList.remove('nws-copy-toast-show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 2000);
         }
 
         hideTooltip() {

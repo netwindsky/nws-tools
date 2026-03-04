@@ -18,6 +18,11 @@
             this.debounceTimer = null;
             this.debounceDelay = 500; // 默认 500ms 防抖
             this.isActive = false;
+            
+            // 重复内容检测
+            this.lastTranslatedText = '';
+            this.lastTranslateTime = 0;
+            this.duplicateTimeWindow = 3000; // 3 秒内相同文本不重复翻译
         }
 
         get utils() {
@@ -68,6 +73,14 @@
         }
 
         async handleSelectionMouseUp(event) {
+            // 如果 Tooltip 已经显示，并且在 Tooltip 内部点击，忽略
+            if (this.view?.isTooltipVisible && this.view.isTooltipVisible()) {
+                if (this.isNwsElement(event.target)) {
+                    console.log('[SelectionManager] 在 Tooltip 内部点击，忽略');
+                    return;
+                }
+            }
+            
             // 清除之前的防抖定时器
             if (this.debounceTimer) {
                 clearTimeout(this.debounceTimer);
@@ -96,6 +109,13 @@
 
             const text = selection.toString().trim();
             console.log('[SelectionManager] 选中文本:', text);
+            
+            // 检查是否是重复内容（防抖 + 时间窗口内相同文本）
+            const now = Date.now();
+            if (text === this.lastTranslatedText && (now - this.lastTranslateTime) < this.duplicateTimeWindow) {
+                console.log('[SelectionManager] 跳过重复翻译:', text);
+                return;
+            }
             
             // 使用 Utils 检查文本是否有效
             const shouldTranslate = this.utils.shouldTranslateText(text);
@@ -126,19 +146,23 @@
                 rect.bottom + window.scrollY + 8
             );
 
-            // 显示"正在翻译..."
-            this.view.showTooltip(position.x, position.y, '正在翻译...');
+            // 显示"正在翻译..."，传入原文
+            this.view.showTooltip(position.x, position.y, '正在翻译...', text);
 
             try {
                 // 调用翻译服务（支持流式）
                 const onStream = (chunk, fullContent) => {
                     const displayResult = fullContent.replace(/\s*%%\s*/g, '\n\n');
-                    this.view.updateTooltip(displayResult);
+                    this.view.updateTooltip(displayResult, text);
                 };
                 
                 const result = await this.module.translateText(text, onStream);
                 const displayResult = result ? result.replace(/\s*%%\s*/g, '\n\n') : '翻译结果为空';
-                this.view.updateTooltip(displayResult);
+                this.view.updateTooltip(displayResult, text);
+                
+                // 记录翻译信息，用于防重复
+                this.lastTranslatedText = text;
+                this.lastTranslateTime = Date.now();
             } catch (e) {
                 console.error('[SelectionManager] Translation failed:', e);
                 this.view.updateTooltip('翻译失败，请稍后重试');

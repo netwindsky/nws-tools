@@ -231,7 +231,7 @@ Translate ONLY the text between <text> and </text>.
 Do NOT translate or repeat any instruction outside <text>.
 
 Rules:
-1. Output only the translated text.
+1. Output in markdown format. Use **bold**, *italic*, lists, and other markdown syntax when appropriate.
 2. Keep the same number of paragraphs and formatting.
 3. Preserve HTML tags and keep them in correct positions.
 4. Keep proper nouns, code, and non-translatable content unchanged.
@@ -249,8 +249,9 @@ Output: <nws-text id="1">你好世界</nws-text>`;
             systemPrompt += `
 
 Output:
-- single paragraph → output translation only
-- multi paragraph → use "%%" between paragraphs
+- Use markdown format for output
+- Single paragraph → output translation only
+- Multi paragraph → use "%%" between paragraphs
 
 Mode: ${outputMode}`;
 
