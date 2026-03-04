@@ -117,13 +117,29 @@
                     return true;
                 }
                 
-                // 纯汉字检查：只有当汉字比例很高且没有其他亚洲文字时才跳过
+                // 统计各类字符数量
                 const chineseChars = (normalized.match(/[\u4e00-\u9fa5]/g) || []).length;
-                const chineseRatio = chineseChars / normalized.length;
-                console.log('[TranslationUtils] 汉字数量:', chineseChars, '比例:', chineseRatio);
-                if (chineseRatio > 0.7) {
-                    console.log('[TranslationUtils] 汉字比例过高，返回 false');
-                    return false;
+                
+                // 统计英文单词数（而不是字母数）
+                // 匹配连续的英文字母作为一个单词
+                const englishWords = (normalized.match(/[a-zA-Z]+/g) || []).length;
+                
+                const totalChars = normalized.length;
+                
+                console.log('[TranslationUtils] 汉字数量:', chineseChars, '英文单词数:', englishWords, '总长度:', totalChars);
+                
+                // 计算有效单位（汉字数 + 英文单词数），刨除符号和数字
+                const validUnits = chineseChars + englishWords;
+                
+                // 如果主要是汉字（汉字占有效单位的比例超过 70%），则不翻译
+                if (validUnits > 0) {
+                    const chineseRatio = chineseChars / validUnits;
+                    console.log('[TranslationUtils] 汉字占有效单位比例:', chineseRatio);
+                    
+                    if (chineseRatio > 0.7) {
+                        console.log('[TranslationUtils] 主要是中文内容，不翻译，返回 false');
+                        return false;
+                    }
                 }
             }
 
