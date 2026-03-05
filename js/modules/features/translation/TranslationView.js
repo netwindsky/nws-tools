@@ -207,6 +207,16 @@
                 .nws-translation-paragraph:last-child {
                     margin-bottom: 0;
                 }
+
+                /* 双语包裹器：强制上下布局 */
+                .nws-bilingual-wrapper {
+                    display: grid !important;
+                    grid-template-columns: 1fr !important;
+                    grid-template-rows: auto auto !important;
+                    gap: 8px !important;
+                    margin: 8px 0 !important;
+                    width: 100% !important;
+                }
             `;
             this.styleManager.inject(this.name, css, `nws-style-${this.name}`, { replace: true, priority: 'normal' });
         }
@@ -511,19 +521,32 @@
             }
 
             const paragraphs = this.splitTranslatedResult(translatedText);
+            
+            // 检查是否已经在 wrapper 中
+            let wrapper = element.closest('.nws-bilingual-wrapper');
+            
+            if (!wrapper) {
+                // 创建 wrapper
+                wrapper = document.createElement('div');
+                wrapper.className = 'nws-bilingual-wrapper';
+                
+                // 插入 wrapper 替换原文
+                if (element.parentNode) {
+                    element.parentNode.insertBefore(wrapper, element);
+                    wrapper.appendChild(element);  // 移动原文到 wrapper
+                }
+            }
+            
+            // 创建译文容器
             const block = document.createElement('div');
-            //block.className = 'nws-translation-block';
             block.className = 'nws-translation-style';
-           //block.setAttribute('data-nws-translation-role', 'block');
+            
             paragraphs.forEach((para) => {
                 const line = para.trim();
                 if (!line) return;
-                ////console.log('fuck:>>>执行我了', element);
                 const p = document.createElement(element.tagName);
-                //p.className = 'nws-translation-paragraph';
                 if (computedStyle) {
-                    p.style.color =computedStyle.color || '';
-                    //p.style.padding = '5px 0';
+                    p.style.color = computedStyle.color || '';
                     p.style.fontSize = computedStyle.fontSize || '';
                     p.style.fontFamily = computedStyle.fontFamily || '';
                     p.style.fontWeight = computedStyle.fontWeight || '';
@@ -535,10 +558,9 @@
                 block.appendChild(p);
             });
 
-            if (element.parentNode) {
-                element.parentNode.insertBefore(block, element.nextSibling);
-                this.blockNodeCache.set(element, block);
-            }
+            // 添加到 wrapper
+            wrapper.appendChild(block);
+            this.blockNodeCache.set(element, wrapper);
         }
 
         applyBilingualTranslationHtml(element, translatedText) {
@@ -546,6 +568,23 @@
             if (!translatedText) return;
             this.removeTranslationBlock(element);
             const paragraphs = this.splitTranslatedResult(translatedText);
+            
+            // 检查是否已经在 wrapper 中
+            let wrapper = element.closest('.nws-bilingual-wrapper');
+            
+            if (!wrapper) {
+                // 创建 wrapper
+                wrapper = document.createElement('div');
+                wrapper.className = 'nws-bilingual-wrapper';
+                
+                // 插入 wrapper 替换原文
+                if (element.parentNode) {
+                    element.parentNode.insertBefore(wrapper, element);
+                    wrapper.appendChild(element);  // 移动原文到 wrapper
+                }
+            }
+            
+            // 创建译文容器
             const block = document.createElement('div');
             block.className = 'nws-translation-style';
             
@@ -574,26 +613,30 @@
                 p.innerHTML = line;
                 block.appendChild(p);
             });
-            if (element.parentNode || element.parentElement) {
-                try {
-                    const parent = element.parentNode || element.parentElement;
-                    parent.insertBefore(block, element.nextSibling);
-                } catch (e) {
-                    element.appendChild(block);
-                }
-                this.blockNodeCache.set(element, block);
-            }
+            
+            // 添加到 wrapper
+            wrapper.appendChild(block);
+            this.blockNodeCache.set(element, wrapper);
         }
 
         removeTranslationBlock(element) {
             if (!element) return;
             const cached = this.blockNodeCache.get(element);
             if (cached && cached.parentNode) {
-                cached.parentNode.removeChild(cached);
+                // 如果缓存的是 wrapper，需要还原原文
+                if (cached.classList.contains('nws-bilingual-wrapper')) {
+                    const originalElement = cached.querySelector(':scope > *:first-child');
+                    if (originalElement && cached.parentNode) {
+                        cached.parentNode.insertBefore(originalElement, cached);
+                        cached.parentNode.removeChild(cached);
+                    }
+                } else {
+                    cached.parentNode.removeChild(cached);
+                }
             }
             this.blockNodeCache.delete(element);
             
-            // 检查下一个兄弟节点是否是翻译块（兼容旧的 nws-translation-block 和新的 nws-translation-style）
+            // 兼容旧的直接插入方式（没有 wrapper）
             const nextSibling = element.nextSibling;
             if (nextSibling && nextSibling.classList) {
                 if (nextSibling.classList.contains('nws-translation-block') || nextSibling.classList.contains('nws-translation-style')) {

@@ -242,6 +242,7 @@
 
             // 修正：我们应该翻译整个元素的聚合文本
             const fullText = textItems.map(i => i.normalized).join('\n');
+            // 页面翻译使用严格的过滤规则（shouldTranslateText）
             if (!this.utils.shouldTranslateText(fullText)) return;
 
             // 显示 loading 占位 (可选)

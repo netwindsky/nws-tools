@@ -37,12 +37,27 @@
         }
 
         /**
-         * 判断文本是否应该被翻译
+         * 判断文本是否应该被翻译（用于页面翻译）
+         * 核心逻辑：
+         * 1. 优先过滤技术内容（文件名、URL、邮箱、路径、代码等）
+         * 2. 过滤无意义内容（符号、乱码等）
+         * 3. 英文：只翻译完整句子/短语（2 个单词以上），不翻译单个单词
+         * 4. 中文/日文/韩文：按字符数和意义判断
          * @param {string} text - 要检查的文本内容
          * @returns {boolean} 是否符合翻译条件
          */
         shouldTranslateText(text) {
-            console.log('[TranslationUtils] shouldTranslateText 输入:', text);
+            return this._shouldTranslateTextForPage(text);
+        }
+
+        /**
+         * 页面翻译：使用严格的过滤规则
+         * 过滤文件名、URL、邮箱、代码、无意义内容等
+         * @param {string} text - 要检查的文本内容
+         * @returns {boolean} 是否符合翻译条件
+         */
+        _shouldTranslateTextForPage(text) {
+            console.log('[TranslationUtils] _shouldTranslateTextForPage 输入:', text);
             if (!text) {
                 console.log('[TranslationUtils] 文本为空');
                 return false;
@@ -50,6 +65,81 @@
             const normalized = this.normalizeText(text);
             console.log('[TranslationUtils] 规范化后:', normalized);
             
+            // === 第一步：优先过滤技术内容（最重要）===
+            
+            // 1. 过滤 URL/链接（包括带描述的 URL，如 "Free-Deompiler.com website"）
+            if (this.isURLWithDescription(normalized)) {
+                console.log('[TranslationUtils] 是 URL 或包含 URL');
+                return false;
+            }
+
+            // 2. 过滤邮箱
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+                console.log('[TranslationUtils] 是邮箱');
+                return false;
+            }
+
+            // 3. 过滤文件名（包括各种扩展名）
+            if (this.isFileName(normalized)) {
+                console.log('[TranslationUtils] 是文件名');
+                return false;
+            }
+
+            // 4. 过滤路径
+            if (this.isPath(normalized)) {
+                console.log('[TranslationUtils] 是路径');
+                return false;
+            }
+
+            // 5. 过滤代码标识符
+            if (this.isCodeIdentifier(normalized)) {
+                console.log('[TranslationUtils] 是代码标识符');
+                return false;
+            }
+
+            // 6. 过滤命令
+            if (this.isCommand(normalized)) {
+                console.log('[TranslationUtils] 是命令');
+                return false;
+            }
+
+            // 7. 过滤日期时间格式
+            if (this.isDateTime(normalized)) {
+                console.log('[TranslationUtils] 是日期时间格式');
+                return false;
+            }
+
+            // === 第二步：过滤无意义内容 ===
+            
+            if (this.isMeaninglessContent(normalized)) {
+                console.log('[TranslationUtils] 检测到无意义内容');
+                return false;
+            }
+
+            // === 第三步：语言相关判断 ===
+
+            // 检查是否包含英文单词
+            const englishWords = normalized.match(/[a-zA-Z]+/g);
+            
+            // 如果是纯英文内容（没有中文/日文/韩文）
+            const hasCJK = /[\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(normalized);
+            if (!hasCJK && englishWords) {
+                // 纯英文内容：检查单词数
+                const wordCount = englishWords.length;
+                console.log('[TranslationUtils] 纯英文内容，单词数:', wordCount);
+                
+                // 只翻译 2 个单词以上的短语或句子
+                if (wordCount < 2) {
+                    console.log('[TranslationUtils] 单个英文单词，不翻译');
+                    return false;
+                }
+                
+                // 2 个单词以上，需要翻译
+                console.log('[TranslationUtils] 英文短语/句子，需要翻译');
+                return true;
+            }
+
+            // 包含中文/日文/韩文的内容
             // 检查最小长度
             const minLength = this.config?.minTextLength || 2;
             console.log('[TranslationUtils] 最小长度:', minLength, '实际长度:', normalized.length);
@@ -59,37 +149,19 @@
             }
 
             // 过滤纯数字/符号
-            // 使用 Unicode 属性转义来检测所有语言的字母（包括中文、日文、韩文、阿拉伯文、泰文、缅甸文等）
             try {
-                // 检测是否包含任何字母字符（L = Letter，包括大写、小写、标题case）
                 const hasLetters = /\p{L}/u.test(normalized);
-                // 检测是否只有数字和标点符号
                 const onlyDigitsAndPunctuation = /^[\d\s\p{P}\p{S}]+$/u.test(normalized);
                 if (!hasLetters || onlyDigitsAndPunctuation) {
                     console.log('[TranslationUtils] 纯数字/符号');
                     return false;
                 }
             } catch (e) {
-                // 如果浏览器不支持 Unicode 属性转义，回退到基础检测
                 const hasBasicLetters = /[a-zA-Z]/.test(normalized);
-                const hasCJK = /[\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(normalized);
                 if (!hasBasicLetters && !hasCJK) {
                     console.log('[TranslationUtils] 纯数字/符号（回退检测）');
                     return false;
                 }
-            }
-
-            // 过滤 URL/链接
-            const urlRegex = /^(?:https?:\/\/|ftp:\/\/|www\.)[^\s]+$|^(?:[\w-]+\.)+[a-z]{2,}(?:\/[^\s]*)?$/i;
-            if (urlRegex.test(normalized)) {
-                console.log('[TranslationUtils] 是URL');
-                return false;
-            }
-
-            // 过滤邮箱
-            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-                console.log('[TranslationUtils] 是邮箱');
-                return false;
             }
 
             // 检查目标语言是否为中文，避免重复翻译中文内容
@@ -145,6 +217,318 @@
 
             console.log('[TranslationUtils] 默认返回 true');
             return true;
+        }
+
+        /**
+         * 划词翻译：使用宽松的过滤规则
+         * 尊重用户选择，只过滤明显的无意义内容
+         * 不过滤文件名、URL、代码等（用户可能就想翻译这些）
+         * @param {string} text - 要检查的文本内容
+         * @returns {boolean} 是否符合翻译条件
+         */
+        shouldTranslateSelectedText(text) {
+            console.log('[TranslationUtils] shouldTranslateSelectedText 输入:', text);
+            if (!text) {
+                console.log('[TranslationUtils] 文本为空');
+                return false;
+            }
+            const normalized = this.normalizeText(text);
+            console.log('[TranslationUtils] 规范化后:', normalized);
+            
+            // 只过滤明显的无意义内容
+            if (this.isMeaninglessContent(normalized)) {
+                console.log('[TranslationUtils] 检测到无意义内容');
+                return false;
+            }
+            
+            // 检查最小长度（划词翻译可以容忍更短的内容）
+            const minLength = this.config?.minTextLength || 1;
+            console.log('[TranslationUtils] 最小长度:', minLength, '实际长度:', normalized.length);
+            if (normalized.length < minLength) {
+                console.log('[TranslationUtils] 长度不足');
+                return false;
+            }
+            
+            // 划词翻译：尊重用户选择，只要不是无意义内容就翻译
+            console.log('[TranslationUtils] 用户选择的内容，翻译');
+            return true;
+        }
+
+        /**
+         * 检测是否为无意义内容
+         * 核心逻辑：基于字符类型和模式识别，而非简单的字符数
+         * @param {string} text - 规范化后的文本
+         * @returns {boolean} 是否为无意义内容
+         */
+        isMeaninglessContent(text) {
+            if (!text || text.length < 2) return true;
+            
+            const len = text.length;
+            
+            // 1. 检测纯符号组合（如 "@#$%^&*", "!!!", "..."）
+            // 这是最重要的过滤，直接拦截无意义符号
+            const hasAnyLetterOrCJK = /[a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(text);
+            if (!hasAnyLetterOrCJK) {
+                console.log('[TranslationUtils] 纯符号，无实际字母或表意文字');
+                return true;
+            }
+            
+            // 2. 【移除】错误的重复字符检测
+            // 正常的英文/中文文本本来就会有字符重复，不应该过滤
+            // 这个检测只针对 "aaaaaa" 这种恶意重复，在第 5 步处理
+            
+            // 3. 检测乱码特征（特殊字符超过 50%）
+            const specialCharCount = (text.match(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\s]/g) || []).length;
+            if (specialCharCount / len > 0.5) {
+                console.log('[TranslationUtils] 特殊字符过多');
+                return true;
+            }
+            
+            // 4. 检测无意义短语模式
+            const meaninglessPatterns = [
+                /^\.{3,}$/,                    // 连续省略号
+                /^\*{3,}$/,                    // 连续星号
+                /^-{3,}$/,                     // 连续横线
+                /^_{3,}$/,                     // 连续下划线
+                /^!{3,}$/,                     // 连续感叹号
+                /^\?{3,}$/,                    // 连续问号
+                /^(click|tap|touch)\s+(here|this)$/i,
+                /^(read|see|view)\s+more$/i,
+                /^(learn|find)\s+more$/i
+            ];
+            
+            for (const pattern of meaninglessPatterns) {
+                if (pattern.test(text)) {
+                    console.log('[TranslationUtils] 匹配无意义模式:', pattern);
+                    return true;
+                }
+            }
+            
+            // 5. 检测单一字符恶意重复（如 "aaaaaa", "啊啊啊啊啊"）
+            // 只针对短文本（< 20 字符），长文本不适用此规则
+            if (len < 20) {
+                const charCount = {};
+                for (const char of text.replace(/\s/g, '')) {
+                    charCount[char] = (charCount[char] || 0) + 1;
+                }
+                const maxCharCount = Math.max(...Object.values(charCount));
+                const totalNonSpaceChars = text.replace(/\s/g, '').length;
+                // 如果某个字符重复超过 5 次，且占总字符的 80% 以上
+                if (maxCharCount > 5 && maxCharCount / totalNonSpaceChars > 0.8) {
+                    console.log('[TranslationUtils] 单一字符重复');
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        /**
+         * 检测是否为文件名
+         * @param {string} text - 文本
+         * @returns {boolean} 是否为文件名
+         */
+        isFileName(text) {
+            // 1. 匹配带扩展名的文件名：README.md, build.xml, worldmonitor.app
+            const fileNameRegex = /^[\w\-_.]+(\.[a-zA-Z]{2,})$/;
+            
+            // 2. 匹配没有扩展名但像文件的：Dockerfile, Makefile, CHANGELOG
+            const noExtensionRegex = /^(Dockerfile|Makefile|LICENSE|README|CHANGELOG|CONTRIBUTING|TRANSLATIONS|build|pom|settings|gradle|webpack|vite|tsconfig|jsconfig|babel|eslint|prettier|stylelint)$/i;
+            
+            // 3. 匹配文件夹命名模式：nsis_locales, cicd_scripts (下划线 + 复数形式)
+            const folderPatternRegex = /^[a-z]+_[a-z]+s$/i;
+            
+            return fileNameRegex.test(text) || 
+                   noExtensionRegex.test(text) ||
+                   folderPatternRegex.test(text);
+        }
+
+        /**
+         * 检测是否为 URL（包括带描述的 URL）
+         * @param {string} text - 文本
+         * @returns {boolean} 是否为 URL 或包含 URL
+         */
+        isURLWithDescription(text) {
+            // 1. 完整 URL：https://example.com, http://localhost:3000
+            const fullURLRegex = /^https?:\/\/[^\s]+$/i;
+            
+            // 2. 简写 URL：www.example.com
+            const wwwURLRegex = /^www\.[^\s]+$/i;
+            
+            // 3. 域名 + 常见后缀：Free-Deompiler.com website, example.com page
+            // 只匹配短语（2-3 个单词），不匹配长句子
+            const domainWithDescRegex = /^[\w\-]+\.[a-z]{2,}\s+(website|page|site|home|docs|api|app|blog|shop|store|cloud|portal|platform|service|system)$/i;
+            
+            // 4. 纯域名（带常见 TLD）- 只匹配纯域名，不匹配包含域名的句子
+            const pureDomainRegex = /^[\w\-]+\.(com|org|net|io|cn|edu|gov|mil|info|biz|me|co|tv|cc|xyz|top|vip|app|dev|cloud|ai|tech)$/i;
+            
+            // 5. 检查是否只是简单提及域名（域名 + 少量描述，总单词数 <= 3）
+            // 这样长句子即使包含域名也会被翻译
+            const hasDomain = /[\w\-]+\.[a-z]{2,}/i.test(text);
+            if (hasDomain) {
+                const wordCount = text.split(/\s+/).length;
+                // 如果单词数超过 3 个，说明是句子，应该翻译，不认为是 URL
+                if (wordCount > 3) {
+                    return false;
+                }
+            }
+            
+            return fullURLRegex.test(text) || 
+                   wwwURLRegex.test(text) ||
+                   domainWithDescRegex.test(text) ||
+                   pureDomainRegex.test(text);
+        }
+
+        /**
+         * 检测是否为代码标识符（驼峰命名、下划线命名等）
+         * @param {string} text - 文本
+         * @returns {boolean} 是否为代码标识符
+         */
+        isCodeIdentifier(text) {
+            // 驼峰命名：shouldTranslateText, TranslationUtils, k2Fsa
+            const camelCaseRegex = /^[a-z][a-zA-Z0-9]*[A-Z][a-zA-Z0-9]*$/;
+            // 帕斯卡命名：TranslationUtils, PageManager, K2Fsa
+            const pascalCaseRegex = /^[A-Z][a-zA-Z0-9]*[A-Z][a-zA-Z0-9]*$/;
+            // 下划线命名：is_meaningless_content, build_translation_messages, k2_fsa
+            const snakeCaseRegex = /^[a-z0-9]+(_[a-z0-9]+)+$/i;
+            // 短横线命名：translation-utils, page-manager, k2-fsa, sherpa-onnx
+            const kebabCaseRegex = /^[a-z0-9]+(-[a-z0-9]+)+$/i;
+            // 常量命名：MAX_CHUNK_SIZE, API_ENDPOINT
+            const constantCaseRegex = /^[A-Z]+(_[A-Z]+)+$/;
+            
+            // 全小写复合词（长度 > 10，可能是多个单词组合）：modelcontextprotocol, typescriptlanguage
+            const longLowercaseRegex = /^[a-z]{10,}$/;
+            
+            // GitHub 仓库名格式：K-Dense-AI/claude-scientific-skills, user/repo
+            // 包括带空格的格式：K-Dense-AI / claude-scientific-skills
+            const githubRepoRegex = /^[\w\-./]+\s*\/\s*[\w\-./]+$/;
+            
+            return camelCaseRegex.test(text) || 
+                   pascalCaseRegex.test(text) || 
+                   snakeCaseRegex.test(text) || 
+                   kebabCaseRegex.test(text) ||
+                   constantCaseRegex.test(text) ||
+                   longLowercaseRegex.test(text) ||
+                   githubRepoRegex.test(text);
+        }
+
+        /**
+         * 检测是否为路径
+         * @param {string} text - 文本
+         * @returns {boolean} 是否为路径
+         */
+        isPath(text) {
+            // Unix 路径：/usr/bin, /home/user
+            const unixPathRegex = /^\/[\w\-./]+$/;
+            // Windows 路径：C:\Windows, D:\Program Files
+            const windowsPathRegex = /^[A-Z]:\\[\\ \w\-.\-]+$/i;
+            // 相对路径：./src, ../config
+            const relativePathRegex = /^\.\.?\/[\w\-./]+$/;
+            
+            // 检测包含路径分隔符的组合：modelcontextprotocol / inspector
+            // 这种格式常见于面包屑导航、层级显示
+            const breadcrumbRegex = /^[\w\-./]+\s*\/\s*[\w\-./]+$/;
+            
+            return unixPathRegex.test(text) || 
+                   windowsPathRegex.test(text) || 
+                   relativePathRegex.test(text) ||
+                   breadcrumbRegex.test(text);
+        }
+
+        /**
+         * 检测是否为命令/终端指令
+         * @param {string} text - 文本
+         * @returns {boolean} 是否为命令
+         */
+        isCommand(text) {
+            // 常见命令开头
+            const commandPatterns = [
+                /^npm\s+\w+/,           // npm install, npm run build
+                /^yarn\s+\w+/,          // yarn add, yarn run
+                /^pnpm\s+\w+/,          // pnpm install
+                /^git\s+\w+/,           // git commit, git push
+                /^docker\s+\w+/,        // docker run, docker build
+                /^node\s+/,             // node app.js
+                /^python[3]?\s+/,       // python script.py
+                /^pip[3]?\s+\w+/,       // pip install
+                /^cargo\s+\w+/,         // cargo build
+                /^go\s+\w+/,            // go run
+                /^make(\s+|$)/,         // make, make build
+                /^webpack(\s+|$)/,      // webpack
+                /^vite(\s+|$)/,         // vite
+                /^eslint(\s+|$)/,       // eslint
+                /^prettier(\s+|$)/,     // prettier
+                /^ls(\s+|$)/,           // ls
+                /^cd\s+/,               // cd /home
+                /^mkdir\s+/,            // mkdir dir
+                /^rm\s+/,               // rm -rf
+                /^cp\s+/,               // cp file1 file2
+                /^mv\s+/                // mv file1 file2
+            ];
+            
+            return commandPatterns.some(pattern => pattern.test(text));
+        }
+
+        /**
+         * 检测是否为日期时间格式
+         * @param {string} text - 文本
+         * @returns {boolean} 是否为日期时间格式
+         */
+        isDateTime(text) {
+            if (!text) return false;
+            
+            // 处理多行文本：按行分割，每行单独检测
+            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            
+            // 如果只有 1 行，直接检测
+            if (lines.length === 1) {
+                return this.isDateTimeLine(lines[0]);
+            }
+            
+            // 如果有多行，检查是否所有行都是日期时间格式
+            // 例如："Updated\n15 hours ago" 应该被识别为相对时间
+            const combinedText = lines.join(' ');
+            return this.isDateTimeLine(combinedText);
+        }
+        
+        /**
+         * 检测单行是否为日期时间格式
+         * @param {string} text - 单行文本
+         * @returns {boolean} 是否为日期时间格式
+         */
+        isDateTimeLine(text) {
+            // 1. 相对时间格式：Updated 15 hours ago, 10 minutes ago, 2 days ago
+            const relativeTimeRegex = /^(updated|created|modified|posted|published|deleted|added|removed)\s+\d+\s+(second|minute|hour|day|week|month|year)s?\s+ago$/i;
+            
+            // 2. 绝对日期格式：Mar 5, 2026, January 1, 2024, Dec 25, 2023
+            const absoluteDateRegex = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}$/i;
+            
+            // 3. 数字日期格式：2024-01-15, 2023/12/25, 01/15/2024, 15-01-2024
+            const numericDateRegex = /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$|^\d{1,2}[-/]\d{1,2}[-/]\d{4}$|^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/;
+            
+            // 4. 时间格式：10:30 AM, 14:30, 3:45 PM, 10:30:45
+            const timeRegex = /^\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM|am|pm)?$/;
+            
+            // 5. 日期时间组合：2024-01-15 10:30 AM, Mar 5, 2026 14:30
+            const dateTimeRegex = /^((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\s+\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM|am|pm)?$/i;
+            
+            // 6. 中文日期时间：2024 年 1 月 15 日，2024 年 1 月 15 日 10:30
+            const chineseDateRegex = /^\d{4}年\d{1,2}月\d{1,2}日(\s*\d{1,2}:\d{2}(:\d{2})?)?$/;
+            
+            // 7. 简短时间标记：15h, 10m, 2d, 3w, 1y (常用于 UI 显示)
+            const shortTimeRegex = /^\d+\s*(s|sec|m|min|h|hr|d|day|w|wk|mo|mth|y|yr)$/i;
+            
+            // 8. 动词 + 绝对日期：Updated Mar 5, 2026, Created January 1, 2024
+            const verbAbsoluteDateRegex = /^(updated|created|modified|posted|published|deleted|added|removed)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}$/i;
+            
+            return relativeTimeRegex.test(text) || 
+                   absoluteDateRegex.test(text) ||
+                   numericDateRegex.test(text) ||
+                   timeRegex.test(text) ||
+                   dateTimeRegex.test(text) ||
+                   chineseDateRegex.test(text) ||
+                   shortTimeRegex.test(text) ||
+                   verbAbsoluteDateRegex.test(text);
         }
 
         /**

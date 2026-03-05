@@ -118,7 +118,9 @@
             }
             
             // 使用 Utils 检查文本是否有效
-            const shouldTranslate = this.utils.shouldTranslateText(text);
+            // 划词翻译使用宽松的过滤规则（shouldTranslateSelectedText）
+            // 尊重用户选择，只过滤无意义内容
+            const shouldTranslate = this.utils.shouldTranslateSelectedText(text);
             console.log('[SelectionManager] 是否应该翻译:', shouldTranslate);
             if (!shouldTranslate) return;
 
