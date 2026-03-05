@@ -98,6 +98,13 @@
                 await this.configManager.updateAndSave({ ollamaEndpoint: this.config.ollamaEndpoint });
             }
 
+            // 自动迁移并发限制配置（从旧版本升级）
+            if (this.config.concurrentLimit !== 8) {
+                console.log(`[TranslationModule] 升级并发限制: ${this.config.concurrentLimit} -> 8`);
+                this.config.concurrentLimit = 8;
+                await this.configManager.updateAndSave({ concurrentLimit: 8 });
+            }
+
             // 监听配置变化
             this.configManager.addObserver((newConfig) => {
                 this.config = newConfig;
