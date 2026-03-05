@@ -103,12 +103,6 @@
                 return false;
             }
 
-            // 7. 过滤日期时间格式
-            if (this.isDateTime(normalized)) {
-                console.log('[TranslationUtils] 是日期时间格式');
-                return false;
-            }
-
             // === 第二步：过滤无意义内容 ===
             
             if (this.isMeaninglessContent(normalized)) {
@@ -397,19 +391,15 @@
             const constantCaseRegex = /^[A-Z]+(_[A-Z]+)+$/;
             
             // 全小写复合词（长度 > 10，可能是多个单词组合）：modelcontextprotocol, typescriptlanguage
+            // 检测是否包含多个英文单词的拼接（通过大小写变化或长度判断）
             const longLowercaseRegex = /^[a-z]{10,}$/;
-            
-            // GitHub 仓库名格式：K-Dense-AI/claude-scientific-skills, user/repo
-            // 包括带空格的格式：K-Dense-AI / claude-scientific-skills
-            const githubRepoRegex = /^[\w\-./]+\s*\/\s*[\w\-./]+$/;
             
             return camelCaseRegex.test(text) || 
                    pascalCaseRegex.test(text) || 
                    snakeCaseRegex.test(text) || 
                    kebabCaseRegex.test(text) ||
                    constantCaseRegex.test(text) ||
-                   longLowercaseRegex.test(text) ||
-                   githubRepoRegex.test(text);
+                   longLowercaseRegex.test(text);
         }
 
         /**
@@ -467,68 +457,6 @@
             ];
             
             return commandPatterns.some(pattern => pattern.test(text));
-        }
-
-        /**
-         * 检测是否为日期时间格式
-         * @param {string} text - 文本
-         * @returns {boolean} 是否为日期时间格式
-         */
-        isDateTime(text) {
-            if (!text) return false;
-            
-            // 处理多行文本：按行分割，每行单独检测
-            const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            
-            // 如果只有 1 行，直接检测
-            if (lines.length === 1) {
-                return this.isDateTimeLine(lines[0]);
-            }
-            
-            // 如果有多行，检查是否所有行都是日期时间格式
-            // 例如："Updated\n15 hours ago" 应该被识别为相对时间
-            const combinedText = lines.join(' ');
-            return this.isDateTimeLine(combinedText);
-        }
-        
-        /**
-         * 检测单行是否为日期时间格式
-         * @param {string} text - 单行文本
-         * @returns {boolean} 是否为日期时间格式
-         */
-        isDateTimeLine(text) {
-            // 1. 相对时间格式：Updated 15 hours ago, 10 minutes ago, 2 days ago
-            const relativeTimeRegex = /^(updated|created|modified|posted|published|deleted|added|removed)\s+\d+\s+(second|minute|hour|day|week|month|year)s?\s+ago$/i;
-            
-            // 2. 绝对日期格式：Mar 5, 2026, January 1, 2024, Dec 25, 2023
-            const absoluteDateRegex = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}$/i;
-            
-            // 3. 数字日期格式：2024-01-15, 2023/12/25, 01/15/2024, 15-01-2024
-            const numericDateRegex = /^\d{4}[-/]\d{1,2}[-/]\d{1,2}$|^\d{1,2}[-/]\d{1,2}[-/]\d{4}$|^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/;
-            
-            // 4. 时间格式：10:30 AM, 14:30, 3:45 PM, 10:30:45
-            const timeRegex = /^\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM|am|pm)?$/;
-            
-            // 5. 日期时间组合：2024-01-15 10:30 AM, Mar 5, 2026 14:30
-            const dateTimeRegex = /^((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}|\d{4}[-/]\d{1,2}[-/]\d{1,2})\s+\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM|am|pm)?$/i;
-            
-            // 6. 中文日期时间：2024 年 1 月 15 日，2024 年 1 月 15 日 10:30
-            const chineseDateRegex = /^\d{4}年\d{1,2}月\d{1,2}日(\s*\d{1,2}:\d{2}(:\d{2})?)?$/;
-            
-            // 7. 简短时间标记：15h, 10m, 2d, 3w, 1y (常用于 UI 显示)
-            const shortTimeRegex = /^\d+\s*(s|sec|m|min|h|hr|d|day|w|wk|mo|mth|y|yr)$/i;
-            
-            // 8. 动词 + 绝对日期：Updated Mar 5, 2026, Created January 1, 2024
-            const verbAbsoluteDateRegex = /^(updated|created|modified|posted|published|deleted|added|removed)\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}$/i;
-            
-            return relativeTimeRegex.test(text) || 
-                   absoluteDateRegex.test(text) ||
-                   numericDateRegex.test(text) ||
-                   timeRegex.test(text) ||
-                   dateTimeRegex.test(text) ||
-                   chineseDateRegex.test(text) ||
-                   shortTimeRegex.test(text) ||
-                   verbAbsoluteDateRegex.test(text);
         }
 
         /**

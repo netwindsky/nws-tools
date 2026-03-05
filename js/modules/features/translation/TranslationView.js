@@ -217,6 +217,27 @@
                     margin: 8px 0 !important;
                     width: 100% !important;
                 }
+                
+                /* 表格单元格内的译文样式 */
+                td .nws-translation-style,
+                th .nws-translation-style {
+                    display: block !important;
+                    margin-top: 8px !important;
+                    padding: 8px 0 !important;
+                    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+                    width: 100% !important;
+                    background-color: rgba(0, 0, 0, 0.03) !important;
+                    border-radius: 4px !important;
+                    font-size: 0.95em !important;
+                    color: #333 !important;
+                    box-shadow: none !important;
+                }
+                
+                /* 保持单元格布局 */
+                td.nws-translation-style,
+                th.nws-translation-style {
+                    display: table-cell !important;
+                }
             `;
             this.styleManager.inject(this.name, css, `nws-style-${this.name}`, { replace: true, priority: 'normal' });
         }
@@ -522,19 +543,13 @@
 
             const paragraphs = this.splitTranslatedResult(translatedText);
             
-            // 检查是否已经在 wrapper 中
-            let wrapper = element.closest('.nws-bilingual-wrapper');
+            // 检查是否是表格单元格
+            const isTableCell = element.tagName === 'TD' || element.tagName === 'TH';
             
-            if (!wrapper) {
-                // 创建 wrapper
-                wrapper = document.createElement('div');
-                wrapper.className = 'nws-bilingual-wrapper';
-                
-                // 插入 wrapper 替换原文
-                if (element.parentNode) {
-                    element.parentNode.insertBefore(wrapper, element);
-                    wrapper.appendChild(element);  // 移动原文到 wrapper
-                }
+            // 检查是否已经有译文
+            const existingTranslation = element.querySelector('.nws-translation-style');
+            if (existingTranslation) {
+                existingTranslation.remove();
             }
             
             // 创建译文容器
@@ -544,7 +559,9 @@
             paragraphs.forEach((para) => {
                 const line = para.trim();
                 if (!line) return;
-                const p = document.createElement(element.tagName);
+                // 表格单元格使用 span，其他元素保持原有标签
+                const tagName = isTableCell ? 'span' : element.tagName;
+                const p = document.createElement(tagName);
                 if (computedStyle) {
                     p.style.color = computedStyle.color || '';
                     p.style.fontSize = computedStyle.fontSize || '';
@@ -558,9 +575,30 @@
                 block.appendChild(p);
             });
 
-            // 添加到 wrapper
-            wrapper.appendChild(block);
-            this.blockNodeCache.set(element, wrapper);
+            if (isTableCell) {
+                // 表格单元格：直接追加译文，不包裹原文
+                element.appendChild(block);
+                this.blockNodeCache.set(element, block);
+            } else {
+                // 非表格元素：使用 wrapper 包裹
+                let wrapper = element.closest('.nws-bilingual-wrapper');
+                
+                if (!wrapper) {
+                    // 创建 wrapper
+                    wrapper = document.createElement('div');
+                    wrapper.className = 'nws-bilingual-wrapper';
+                    
+                    // 插入 wrapper 替换原文
+                    if (element.parentNode) {
+                        element.parentNode.insertBefore(wrapper, element);
+                        wrapper.appendChild(element);  // 移动原文到 wrapper
+                    }
+                }
+                
+                // 添加到 wrapper
+                wrapper.appendChild(block);
+                this.blockNodeCache.set(element, wrapper);
+            }
         }
 
         applyBilingualTranslationHtml(element, translatedText) {
