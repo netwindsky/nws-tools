@@ -31,7 +31,7 @@
                     translationMode: 'bilingual',
                     enableSelectionTranslation: true,
                     enableViewportTranslation: true,
-                    concurrentLimit: 1,
+                    concurrentLimit: 8,  // 默认并发 8 个请求
                     viewportMargin: '120px',
                     minTextLength: 2
                 },
@@ -384,13 +384,18 @@
             const limit = Math.max(1, this.config.concurrentLimit || 1);
             if (!this.queue.length) return;
 
+            console.log(`[TranslationModule] processQueue: 队列长度=${this.queue.length}, 活跃请求=${this.activeRequests}, 限制=${limit}`);
+
             while (this.activeRequests < limit && this.queue.length > 0) {
                 const task = this.queue.shift();
                 this.activeRequests += 1;
 
+                console.log(`[TranslationModule] 开始翻译: 活跃请求=${this.activeRequests}, 剩余队列=${this.queue.length}`);
+
                 this.translateTextRequest(task.text)
                     .then((result) => {
                         this.activeRequests = Math.max(0, this.activeRequests - 1);
+                        console.log(`[TranslationModule] 翻译完成: 活跃请求=${this.activeRequests}`);
                         this.updateCache(task.text, result);
                         task.resolve(result);
                         this.processQueue();

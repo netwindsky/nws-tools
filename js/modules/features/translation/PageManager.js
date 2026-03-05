@@ -107,6 +107,7 @@
                     }
                 }
                 if (visibleElements.length > 0) {
+                    console.log(`[PageManager] IntersectionObserver: ${visibleElements.length} 个元素进入视口`);
                     visibleElements.forEach(el => this.processElement(el));
                 }
             }, {
@@ -220,7 +221,7 @@
             return false;
         }
 
-        async processElement(element) {
+        processElement(element) {
             if (this.processedNodes.has(element)) return;
             this.processedNodes.add(element);
 
@@ -245,25 +246,30 @@
             // 页面翻译使用严格的过滤规则（shouldTranslateText）
             if (!this.utils.shouldTranslateText(fullText)) return;
 
+            console.log(`[PageManager] processElement: 提交翻译任务, 文本长度=${fullText.length}, 文本="${fullText.substring(0, 50)}..."`);
+
             // 显示 loading 占位 (可选)
             // this.view.showLoading(element);
 
-            try {
-                const translation = await this.module.translateText(fullText);
-                if (translation && this.isObserving) {
-                    const mode = this.module.config.translationMode || 'bilingual';
-                    if (mode === 'bilingual') {
-                        this.view.applyBilingualTranslation(element, translation);
-                    } else {
-                        // 替换模式比较复杂，需要替换 TextNode 内容，这里暂且只支持双语对照，
-                        // 或者简单的文本替换。为了稳健性，先只支持双语对照注入。
-                        // 如果需要替换模式，需实现 applyReplacementTranslation
-                         this.view.applyBilingualTranslation(element, translation);
+            // 不等待翻译完成，直接返回，让 TranslationModule 的队列系统并发处理
+            this.module.translateText(fullText)
+                .then((translation) => {
+                    console.log(`[PageManager] 翻译完成: 文本="${fullText.substring(0, 50)}..."`);
+                    if (translation && this.isObserving) {
+                        const mode = this.module.config.translationMode || 'bilingual';
+                        if (mode === 'bilingual') {
+                            this.view.applyBilingualTranslation(element, translation);
+                        } else {
+                            // 替换模式比较复杂，需要替换 TextNode 内容，这里暂且只支持双语对照，
+                            // 或者简单的文本替换。为了稳健性，先只支持双语对照注入。
+                            // 如果需要替换模式，需实现 applyReplacementTranslation
+                             this.view.applyBilingualTranslation(element, translation);
+                        }
                     }
-                }
-            } catch (e) {
-                console.warn('[PageManager] Translation failed for element:', element, e);
-            }
+                })
+                .catch((e) => {
+                    console.warn('[PageManager] Translation failed for element:', element, e);
+                });
         }
 
         getTextItems(element) {
