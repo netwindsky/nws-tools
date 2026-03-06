@@ -195,101 +195,13 @@
          * @returns {boolean} 是否通过验证
          */
         validateTranslationResult(original, translated) {
+            // 只检查翻译结果是否为空
             if (!translated || translated.length === 0) {
                 console.warn('[TranslationService] 翻译结果为空');
                 return false;
             }
 
-            // 1. 基于语义单位的长度验证（而非简单字符数）
-            // 英文按单词数，中文按词汇数（估算）
-            const originalUnits = this.countSemanticUnits(original);
-            const translatedUnits = this.countSemanticUnits(translated);
-            
-            console.log('[TranslationService] 语义单位：原文=', originalUnits, '译文=', translatedUnits);
-            
-            if (originalUnits > 0 && translatedUnits > 0) {
-                const semanticRatio = translatedUnits / originalUnits;
-                // 语义单位比例应该在合理范围内（允许一定的灵活性）
-                if (semanticRatio < 0.3 || semanticRatio > 4) {
-                    console.warn('[TranslationService] 语义单位比例异常:', semanticRatio, 
-                                 '(原文语义单位:', originalUnits, ', 译文语义单位:', translatedUnits, ')');
-                    return false;
-                }
-            }
-
-            // 2. 检查是否包含明显的错误标记
-            const errorPatterns = [
-                /无法翻译/i,
-                /cannot translate/i,
-                /invalid input/i,
-                /error:/i,
-                /^\s*$/ // 纯空白
-            ];
-
-            for (const pattern of errorPatterns) {
-                if (pattern.test(translated)) {
-                    console.warn('[TranslationService] 翻译结果包含错误标记');
-                    return false;
-                }
-            }
-
-            // 3. 检查是否过度重复
-            const uniqueChars = new Set(translated.replace(/\s/g, '')).size;
-            const totalNonSpaceChars = translated.replace(/\s/g, '').length;
-            if (totalNonSpaceChars > 10 && uniqueChars / totalNonSpaceChars < 0.2) {
-                console.warn('[TranslationService] 翻译结果重复度过高');
-                return false;
-            }
-
-            // 4. 检查是否包含过多的特殊字符
-            const specialCharCount = (translated.match(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\s\p{P}]/gu) || []).length;
-            if (specialCharCount / translated.length > 0.3) {
-                console.warn('[TranslationService] 翻译结果包含过多特殊字符');
-                return false;
-            }
-
             return true;
-        }
-
-        /**
-         * 计算文本的语义单位数
-         * 英文按单词数，中文按词汇数（估算），混合文本智能处理
-         * @param {string} text - 文本
-         * @returns {number} 语义单位数
-         */
-        countSemanticUnits(text) {
-            if (!text) return 0;
-
-            const trimmed = text.trim();
-            if (!trimmed) return 0;
-
-            // 提取英文单词
-            const englishWords = trimmed.match(/[a-zA-Z]+/g) || [];
-            const englishWordCount = englishWords.length;
-
-            // 提取中文字符（包括标点）
-            const chineseChars = trimmed.match(/[\u4e00-\u9fa5]/g) || [];
-            
-            // 提取日文假名
-            const japaneseKana = trimmed.match(/[\u3040-\u309F\u30A0-\u30FF]/g) || [];
-            
-            // 提取韩文字符
-            const koreanChars = trimmed.match(/[\uAC00-\uD7AF]/g) || [];
-
-            // 估算中文词汇数（中文词均长度约 2 个字符）
-            const chineseWordCount = Math.ceil(chineseChars.length / 2);
-            
-            // 日文词汇估算
-            const japaneseWordCount = Math.ceil(japaneseKana.length / 2);
-            
-            // 韩文词汇估算（韩文是表音文字，按音节分组）
-            const koreanWordCount = Math.ceil(koreanChars.length / 2);
-
-            // 总语义单位 = 英文单词数 + 中文词汇数 + 日文词汇数 + 韩文词汇数
-            const totalUnits = englishWordCount + chineseWordCount + japaneseWordCount + koreanWordCount;
-
-            // 如果没有检测到明确的语义单位，回退到字符数（避免返回 0）
-            return totalUnits > 0 ? totalUnits : trimmed.length;
         }
 
         async translateTextBatch(texts) {
