@@ -185,24 +185,22 @@
                 
                 // 统计各类字符数量
                 const chineseChars = (normalized.match(/[\u4e00-\u9fa5]/g) || []).length;
-                
-                // 统计英文单词数（而不是字母数）
-                // 匹配连续的英文字母作为一个单词
-                const englishWords = (normalized.match(/[a-zA-Z]+/g) || []).length;
-                
+                const englishLetters = (normalized.match(/[a-zA-Z]/g) || []).length;
                 const totalChars = normalized.length;
                 
-                console.log('[TranslationUtils] 汉字数量:', chineseChars, '英文单词数:', englishWords, '总长度:', totalChars);
+                console.log('[TranslationUtils] 汉字数量:', chineseChars, '英文字母数:', englishLetters, '总长度:', totalChars);
                 
-                // 计算有效单位（汉字数 + 英文单词数），刨除符号和数字
-                const validUnits = chineseChars + englishWords;
+                // 基于字符比例判断（而不是单词数）
+                // 中文内容中可能包含英文技术术语（如 token, GPU），这是正常的
+                const meaningfulChars = chineseChars + englishLetters;
                 
-                // 如果主要是汉字（汉字占有效单位的比例超过 70%），则不翻译
-                if (validUnits > 0) {
-                    const chineseRatio = chineseChars / validUnits;
-                    console.log('[TranslationUtils] 汉字占有效单位比例:', chineseRatio);
+                if (meaningfulChars > 0) {
+                    const chineseRatio = chineseChars / meaningfulChars;
+                    console.log('[TranslationUtils] 汉字占字符比例:', chineseRatio);
                     
-                    if (chineseRatio > 0.7) {
+                    // 如果汉字占比超过 50%，认为是中文内容，不翻译
+                    // 降低阈值以适应技术文章中包含英文术语的情况
+                    if (chineseRatio > 0.5) {
                         console.log('[TranslationUtils] 主要是中文内容，不翻译，返回 false');
                         return false;
                     }
