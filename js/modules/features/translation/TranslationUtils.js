@@ -261,7 +261,9 @@
             
             // 1. 检测纯符号组合（如 "@#$%^&*", "!!!", "..."）
             // 这是最重要的过滤，直接拦截无意义符号
-            const hasAnyLetterOrCJK = /[a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF]/.test(text);
+            // 支持的语言：英文、中文、日文、韩文、印地语、孟加拉语、泰米尔语、泰卢固语、
+            // 卡纳达语、马拉雅拉姆语、古吉拉特语、旁遮普语、奥里亚语等
+            const hasAnyLetterOrCJK = /[a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]/.test(text);
             if (!hasAnyLetterOrCJK) {
                 console.log('[TranslationUtils] 纯符号，无实际字母或表意文字');
                 return true;
@@ -272,7 +274,7 @@
             // 这个检测只针对 "aaaaaa" 这种恶意重复，在第 5 步处理
             
             // 3. 检测乱码特征（特殊字符超过 50%）
-            const specialCharCount = (text.match(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\s]/g) || []).length;
+            const specialCharCount = (text.match(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\s]/g) || []).length;
             if (specialCharCount / len > 0.5) {
                 console.log('[TranslationUtils] 特殊字符过多');
                 return true;
