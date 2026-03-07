@@ -51,9 +51,6 @@
         }
 
         injectStyles() {
-        }
-
-        injectStyles() {
             if (!this.styleManager) return;
             const css = `
                 .nws-translation-tooltip {
