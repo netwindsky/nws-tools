@@ -247,16 +247,23 @@
             console.log('[TranslationUtils] 目标语言:', lang, 'isTargetChinese:', isTargetChinese);
             
             if (isTargetChinese) {
-                // 统计汉字和英文字母数量
-                const chineseChars = (normalized.match(/[\u4e00-\u9fa5]/g) || []).length;
-                const englishLetters = (normalized.match(/[a-zA-Z]/g) || []).length;
-                const meaningfulChars = chineseChars + englishLetters;
+                // 移除所有标点符号，只保留文字内容
+                const textWithoutPunctuation = normalized.replace(/[\p{P}\p{S}]/gu, '');
                 
-                console.log('[TranslationUtils] 汉字数量:', chineseChars, '英文字母数:', englishLetters);
+                // 统计汉字数量（以字符为单位）
+                const chineseChars = (textWithoutPunctuation.match(/[\u4e00-\u9fa5]/g) || []).length;
                 
-                if (meaningfulChars > 0) {
-                    const chineseRatio = chineseChars / meaningfulChars;
-                    console.log('[TranslationUtils] 汉字占字符比例:', chineseRatio);
+                // 统计英文单词数量（以单词为单位，不是字母）
+                const englishWords = (textWithoutPunctuation.match(/[a-zA-Z]+/g) || []).length;
+                
+                // 总语义单位 = 汉字数 + 英文单词数
+                const totalSemanticUnits = chineseChars + englishWords;
+                
+                console.log('[TranslationUtils] 汉字数量:', chineseChars, '英文单词数:', englishWords, '总语义单位:', totalSemanticUnits);
+                
+                if (totalSemanticUnits > 0) {
+                    const chineseRatio = chineseChars / totalSemanticUnits;
+                    console.log('[TranslationUtils] 汉字占语义单位比例:', chineseRatio);
                     
                     // 如果汉字占比超过 50%，认为是中文内容，不翻译
                     if (chineseRatio > 0.5) {
