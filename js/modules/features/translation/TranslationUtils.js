@@ -241,6 +241,31 @@
                 return false;
             }
             
+            // 检查目标语言是否为中文，如果是中文则过滤中文内容
+            const lang = this.config?.targetLanguage || '中文';
+            const isTargetChinese = /中文|Chinese/i.test(lang);
+            console.log('[TranslationUtils] 目标语言:', lang, 'isTargetChinese:', isTargetChinese);
+            
+            if (isTargetChinese) {
+                // 统计汉字和英文字母数量
+                const chineseChars = (normalized.match(/[\u4e00-\u9fa5]/g) || []).length;
+                const englishLetters = (normalized.match(/[a-zA-Z]/g) || []).length;
+                const meaningfulChars = chineseChars + englishLetters;
+                
+                console.log('[TranslationUtils] 汉字数量:', chineseChars, '英文字母数:', englishLetters);
+                
+                if (meaningfulChars > 0) {
+                    const chineseRatio = chineseChars / meaningfulChars;
+                    console.log('[TranslationUtils] 汉字占字符比例:', chineseRatio);
+                    
+                    // 如果汉字占比超过 50%，认为是中文内容，不翻译
+                    if (chineseRatio > 0.5) {
+                        console.log('[TranslationUtils] 主要是中文内容，不翻译，返回 false');
+                        return false;
+                    }
+                }
+            }
+            
             // 划词翻译：尊重用户选择，只要不是无意义内容就翻译
             console.log('[TranslationUtils] 用户选择的内容，翻译');
             return true;
