@@ -37,6 +37,88 @@
         }
 
         /**
+         * 分析文本中的语义单位
+         * 用于语言检测和翻译决策
+         * @param {string} text - 原始文本
+         * @returns {Object} 各类语义单位的统计信息
+         */
+        analyzeSemanticUnits(text) {
+            if (!text) {
+                return {
+                    chineseChars: 0,
+                    japaneseKana: 0,
+                    koreanChars: 0,
+                    englishWords: 0,
+                    englishLetters: 0,
+                    totalUnits: 0,
+                    textWithoutPunctuation: ''
+                };
+            }
+
+            // 移除所有标点符号，只保留文字内容
+            const textWithoutPunctuation = text.replace(/[\p{P}\p{S}]/gu, '');
+
+            // 统计各类语义单位
+            const chineseChars = (textWithoutPunctuation.match(/[\u4e00-\u9fa5]/g) || []).length;
+            const japaneseKana = (textWithoutPunctuation.match(/[\u3040-\u309F\u30A0-\u30FF]/g) || []).length;
+            const koreanChars = (textWithoutPunctuation.match(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g) || []).length;
+            const englishWords = (textWithoutPunctuation.match(/[a-zA-Z]+/g) || []).length;
+            const englishLetters = (textWithoutPunctuation.match(/[a-zA-Z]/g) || []).length;
+
+            // 计算总语义单位
+            const totalUnits = chineseChars + japaneseKana + koreanChars + englishWords;
+
+            return {
+                chineseChars,
+                japaneseKana,
+                koreanChars,
+                englishWords,
+                englishLetters,
+                totalUnits,
+                textWithoutPunctuation
+            };
+        }
+
+        /**
+         * 计算中文内容占比
+         * @param {string} text - 要分析的文本
+         * @returns {Object} 包含各类占比的计算结果
+         */
+        calculateChineseContentRatio(text) {
+            const units = this.analyzeSemanticUnits(text);
+
+            if (units.totalUnits === 0) {
+                return {
+                    chineseRatio: 0,
+                    nonChineseRatio: 0,
+                    japaneseRatio: 0,
+                    koreanRatio: 0,
+                    englishRatio: 0,
+                    isMainlyChinese: false,
+                    hasForeignContent: false,
+                    ...units
+                };
+            }
+
+            const chineseRatio = units.chineseChars / units.totalUnits;
+            const japaneseRatio = units.japaneseKana / units.totalUnits;
+            const koreanRatio = units.koreanChars / units.totalUnits;
+            const englishRatio = units.englishWords / units.totalUnits;
+            const nonChineseRatio = (units.japaneseKana + units.koreanChars + units.englishWords) / units.totalUnits;
+
+            return {
+                chineseRatio,
+                nonChineseRatio,
+                japaneseRatio,
+                koreanRatio,
+                englishRatio,
+                isMainlyChinese: chineseRatio > 0.7,
+                hasForeignContent: nonChineseRatio > 0.3,
+                ...units
+            };
+        }
+
+        /**
          * 判断文本是否应该被翻译（用于页面翻译）
          * 核心逻辑：
          * 1. 优先过滤技术内容（文件名、URL、邮箱、路径、代码等）
@@ -247,43 +329,34 @@
             console.log('[TranslationUtils] 目标语言:', lang, 'isTargetChinese:', isTargetChinese);
             
             if (isTargetChinese) {
-                // 移除所有标点符号，只保留文字内容
-                const textWithoutPunctuation = normalized.replace(/[\p{P}\p{S}]/gu, '');
+                // 使用工具方法分析文本语义单位
+                const ratio = this.calculateChineseContentRatio(normalized);
                 
-                // 统计汉字数量（以字符为单位）
-                const chineseChars = (textWithoutPunctuation.match(/[\u4e00-\u9fa5]/g) || []).length;
+                console.log('[TranslationUtils] 语义单位分析:', {
+                    汉字: ratio.chineseChars,
+                    日文假名: ratio.japaneseKana,
+                    韩文: ratio.koreanChars,
+                    英文单词: ratio.englishWords,
+                    总语义单位: ratio.totalUnits
+                });
+                console.log('[TranslationUtils] 占比分析:', {
+                    中文占比: ratio.chineseRatio.toFixed(2),
+                    非中文占比: ratio.nonChineseRatio.toFixed(2),
+                    日文占比: ratio.japaneseRatio.toFixed(2),
+                    韩文占比: ratio.koreanRatio.toFixed(2),
+                    英文占比: ratio.englishRatio.toFixed(2)
+                });
                 
-                // 统计日文假名数量（平假名 + 片假名）
-                const japaneseKana = (textWithoutPunctuation.match(/[\u3040-\u309F\u30A0-\u30FF]/g) || []).length;
+                // 如果包含较多外文内容（日文/韩文/英文），需要翻译
+                if (ratio.hasForeignContent) {
+                    console.log('[TranslationUtils] 包含较多外文内容，需要翻译，返回 true');
+                    return true;
+                }
                 
-                // 统计英文单词数量（以单词为单位，不是字母）
-                const englishWords = (textWithoutPunctuation.match(/[a-zA-Z]+/g) || []).length;
-                
-                // 总语义单位 = 汉字数 + 日文假名数 + 英文单词数
-                const totalSemanticUnits = chineseChars + japaneseKana + englishWords;
-                
-                console.log('[TranslationUtils] 汉字数量:', chineseChars, '日文假名:', japaneseKana, '英文单词数:', englishWords, '总语义单位:', totalSemanticUnits);
-                
-                if (totalSemanticUnits > 0) {
-                    // 计算非中文内容占比（日文 + 英文）
-                    const nonChineseUnits = japaneseKana + englishWords;
-                    const nonChineseRatio = nonChineseUnits / totalSemanticUnits;
-                    console.log('[TranslationUtils] 非中文内容占比:', nonChineseRatio);
-                    
-                    // 如果非中文内容占比超过 30%，认为是外文内容，需要翻译
-                    if (nonChineseRatio > 0.3) {
-                        console.log('[TranslationUtils] 包含较多外文内容，需要翻译，返回 true');
-                        return true;
-                    }
-                    
-                    // 如果汉字占比超过 70%，认为是中文内容，不翻译
-                    const chineseRatio = chineseChars / totalSemanticUnits;
-                    console.log('[TranslationUtils] 汉字占比:', chineseRatio);
-                    
-                    if (chineseRatio > 0.7) {
-                        console.log('[TranslationUtils] 主要是中文内容，不翻译，返回 false');
-                        return false;
-                    }
+                // 如果主要是中文内容，不翻译
+                if (ratio.isMainlyChinese) {
+                    console.log('[TranslationUtils] 主要是中文内容，不翻译，返回 false');
+                    return false;
                 }
             }
             
