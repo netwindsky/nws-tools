@@ -253,20 +253,34 @@
                 // 统计汉字数量（以字符为单位）
                 const chineseChars = (textWithoutPunctuation.match(/[\u4e00-\u9fa5]/g) || []).length;
                 
+                // 统计日文假名数量（平假名 + 片假名）
+                const japaneseKana = (textWithoutPunctuation.match(/[\u3040-\u309F\u30A0-\u30FF]/g) || []).length;
+                
                 // 统计英文单词数量（以单词为单位，不是字母）
                 const englishWords = (textWithoutPunctuation.match(/[a-zA-Z]+/g) || []).length;
                 
-                // 总语义单位 = 汉字数 + 英文单词数
-                const totalSemanticUnits = chineseChars + englishWords;
+                // 总语义单位 = 汉字数 + 日文假名数 + 英文单词数
+                const totalSemanticUnits = chineseChars + japaneseKana + englishWords;
                 
-                console.log('[TranslationUtils] 汉字数量:', chineseChars, '英文单词数:', englishWords, '总语义单位:', totalSemanticUnits);
+                console.log('[TranslationUtils] 汉字数量:', chineseChars, '日文假名:', japaneseKana, '英文单词数:', englishWords, '总语义单位:', totalSemanticUnits);
                 
                 if (totalSemanticUnits > 0) {
-                    const chineseRatio = chineseChars / totalSemanticUnits;
-                    console.log('[TranslationUtils] 汉字占语义单位比例:', chineseRatio);
+                    // 计算非中文内容占比（日文 + 英文）
+                    const nonChineseUnits = japaneseKana + englishWords;
+                    const nonChineseRatio = nonChineseUnits / totalSemanticUnits;
+                    console.log('[TranslationUtils] 非中文内容占比:', nonChineseRatio);
                     
-                    // 如果汉字占比超过 50%，认为是中文内容，不翻译
-                    if (chineseRatio > 0.5) {
+                    // 如果非中文内容占比超过 30%，认为是外文内容，需要翻译
+                    if (nonChineseRatio > 0.3) {
+                        console.log('[TranslationUtils] 包含较多外文内容，需要翻译，返回 true');
+                        return true;
+                    }
+                    
+                    // 如果汉字占比超过 70%，认为是中文内容，不翻译
+                    const chineseRatio = chineseChars / totalSemanticUnits;
+                    console.log('[TranslationUtils] 汉字占比:', chineseRatio);
+                    
+                    if (chineseRatio > 0.7) {
                         console.log('[TranslationUtils] 主要是中文内容，不翻译，返回 false');
                         return false;
                     }
