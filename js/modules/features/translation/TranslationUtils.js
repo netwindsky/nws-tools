@@ -50,6 +50,12 @@
                     koreanChars: 0,
                     englishWords: 0,
                     englishLetters: 0,
+                    cyrillicChars: 0,
+                    arabicChars: 0,
+                    thaiChars: 0,
+                    hebrewChars: 0,
+                    greekChars: 0,
+                    latinExtendedChars: 0,
                     totalUnits: 0,
                     textWithoutPunctuation: ''
                 };
@@ -59,14 +65,37 @@
             const textWithoutPunctuation = text.replace(/[\p{P}\p{S}]/gu, '');
 
             // 统计各类语义单位
+            // CJK 语言
             const chineseChars = (textWithoutPunctuation.match(/[\u4e00-\u9fa5]/g) || []).length;
             const japaneseKana = (textWithoutPunctuation.match(/[\u3040-\u309F\u30A0-\u30FF]/g) || []).length;
             const koreanChars = (textWithoutPunctuation.match(/[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/g) || []).length;
+            
+            // 欧洲语言
             const englishWords = (textWithoutPunctuation.match(/[a-zA-Z]+/g) || []).length;
             const englishLetters = (textWithoutPunctuation.match(/[a-zA-Z]/g) || []).length;
+            
+            // 西里尔字母（俄文、乌克兰文、保加利亚文等）
+            const cyrillicChars = (textWithoutPunctuation.match(/[\u0400-\u04FF\u0500-\u052F]/g) || []).length;
+            
+            // 阿拉伯文（阿拉伯语、波斯语、乌尔都语等）
+            const arabicChars = (textWithoutPunctuation.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/g) || []).length;
+            
+            // 泰文
+            const thaiChars = (textWithoutPunctuation.match(/[\u0E00-\u0E7F]/g) || []).length;
+            
+            // 希伯来文
+            const hebrewChars = (textWithoutPunctuation.match(/[\u0590-\u05FF]/g) || []).length;
+            
+            // 希腊文
+            const greekChars = (textWithoutPunctuation.match(/[\u0370-\u03FF\u1F00-\u1FFF]/g) || []).length;
+            
+            // 拉丁字母扩展（法语、德语、西班牙语、葡萄牙语等）
+            const latinExtendedChars = (textWithoutPunctuation.match(/[\u00C0-\u024F]/g) || []).length;
 
-            // 计算总语义单位
-            const totalUnits = chineseChars + japaneseKana + koreanChars + englishWords;
+            // 计算总语义单位（所有有意义的字符/单词）
+            const totalUnits = chineseChars + japaneseKana + koreanChars + 
+                              englishWords + cyrillicChars + arabicChars + 
+                              thaiChars + hebrewChars + greekChars + latinExtendedChars;
 
             return {
                 chineseChars,
@@ -74,6 +103,12 @@
                 koreanChars,
                 englishWords,
                 englishLetters,
+                cyrillicChars,
+                arabicChars,
+                thaiChars,
+                hebrewChars,
+                greekChars,
+                latinExtendedChars,
                 totalUnits,
                 textWithoutPunctuation
             };
@@ -94,6 +129,12 @@
                     japaneseRatio: 0,
                     koreanRatio: 0,
                     englishRatio: 0,
+                    cyrillicRatio: 0,
+                    arabicRatio: 0,
+                    thaiRatio: 0,
+                    hebrewRatio: 0,
+                    greekRatio: 0,
+                    latinExtendedRatio: 0,
                     isMainlyChinese: false,
                     hasForeignContent: false,
                     ...units
@@ -104,7 +145,18 @@
             const japaneseRatio = units.japaneseKana / units.totalUnits;
             const koreanRatio = units.koreanChars / units.totalUnits;
             const englishRatio = units.englishWords / units.totalUnits;
-            const nonChineseRatio = (units.japaneseKana + units.koreanChars + units.englishWords) / units.totalUnits;
+            const cyrillicRatio = units.cyrillicChars / units.totalUnits;
+            const arabicRatio = units.arabicChars / units.totalUnits;
+            const thaiRatio = units.thaiChars / units.totalUnits;
+            const hebrewRatio = units.hebrewChars / units.totalUnits;
+            const greekRatio = units.greekChars / units.totalUnits;
+            const latinExtendedRatio = units.latinExtendedChars / units.totalUnits;
+            
+            // 非中文内容 = 所有其他语言
+            const nonChineseUnits = units.japaneseKana + units.koreanChars + units.englishWords +
+                                   units.cyrillicChars + units.arabicChars + units.thaiChars +
+                                   units.hebrewChars + units.greekChars + units.latinExtendedChars;
+            const nonChineseRatio = nonChineseUnits / units.totalUnits;
 
             return {
                 chineseRatio,
@@ -112,6 +164,12 @@
                 japaneseRatio,
                 koreanRatio,
                 englishRatio,
+                cyrillicRatio,
+                arabicRatio,
+                thaiRatio,
+                hebrewRatio,
+                greekRatio,
+                latinExtendedRatio,
                 isMainlyChinese: chineseRatio > 0.7,
                 hasForeignContent: nonChineseRatio > 0.3,
                 ...units
@@ -337,6 +395,12 @@
                     日文假名: ratio.japaneseKana,
                     韩文: ratio.koreanChars,
                     英文单词: ratio.englishWords,
+                    西里尔字母: ratio.cyrillicChars,
+                    阿拉伯文: ratio.arabicChars,
+                    泰文: ratio.thaiChars,
+                    希伯来文: ratio.hebrewChars,
+                    希腊文: ratio.greekChars,
+                    拉丁扩展: ratio.latinExtendedChars,
                     总语义单位: ratio.totalUnits
                 });
                 console.log('[TranslationUtils] 占比分析:', {
@@ -344,10 +408,16 @@
                     非中文占比: ratio.nonChineseRatio.toFixed(2),
                     日文占比: ratio.japaneseRatio.toFixed(2),
                     韩文占比: ratio.koreanRatio.toFixed(2),
-                    英文占比: ratio.englishRatio.toFixed(2)
+                    英文占比: ratio.englishRatio.toFixed(2),
+                    西里尔占比: ratio.cyrillicRatio.toFixed(2),
+                    阿拉伯占比: ratio.arabicRatio.toFixed(2),
+                    泰文占比: ratio.thaiRatio.toFixed(2),
+                    希伯来占比: ratio.hebrewRatio.toFixed(2),
+                    希腊占比: ratio.greekRatio.toFixed(2),
+                    拉丁扩展占比: ratio.latinExtendedRatio.toFixed(2)
                 });
                 
-                // 如果包含较多外文内容（日文/韩文/英文），需要翻译
+                // 如果包含较多外文内容（日文/韩文/英文/俄文/阿拉伯文/泰文/希伯来文/希腊文等），需要翻译
                 if (ratio.hasForeignContent) {
                     console.log('[TranslationUtils] 包含较多外文内容，需要翻译，返回 true');
                     return true;
@@ -378,10 +448,14 @@
             
             // 1. 检测纯符号组合（如 "@#$%^&*", "!!!", "..."）
             // 这是最重要的过滤，直接拦截无意义符号
-            // 支持的语言：英文、中文、日文、韩文、印地语、孟加拉语、泰米尔语、泰卢固语、
-            // 卡纳达语、马拉雅拉姆语、古吉拉特语、旁遮普语、奥里亚语等
-            const hasAnyLetterOrCJK = /[a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]/.test(text);
-            if (!hasAnyLetterOrCJK) {
+            // 支持的语言：
+            // - CJK: 中文、日文、韩文
+            // - 印度语言: 印地语、孟加拉语、泰米尔语、泰卢固语、卡纳达语、马拉雅拉姆语、古吉拉特语、旁遮普语、奥里亚语
+            // - 欧洲: 英文、拉丁扩展（法语、德语、西班牙语等）、西里尔字母（俄文等）、希腊文
+            // - 中东: 阿拉伯文、希伯来文
+            // - 东南亚: 泰文
+            const hasAnyLetter = /[a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0400-\u04FF\u0500-\u052F\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u0E00-\u0E7F\u0590-\u05FF\u0370-\u03FF\u1F00-\u1FFF\u00C0-\u024F]/.test(text);
+            if (!hasAnyLetter) {
                 console.log('[TranslationUtils] 纯符号，无实际字母或表意文字');
                 return true;
             }
@@ -391,7 +465,8 @@
             // 这个检测只针对 "aaaaaa" 这种恶意重复，在第 5 步处理
             
             // 3. 检测乱码特征（特殊字符超过 50%）
-            const specialCharCount = (text.match(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\s]/g) || []).length;
+            // 使用与 hasAnyLetter 相同的字符集，确保一致性
+            const specialCharCount = (text.match(/[^a-zA-Z\u4e00-\u9fa5\u3040-\u309F\u30A0-\u30FF\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFF\u0B00-\u0B7F\u0B80-\u0BFF\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F\u0400-\u04FF\u0500-\u052F\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u0E00-\u0E7F\u0590-\u05FF\u0370-\u03FF\u1F00-\u1FFF\u00C0-\u024F\s]/g) || []).length;
             if (specialCharCount / len > 0.5) {
                 console.log('[TranslationUtils] 特殊字符过多');
                 return true;
