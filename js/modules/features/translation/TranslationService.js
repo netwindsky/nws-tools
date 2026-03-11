@@ -135,38 +135,81 @@
 
         async translateTextRequest(text, onStream = null) {
             const config = this.getCurrentConfig();
+            const service = config.service || 'ai';
+
+            switch (service) {
+                case 'google':
+                    return await this.translateWithGoogle(text);
+                case 'deepl':
+                    return await this.translateWithDeepL(text);
+                case 'ai':
+                default:
+                    return await this.translateWithAI(text, onStream);
+            }
+        }
+
+        async translateWithAI(text, onStream = null) {
+            const config = this.getCurrentConfig();
             const chunks = this.splitTextIntoChunks(text, config.maxChunkSize);
             const results = [];
             const lang = config.targetLanguage || '中文';
-            
+
             for (const chunk of chunks) {
                 const messages = this.buildTranslationMessages(chunk, lang);
                 let chunkResult = '';
-                
+
                 if (onStream) {
-                    // 流式模式
                     const chunkOnStream = (content, fullContent) => {
                         chunkResult = fullContent;
                         onStream(content, fullContent);
                     };
                     chunkResult = await this.callOllama(messages, null, chunkOnStream);
                 } else {
-                    // 非流式模式
                     chunkResult = await this.callOllama(messages);
                 }
-                
-                // 验证翻译结果
+
                 const cleanedResult = this.cleanTranslationResult(chunkResult);
                 if (this.validateTranslationResult(chunk, cleanedResult)) {
                     results.push(cleanedResult);
                 } else {
-                    // 验证失败，返回原文
                     console.warn('[TranslationService] 翻译结果验证失败，返回原文');
                     results.push(chunk);
                 }
             }
-            
+
             return results.join(' ');
+        }
+
+        async translateWithGoogle(text) {
+            const config = this.getCurrentConfig();
+            const langMap = {
+                '中文': 'zh-CN',
+                'English': 'en',
+                '日本語': 'ja',
+                '한국어': 'ko'
+            };
+            const targetLang = langMap[config.targetLanguage] || 'zh-CN';
+
+            try {
+                const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+                if (!response.ok) throw new Error('Google Translate API error');
+                const data = await response.json();
+                return data[0]?.map(item => item[0]).join('') || text;
+            } catch (error) {
+                console.error('[TranslationService] Google翻译失败:', error);
+                if (this.fallbackTranslate) {
+                    return await this.fallbackTranslate(text);
+                }
+                return text;
+            }
+        }
+
+        async translateWithDeepL(text) {
+            console.warn('[TranslationService] DeepL翻译暂未实现，请使用AI或Google翻译');
+            if (this.fallbackTranslate) {
+                return await this.fallbackTranslate(text);
+            }
+            return text;
         }
 
         cleanTranslationResult(text) {
@@ -207,6 +250,21 @@
         async translateTextBatch(texts) {
             if (!Array.isArray(texts) || texts.length === 0) return [];
             const config = this.getCurrentConfig();
+            const service = config.service || 'ai';
+
+            switch (service) {
+                case 'google':
+                    return await this.translateTextBatchWithGoogle(texts);
+                case 'deepl':
+                    return await this.translateTextBatchWithDeepL(texts);
+                case 'ai':
+                default:
+                    return await this.translateTextBatchWithAI(texts);
+            }
+        }
+
+        async translateTextBatchWithAI(texts) {
+            const config = this.getCurrentConfig();
             const lang = config.targetLanguage || '中文';
             const systemPrompt = `You are a professional ${lang} translator engine.
 You will receive a JSON array of strings.
@@ -231,6 +289,25 @@ IMPORTANT rules:
                 const fallbacks = await Promise.all(texts.map((text) => this.fallbackTranslate(text)));
                 return fallbacks;
             }
+            return texts.map((text) => String(text));
+        }
+
+        async translateTextBatchWithGoogle(texts) {
+            const results = [];
+            for (const text of texts) {
+                try {
+                    const result = await this.translateWithGoogle(text);
+                    results.push(result);
+                } catch (error) {
+                    console.error('[TranslationService] Google批量翻译失败:', error);
+                    results.push(text);
+                }
+            }
+            return results;
+        }
+
+        async translateTextBatchWithDeepL(texts) {
+            console.warn('[TranslationService] DeepL批量翻译暂未实现');
             return texts.map((text) => String(text));
         }
 

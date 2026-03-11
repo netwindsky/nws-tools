@@ -23,15 +23,16 @@
                 enabled: true,
                 defaultConfig: {
                     enabled: false,
-                    enablePageTranslation: false, // 新增：独立的全页翻译开关
+                    enablePageTranslation: false,
                     targetLanguage: '中文',
-                    ollamaEndpoint: 'http://localhost:38520/v1/chat/completions',
-                    defaultModel: 'hy-mt1.5-7b-q4-m',
+                    service: 'ai',
+                    ollamaEndpoint: 'http://localhost:39520/v1/chat/completions',
+                    defaultModel: '',
                     maxChunkSize: 2000,
                     translationMode: 'bilingual',
                     enableSelectionTranslation: true,
                     enableViewportTranslation: true,
-                    concurrentLimit: 8,  // 默认并发 8 个请求
+                    concurrentLimit: 1,
                     viewportMargin: '120px',
                     minTextLength: 2
                 },
@@ -76,33 +77,51 @@
             );
 
             this.config = await this.configManager.load();
-            
+
+            // 从 translationSettings 加载配置（设置页面保存的位置）
+            if (this.chromeSettings) {
+                const translationSettings = await this.chromeSettings.getStorage('translationSettings', 'sync');
+                if (translationSettings) {
+                    const langMap = {
+                        'zh': '中文',
+                        'en': 'English',
+                        'ja': '日本語',
+                        'ko': '한국어'
+                    };
+                    const updates = {};
+                    if (translationSettings.defaultLanguage) {
+                        updates.targetLanguage = langMap[translationSettings.defaultLanguage] || translationSettings.defaultLanguage;
+                    }
+                    if (translationSettings.service) updates.service = translationSettings.service;
+                    if (translationSettings.defaultModel !== undefined) updates.defaultModel = translationSettings.defaultModel;
+                    if (translationSettings.translationMode) updates.translationMode = translationSettings.translationMode;
+                    if (translationSettings.concurrentLimit !== undefined) updates.concurrentLimit = translationSettings.concurrentLimit;
+                    if (translationSettings.enableSelectionTranslation !== undefined) updates.enableSelectionTranslation = translationSettings.enableSelectionTranslation;
+                    if (translationSettings.enableViewportTranslation !== undefined) updates.enableViewportTranslation = translationSettings.enableViewportTranslation;
+
+                    if (Object.keys(updates).length > 0) {
+                        await this.configManager.updateAndSave(updates);
+                    }
+                }
+            }
+
             // 兼容性迁移：如果 enablePageTranslation 未定义，则继承 enabled 的状态
             if (this.config.enablePageTranslation === undefined) {
                 const shouldEnablePage = this.config.enabled;
-                // 更新配置，同时确保 enabled 为 true (如果划词翻译开启)
-                await this.configManager.updateAndSave({ 
+                await this.configManager.updateAndSave({
                     enablePageTranslation: shouldEnablePage,
                     enabled: shouldEnablePage || this.config.enableSelectionTranslation
                 });
             } else {
-                // 确保主开关 enabled 正确反映子功能状态
                 if ((this.config.enablePageTranslation || this.config.enableSelectionTranslation) && !this.config.enabled) {
                     await this.configManager.updateAndSave({ enabled: true });
                 }
             }
-            
+
             // 自动迁移旧的 API 接口
             if (this.config.ollamaEndpoint === 'http://localhost:11434/api/generate') {
                 this.config.ollamaEndpoint = 'http://localhost:11434/v1/chat/completions';
                 await this.configManager.updateAndSave({ ollamaEndpoint: this.config.ollamaEndpoint });
-            }
-
-            // 自动迁移并发限制配置（从旧版本升级）
-            if (this.config.concurrentLimit !== 8) {
-                console.log(`[TranslationModule] 升级并发限制: ${this.config.concurrentLimit} -> 8`);
-                this.config.concurrentLimit = 8;
-                await this.configManager.updateAndSave({ concurrentLimit: 8 });
             }
 
             // 监听配置变化

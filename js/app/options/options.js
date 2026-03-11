@@ -142,6 +142,289 @@ const normalizeBlacklist = (list) => {
     return Array.from(new Set(normalized));
 };
 
+// AI 模型管理
+let aiModelList = [];
+let currentEditingIndex = -1;
+
+const normalizeAIModels = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list.filter(model => model && typeof model === 'object');
+};
+
+const getAIModelFormData = () => ({
+    basename: getValue('ai-model-name').trim(),
+    baseurl: getValue('ai-model-baseurl').trim(),
+    apikey: getValue('ai-model-apikey').trim(),
+    modelname: getValue('ai-model-modelname').trim()
+});
+
+const setAIModelFormData = (model) => {
+    setValue('ai-model-name', model?.basename || '');
+    setValue('ai-model-baseurl', model?.baseurl || '');
+    setValue('ai-model-apikey', model?.apikey || '');
+    setValue('ai-model-modelname', model?.modelname || '');
+};
+
+const clearAIModelForm = () => {
+    setValue('ai-model-name', '');
+    setValue('ai-model-baseurl', '');
+    setValue('ai-model-apikey', '');
+    setValue('ai-model-modelname', '');
+    setValue('ai-model-edit-index', '');
+    currentEditingIndex = -1;
+};
+
+const validateAIModel = (model) => {
+    if (!model.basename) return t('validate_model_name_required', null, '请输入模型名称');
+    if (!model.baseurl) return t('validate_api_endpoint_required', null, '请输入 API 节点地址');
+    if (!model.apikey) return t('validate_api_key_required', null, '请输入 API 密钥');
+    if (!model.modelname) return t('validate_model_identifier_required', null, '请输入模型标识');
+    return null;
+};
+
+const showAIModelForm = (isEdit = false) => {
+    const form = getEl('ai-model-form');
+    const addSection = getEl('ai-model-add-section');
+    if (form) form.classList.add('show');
+    if (addSection) addSection.style.display = 'none';
+    if (!isEdit) clearAIModelForm();
+};
+
+const hideAIModelForm = () => {
+    const form = getEl('ai-model-form');
+    const addSection = getEl('ai-model-add-section');
+    if (form) form.classList.remove('show');
+    if (addSection) addSection.style.display = 'block';
+    clearAIModelForm();
+};
+
+
+
+const renderAIModelList = () => {
+    const list = getEl('ai-model-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (aiModelList.length === 0) {
+        list.innerHTML = `
+            <li class="ai-model-empty">
+                <i class="fas fa-robot"></i>
+                <p data-i18n="msg_no_models">暂无配置模型，点击上方按钮添加</p>
+            </li>
+        `;
+        return;
+    }
+
+    aiModelList.forEach((model, index) => {
+        const li = document.createElement('li');
+        li.className = 'ai-model-item';
+        li.innerHTML = `
+            <div class="ai-model-info">
+                <div class="ai-model-name">${escapeHtml(model.basename)}</div>
+                <div class="ai-model-details">
+                    <span><i class="fas fa-link"></i> ${escapeHtml(truncateUrl(model.baseurl))}</span>
+                    <span><i class="fas fa-robot"></i> ${escapeHtml(model.modelname)}</span>
+                </div>
+            </div>
+            <div class="ai-model-actions">
+                <button class="action-btn edit" data-index="${index}" title="编辑">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button class="action-btn delete" data-index="${index}" title="删除">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        list.appendChild(li);
+    });
+
+    // 绑定编辑和删除事件
+    list.querySelectorAll('.action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.currentTarget.dataset.index);
+            editAIModel(index);
+        });
+    });
+
+    list.querySelectorAll('.action-btn.delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const index = parseInt(e.currentTarget.dataset.index);
+            deleteAIModel(index);
+        });
+    });
+};
+
+const escapeHtml = (text) => {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+};
+
+const truncateUrl = (url, maxLength = 30) => {
+    if (!url) return '';
+    if (url.length <= maxLength) return url;
+    return url.substring(0, maxLength) + '...';
+};
+
+const editAIModel = (index) => {
+    if (index < 0 || index >= aiModelList.length) return;
+    const model = aiModelList[index];
+    currentEditingIndex = index;
+    setAIModelFormData(model);
+    setValue('ai-model-edit-index', index);
+    showAIModelForm(true);
+};
+
+const deleteAIModel = async (index) => {
+    if (index < 0 || index >= aiModelList.length) return;
+
+    const modelName = aiModelList[index].basename;
+    const confirmMsg = t('msg_confirm_delete_model', modelName, `确定要删除模型 "${modelName}" 吗？`);
+    if (!confirm(confirmMsg)) return;
+
+    aiModelList.splice(index, 1);
+
+    await saveAIModelConfig();
+    renderAIModelList();
+    showToast(t('msg_model_deleted', null, '模型已删除'));
+
+    // 更新默认翻译模型下拉选项，保持当前选中值
+    const currentSelected = getValue('default-model');
+    updateDefaultModelOptions(currentSelected);
+};
+
+const saveAIModel = async () => {
+    const model = getAIModelFormData();
+    const error = validateAIModel(model);
+    if (error) {
+        showToast(error, 'error');
+        return;
+    }
+
+    if (currentEditingIndex >= 0) {
+        // 编辑模式
+        aiModelList[currentEditingIndex] = model;
+        showToast(t('msg_model_updated', null, '模型已更新'));
+    } else {
+        // 添加模式
+        aiModelList.push(model);
+        showToast(t('msg_model_added', null, '模型已添加'));
+    }
+
+    await saveAIModelConfig();
+    hideAIModelForm();
+    renderAIModelList();
+
+    // 更新默认翻译模型下拉选项，保持当前选中值
+    const currentSelected = getValue('default-model');
+    updateDefaultModelOptions(currentSelected);
+};
+
+const saveAIModelConfig = async () => {
+    await setConfig('aiModelSettings', {
+        models: aiModelList
+    });
+};
+
+// 更新默认翻译模型下拉选项
+const updateDefaultModelOptions = (selectedValue = '') => {
+    const select = getEl('default-model');
+    if (!select) return;
+
+    // 保留第一个默认选项
+    const defaultOption = select.options[0];
+    const defaultOptionValue = defaultOption.value;
+    const defaultOptionText = defaultOption.textContent;
+
+    // 构建新的选项列表
+    const options = [];
+
+    // 添加默认选项
+    options.push({ value: defaultOptionValue, text: defaultOptionText });
+
+    // 添加 AI 模型列表
+    aiModelList.forEach(model => {
+        options.push({ value: model.modelname, text: model.basename });
+    });
+
+    // 如果已保存的模型不在列表中，添加一个提示选项
+    const modelExists = aiModelList.some(m => m.modelname === selectedValue);
+    if (selectedValue && !modelExists) {
+        const notConfigured = t('msg_model_not_configured', null, '未配置');
+        options.push({ value: selectedValue, text: `${selectedValue} (${notConfigured})` });
+    }
+
+    // 重新构建 select
+    select.innerHTML = '';
+    options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.text;
+        if (opt.value === selectedValue && !modelExists && opt.value !== defaultOptionValue) {
+            option.style.color = '#ff5252';
+        }
+        select.appendChild(option);
+    });
+
+    // 恢复选中值
+    if (selectedValue) {
+        select.value = selectedValue;
+    }
+};
+
+const loadAIModelSettings = async (savedDefaultModel = '') => {
+    const config = await getConfig(['aiModelSettings', 'modelSettings']);
+
+    // 加载新格式
+    if (config.aiModelSettings) {
+        aiModelList = normalizeAIModels(config.aiModelSettings.models);
+    }
+
+    // 兼容旧格式 - 迁移数据
+    if (config.modelSettings && aiModelList.length === 0) {
+        if (config.modelSettings.apiUrl || config.modelSettings.apiKey) {
+            const oldModel = {
+                basename: t('msg_default_model_name', null, '默认模型'),
+                baseurl: config.modelSettings.apiUrl || '',
+                apikey: config.modelSettings.apiKey || '',
+                modelname: config.modelSettings.model || 'gpt-4o'
+            };
+            if (oldModel.baseurl && oldModel.apikey) {
+                aiModelList.push(oldModel);
+                await saveAIModelConfig();
+            }
+        }
+    }
+
+    renderAIModelList();
+
+    // 更新默认翻译模型下拉选项
+    updateDefaultModelOptions(savedDefaultModel);
+};
+
+const bindAIModelHandlers = () => {
+    const addBtn = getEl('ai-model-add-btn');
+    const cancelBtn = getEl('ai-model-cancel');
+    const saveBtn = getEl('ai-model-save');
+
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            currentEditingIndex = -1;
+            clearAIModelForm();
+            showAIModelForm();
+        });
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', hideAIModelForm);
+    }
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => handleSave(saveBtn, saveAIModel));
+    }
+};
+
 const saveBlacklistConfig = async () => {
     currentBlacklist = normalizeBlacklist(currentBlacklist);
     renderBlacklist();
@@ -207,22 +490,12 @@ const bindSaveHandlers = () => {
         }));
     }
 
-    const saveModel = getEl('save-model');
-    if (saveModel) {
-        saveModel.addEventListener('click', () => handleSave(saveModel, async () => {
-            await setConfig('modelSettings', {
-                apiUrl: getValue('model-api-url'),
-                apiKey: getValue('model-api-key'),
-                model: getValue('model-selection')
-            });
-        }));
-    }
-
     const saveTranslation = getEl('save-translation');
     if (saveTranslation) {
         saveTranslation.addEventListener('click', () => handleSave(saveTranslation, async () => {
             const defaultLanguage = getValue('default-language');
             const service = getValue('translation-service');
+            const defaultModel = getValue('default-model');
             const translationMode = getValue('translation-mode') || 'bilingual';
             const concurrentLimit = parseInt(getValue('concurrent-limit'), 10) || 1;
             const enableSelectionTranslation = getChecked('enable-selection-translation');
@@ -230,6 +503,7 @@ const bindSaveHandlers = () => {
             await setConfig('translationSettings', {
                 defaultLanguage,
                 service,
+                defaultModel,
                 translationMode,
                 concurrentLimit,
                 enableSelectionTranslation,
@@ -247,6 +521,8 @@ const bindSaveHandlers = () => {
             await setConfig('TranslationModule', {
                 ...existing,
                 targetLanguage,
+                service,
+                defaultModel,
                 translationMode,
                 concurrentLimit,
                 enableSelectionTranslation,
@@ -327,6 +603,7 @@ const loadSavedSettings = async () => {
         const config = await getConfig([
             'userData',
             'modelSettings',
+            'aiModelSettings',
             'translationSettings',
             'TranslationModule',
             'contentSettings',
@@ -335,8 +612,6 @@ const loadSavedSettings = async () => {
             'ChromeSettingsModule'
         ]);
 
-        //console.log('[Options] 加载配置成功:', config);
-
         if (config.ChromeSettingsModule) {
             currentBlacklist = normalizeBlacklist(config.ChromeSettingsModule.blacklist);
         } else {
@@ -344,18 +619,22 @@ const loadSavedSettings = async () => {
         }
         renderBlacklist();
 
+        // 准备翻译设置数据
+        const translationSettings = config.translationSettings || {};
+        const translationModule = config.TranslationModule || {};
+        const savedDefaultModel = translationSettings.defaultModel || translationModule.defaultModel || '';
+
+        // 加载 AI 模型设置（传入已保存的默认模型）
+        await loadAIModelSettings(savedDefaultModel);
+
         if (config.userData) {
             setValue('username', config.userData.username);
             setValue('email', config.userData.email);
         }
-        if (config.modelSettings) {
-            setValue('model-api-url', config.modelSettings.apiUrl);
-            setValue('model-api-key', config.modelSettings.apiKey);
-            setValue('model-selection', config.modelSettings.model);
-        }
+
+        // 兼容旧版模型设置（已迁移到 loadAIModelSettings）
+
         if (config.translationSettings || config.TranslationModule) {
-            const translationSettings = config.translationSettings || {};
-            const translationModule = config.TranslationModule || {};
             const defaultLanguage = translationSettings.defaultLanguage || mapTargetLanguageToCode(translationModule.targetLanguage) || 'zh';
             setValue('default-language', defaultLanguage);
             setValue('translation-service', translationSettings.service);
@@ -397,6 +676,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initNavigation();
     bindSaveHandlers();
     bindToggleHandlers();
+    bindAIModelHandlers();
     await loadSavedSettings();
     applyI18n();
 });
